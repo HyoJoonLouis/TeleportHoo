@@ -1,7 +1,12 @@
 #include "BaseCharacter.h"
 #include "CharacterTrajectoryComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include <Kismet/KismetMathLibrary.h>
 #include "Net/UnrealNetwork.h"
@@ -10,9 +15,38 @@ ABaseCharacter::ABaseCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
+
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationRoll = false;
+
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 300.0f, 0.0f);
+	GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->TargetArmLength = 300.0f;
+	CameraBoom->bUsePawnControlRotation = true;
+	CameraBoom->SocketOffset = FVector(0, 50, 0);
+	CameraBoom->TargetOffset = FVector(0, 0, 65);
+	CameraBoom->bEnableCameraLag = true;
+	CameraBoom->CameraLagSpeed = 9.0f;
+
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	FollowCamera->bUsePawnControlRotation = true;
+	FollowCamera->FieldOfView = 78;
+
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
-	WeaponMesh->SetupAttachment(GetMesh(), FName("weapon-r1Socket"));
+	WeaponMesh->SetupAttachment(GetMesh(), FName("Sword"));
 	WeaponMesh->SetCollisionProfileName(FName("NoCollision"), false);
+
+	Server_SetState(ECharacterStates::IDLE);
+
+	bTargeting = false;
+	bActivateCollision = false;
 
 	TrajectoryComponent = CreateDefaultSubobject<UCharacterTrajectoryComponent>(TEXT("TrajectoryComponent"));
 }
@@ -20,7 +54,16 @@ ABaseCharacter::ABaseCharacter()
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+
+	Server_SetState(ECharacterStates::IDLE);
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
@@ -62,6 +105,11 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Look);
+		EnhancedInputComponent->BindAction(TargetingAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Targeting);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Error In PlayerSetupPlayerInputComponent"));
 	}
 }
 
@@ -70,13 +118,45 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABaseCharacter, CurrentHealth);
+	DOREPLIFETIME(ABaseCharacter, CurrentState);
 }
 
-void ABaseCharacter::SetState(ECharacterStates NewState)
+void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
 {
-	if (CurrentState == NewState)
-		return;
-	CurrentState = NewState;
+	if (HasAuthority())
+	{
+		if (CurrentState == NewState)
+			return;
+		CurrentState = NewState;
+	}
+}
+
+void ABaseCharacter::OnRep_SetState()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("OnRep"));
+}
+
+void ABaseCharacter::Server_Targeting_Implementation()
+{
+	bTargeting != bTargeting;
+}
+
+void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
+{
+	if (HasAuthority())
+	{
+		CurrentHealth -= DamageInfo.Amount;
+	}
+}
+
+void ABaseCharacter::Server_PlayAnimMontage_Implementation(UAnimMontage* AnimMontage)
+{
+	Multicast_PlayAnimMontage(AnimMontage);
+}
+
+void ABaseCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* AnimMontage)
+{
+	PlayAnimMontage(AnimMontage);
 }
 
 void ABaseCharacter::StartWeaponCollision()
@@ -115,7 +195,7 @@ void ABaseCharacter::Look(const FInputActionValue& Value)
 	if (bTargeting && IsValid(TargetActor))
 		return;
 
-	if (CheckCurrentState({ ECharacterStates::IDLE }))
+	if (!CheckCurrentState({ ECharacterStates::IDLE }))
 		return;
 
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -125,5 +205,10 @@ void ABaseCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void ABaseCharacter::Targeting()
+{
+	Server_SetTargeting();
 }
 

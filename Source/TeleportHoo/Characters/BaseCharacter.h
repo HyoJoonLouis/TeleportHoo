@@ -24,8 +24,6 @@ public:
 protected:
 	//Client
 	UFUNCTION(BlueprintCallable)
-	void SetState(ECharacterStates NewState);
-	UFUNCTION(BlueprintCallable)
 	FORCEINLINE ECharacterStates GetState() const { return CurrentState; }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE bool CheckCurrentState(TArray<ECharacterStates> States) const { return States.Contains(CurrentState); }
@@ -39,8 +37,25 @@ protected:
 	void Move(const FInputActionValue& Value);
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
+	UFUNCTION()
+	void Targeting();
 	
 	// Servers
+	UFUNCTION(Server, UnReliable, BlueprintCallable)
+	void Server_SetState(ECharacterStates NewState);
+	UFUNCTION()
+	void OnRep_SetState();
+
+	UFUNCTION(Server, Unreliable, BlueprintCallable)
+	void Server_Targeting();
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_TakeDamage(AActor* CauseActor, FDamageInfo DamageInfo);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_PlayAnimMontage(class UAnimMontage* AnimMontage);
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
+	void Multicast_PlayAnimMontage(class UAnimMontage* AnimMontage);
 protected:
 	// Cameras
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
@@ -69,7 +84,7 @@ protected:
 	float MaxHealth;
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Status | Health")
 	float CurrentHealth;
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_SetState)
 	ECharacterStates CurrentState;
 	UPROPERTY(Replicated)
 	EDamageDirection CurrentDirection;
@@ -85,7 +100,7 @@ protected:
 
 	UPROPERTY()
 	AActor* TargetActor;
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(Replicated, BlueprintReadOnly)
 	bool bTargeting;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Weak")
