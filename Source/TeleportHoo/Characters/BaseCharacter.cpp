@@ -138,7 +138,10 @@ void ABaseCharacter::OnRep_SetState()
 
 void ABaseCharacter::Server_Targeting_Implementation()
 {
-	bTargeting != bTargeting;
+	if (bTargeting)
+		bTargeting = false;
+	else
+		bTargeting = true;
 }
 
 void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
@@ -209,6 +212,6 @@ void ABaseCharacter::Look(const FInputActionValue& Value)
 
 void ABaseCharacter::Targeting()
 {
-	Server_SetTargeting();
+	Server_Targeting();
 }
 
