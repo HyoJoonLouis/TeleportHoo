@@ -1,8 +1,10 @@
 #include "BaseCharacter.h"
+#include "../HealthBarWidget.h"
 #include "CharacterTrajectoryComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/WidgetComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -43,27 +45,35 @@ ABaseCharacter::ABaseCharacter()
 	WeaponMesh->SetupAttachment(GetMesh(), FName("Sword"));
 	WeaponMesh->SetCollisionProfileName(FName("NoCollision"), false);
 
-	Server_SetState(ECharacterStates::IDLE);
-
 	bTargeting = false;
 	bActivateCollision = false;
+	CurrentHealth = MaxHealth;
+
+	HealthBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarComponent"));
+	HealthBarComponent->SetupAttachment(GetMesh());
+	HealthBarComponent->SetRelativeLocation(FVector(0, 0, 200));
+	HealthBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
+
 
 	TrajectoryComponent = CreateDefaultSubobject<UCharacterTrajectoryComponent>(TEXT("TrajectoryComponent"));
+	TrajectoryComponent->SetIsReplicated(true);
+
 }
 
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
+
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+			OnRep_SetHealth();
 		}
 	}
-
-	Server_SetState(ECharacterStates::IDLE);
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
@@ -105,7 +115,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Look);
-		EnhancedInputComponent->BindAction(TargetingAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Targeting);
+		EnhancedInputComponent->BindAction(TargetingAction, ETriggerEvent::Started, this, &ABaseCharacter::Targeting);
 	}
 	else
 	{
@@ -121,6 +131,27 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	DOREPLIFETIME(ABaseCharacter, CurrentState);
 }
 
+void ABaseCharacter::OnRep_SetHealth()
+{
+	if (IsValid(HealthBarWidget))
+	{
+		HealthBarWidget->SetHealth(CurrentHealth / MaxHealth);
+	}
+}
+
+void ABaseCharacter::OnRep_SetState()
+{
+}
+
+void ABaseCharacter::Server_SetHealth_Implementation(float Value)
+{
+	if (HasAuthority())
+	{
+		CurrentHealth = Value;
+		OnRep_SetHealth();
+	}
+}
+
 void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
 {
 	if (HasAuthority())
@@ -128,12 +159,8 @@ void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
 		if (CurrentState == NewState)
 			return;
 		CurrentState = NewState;
+		OnRep_SetState();
 	}
-}
-
-void ABaseCharacter::OnRep_SetState()
-{
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("OnRep"));
 }
 
 void ABaseCharacter::Server_Targeting_Implementation()
@@ -149,6 +176,10 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 	if (HasAuthority())
 	{
 		CurrentHealth -= DamageInfo.Amount;
+		if (CurrentHealth <= 0)
+		{
+
+		}
 	}
 }
 
@@ -189,7 +220,6 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
-
 	}
 }
 
@@ -214,4 +244,3 @@ void ABaseCharacter::Targeting()
 {
 	Server_Targeting();
 }
-

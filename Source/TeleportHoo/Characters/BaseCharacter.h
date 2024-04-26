@@ -41,13 +41,18 @@ protected:
 	void Targeting();
 	
 	// Servers
-	UFUNCTION(Server, UnReliable, BlueprintCallable)
-	void Server_SetState(ECharacterStates NewState);
+	UFUNCTION()
+	void OnRep_SetHealth();
 	UFUNCTION()
 	void OnRep_SetState();
 
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_SetHealth(float Value);
+	UFUNCTION(Server, UnReliable, BlueprintCallable)
+	void Server_SetState(ECharacterStates NewState);
 	UFUNCTION(Server, Unreliable, BlueprintCallable)
 	void Server_Targeting();
+
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_TakeDamage(AActor* CauseActor, FDamageInfo DamageInfo);
@@ -56,6 +61,7 @@ protected:
 	void Server_PlayAnimMontage(class UAnimMontage* AnimMontage);
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void Multicast_PlayAnimMontage(class UAnimMontage* AnimMontage);
+
 protected:
 	// Cameras
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
@@ -82,8 +88,10 @@ protected:
 	// Status
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Health")
 	float MaxHealth;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Status | Health")
+	UPROPERTY(ReplicatedUsing = OnRep_SetHealth, EditAnywhere, BlueprintReadWrite, Category = "Status | Health")
 	float CurrentHealth;
+	UPROPERTY()
+	class UHealthBarWidget* HealthBarWidget;
 	UPROPERTY(ReplicatedUsing = OnRep_SetState)
 	ECharacterStates CurrentState;
 	UPROPERTY(Replicated)
@@ -115,6 +123,8 @@ protected:
 	TMap<EDamageDirection, class UAnimMontage*> HitMontages;
 
 	// Components
-	UPROPERTY(VisibleAnywhere, BLueprintReadOnly, Category = "Components")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	class UWidgetComponent* HealthBarComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	class UCharacterTrajectoryComponent* TrajectoryComponent;
 };
