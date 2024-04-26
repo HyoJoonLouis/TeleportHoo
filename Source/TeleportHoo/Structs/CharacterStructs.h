@@ -9,7 +9,10 @@ enum class ECharacterStates : uint8
 	IDLE	UMETA(DisplayName = "Idle"),
 	ATTACK	UMETA(DisplayName = "Attack"),
 	BLOCK	UMETA(DisplayName = "Block"),
+	STUN	UMETA(DisplayName = "Stun"),
 	DODGE	UMETA(DisplayName = "Dodge"),
+	HIT		UMETA(DisplayName = "Hit"),
+	DEAD	UMETA(DisplayName = "Dead")
 };
 
 UENUM(BlueprintType)

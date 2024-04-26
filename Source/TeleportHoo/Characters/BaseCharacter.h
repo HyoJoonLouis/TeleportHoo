@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "../Structs/CharacterStructs.h"
+#include <Components/TimelineComponent.h>
 #include "BaseCharacter.generated.h"
 
 UCLASS()
@@ -27,10 +28,14 @@ protected:
 	FORCEINLINE ECharacterStates GetState() const { return CurrentState; }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE bool CheckCurrentState(TArray<ECharacterStates> States) const { return States.Contains(CurrentState); }
+	UFUNCTION()
+	void TargetingTimelineFunction(float Value);
 	UFUNCTION(BlueprintCallable)
 	virtual void StartWeaponCollision();
 	UFUNCTION(BlueprintCallable)
 	virtual void EndWeaponCollision();
+	void ChangeToControllerDesiredRotation();
+	void ChangeToRotationToMovement();
 
 	// Inputs
 	UFUNCTION()
@@ -45,6 +50,8 @@ protected:
 	void OnRep_SetHealth();
 	UFUNCTION()
 	void OnRep_SetState();
+	UFUNCTION()
+	void OnRep_SetTargeting();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_SetHealth(float Value);
@@ -64,9 +71,9 @@ protected:
 
 protected:
 	// Cameras
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
 	class USpringArmComponent* CameraBoom;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
 	class UCameraComponent* FollowCamera;
 
 	// Input
@@ -108,8 +115,11 @@ protected:
 
 	UPROPERTY()
 	AActor* TargetActor;
-	UPROPERTY(Replicated, BlueprintReadOnly)
+	UPROPERTY(ReplicatedUsing = OnRep_SetTargeting, BlueprintReadOnly)
 	bool bTargeting;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline | Curve")
+	UCurveFloat* TargetingCurve;
+	FTimeline TargetingTimeline;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Weak")
 	TMap<EDamageDirection, class UAnimMontage*> WeakAttackMontages;

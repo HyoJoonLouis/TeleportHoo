@@ -35,11 +35,14 @@ ABaseCharacter::ABaseCharacter()
 	CameraBoom->TargetOffset = FVector(0, 0, 65);
 	CameraBoom->bEnableCameraLag = true;
 	CameraBoom->CameraLagSpeed = 9.0f;
+	CameraBoom->bDoCollisionTest = false;
+	CameraBoom->SetIsReplicated(true);
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = true;
 	FollowCamera->FieldOfView = 78;
+	FollowCamera->SetIsReplicated(true);
 
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
 	WeaponMesh->SetupAttachment(GetMesh(), FName("Sword"));
@@ -47,7 +50,6 @@ ABaseCharacter::ABaseCharacter()
 
 	bTargeting = false;
 	bActivateCollision = false;
-	CurrentHealth = MaxHealth;
 
 	HealthBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarComponent"));
 	HealthBarComponent->SetupAttachment(GetMesh());
@@ -71,14 +73,55 @@ void ABaseCharacter::BeginPlay()
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-			OnRep_SetHealth();
 		}
+	}
+
+	Server_SetHealth(MaxHealth);
+
+	// Timeline
+	if (TargetingCurve)
+	{
+		FOnTimelineFloat TargetingCurveCallback;
+		TargetingCurveCallback.BindUFunction(this, FName("TargetingTimelineFunction"));
+
+		TargetingTimeline.AddInterpFloat(TargetingCurve, TargetingCurveCallback);
+		TargetingTimeline.SetTimelineLength(0.4f);
 	}
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Timeline
+	TargetingTimeline.TickTimeline(DeltaTime);
+
+	if (IsLocallyControlled() && bTargeting)
+	{
+		if (IsValid(TargetActor) && FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) <= 1000)
+		{
+			GetController()->SetControlRotation(UKismetMathLibrary::RInterpTo(GetActorRotation(), UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetActor->GetActorLocation()), DeltaTime, 5));
+		}
+		else
+		{
+			TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+			TEnumAsByte<EObjectTypeQuery> Pawn = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn);
+			ObjectTypes.Add(Pawn);
+			TArray<AActor*> IgnoreActors;
+			IgnoreActors.Add(GetOwner());
+			FHitResult HitResult;
+
+			bool Result = UKismetSystemLibrary::SphereTraceSingleForObjects(this, GetActorLocation(), GetActorLocation(), 1000, ObjectTypes, false, IgnoreActors, EDrawDebugTrace::ForOneFrame, HitResult, true);
+			if (Result)
+			{
+				TargetActor = HitResult.GetActor();
+			}
+		}
+	}
+	else
+	{
+		TargetActor = nullptr;
+	}
 
 	if (HasAuthority() && bActivateCollision)
 	{
@@ -100,7 +143,7 @@ void ABaseCharacter::Tick(float DeltaTime)
 				AlreadyHitActors.AddUnique(HitActor);
 				if (IsValid(HitActor))
 				{
-
+					Cast<ABaseCharacter>(HitActor)->Server_TakeDamage(this, CurrentDamageInfo);
 				}
 			}
 		}
@@ -129,6 +172,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 
 	DOREPLIFETIME(ABaseCharacter, CurrentHealth);
 	DOREPLIFETIME(ABaseCharacter, CurrentState);
+	DOREPLIFETIME(ABaseCharacter, bTargeting);
 }
 
 void ABaseCharacter::OnRep_SetHealth()
@@ -141,6 +185,22 @@ void ABaseCharacter::OnRep_SetHealth()
 
 void ABaseCharacter::OnRep_SetState()
 {
+}
+
+void ABaseCharacter::OnRep_SetTargeting()
+{
+	if (bTargeting)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 200.0f;
+		TargetingTimeline.PlayFromStart();
+		ChangeToControllerDesiredRotation();
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 400.0f;
+		TargetingTimeline.Reverse();
+		ChangeToRotationToMovement();
+	}
 }
 
 void ABaseCharacter::Server_SetHealth_Implementation(float Value)
@@ -165,10 +225,14 @@ void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
 
 void ABaseCharacter::Server_Targeting_Implementation()
 {
-	if (bTargeting)
-		bTargeting = false;
-	else
-		bTargeting = true;
+	if (HasAuthority())
+	{
+		if (bTargeting)
+			bTargeting = false;
+		else
+			bTargeting = true;
+		OnRep_SetTargeting();
+	}
 }
 
 void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
@@ -176,9 +240,11 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 	if (HasAuthority())
 	{
 		CurrentHealth -= DamageInfo.Amount;
+		OnRep_SetHealth();
+		Server_SetState(ECharacterStates::HIT);
 		if (CurrentHealth <= 0)
 		{
-
+			Server_SetState(ECharacterStates::DEAD);
 		}
 	}
 }
@@ -193,6 +259,14 @@ void ABaseCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* Anim
 	PlayAnimMontage(AnimMontage);
 }
 
+void ABaseCharacter::TargetingTimelineFunction(float Value)
+{
+	CameraBoom->SocketOffset = FVector(0, UKismetMathLibrary::Lerp(50, 70, Value), 0);
+	CameraBoom->TargetOffset = FVector(0, 0, UKismetMathLibrary::Lerp(65, 40, Value));
+	FollowCamera->FieldOfView = UKismetMathLibrary::Lerp(78, 60, Value);
+	
+}
+
 void ABaseCharacter::StartWeaponCollision()
 {
 	bActivateCollision = true;
@@ -202,6 +276,18 @@ void ABaseCharacter::StartWeaponCollision()
 void ABaseCharacter::EndWeaponCollision()
 {
 	bActivateCollision = false;
+}
+
+void ABaseCharacter::ChangeToControllerDesiredRotation()
+{
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+}
+
+void ABaseCharacter::ChangeToRotationToMovement()
+{
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 }
 
 void ABaseCharacter::Move(const FInputActionValue& Value)
