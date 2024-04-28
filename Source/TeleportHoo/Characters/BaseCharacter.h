@@ -6,6 +6,8 @@
 #include <Components/TimelineComponent.h>
 #include "BaseCharacter.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeadDelegate, AActor*, DeadCharacter);
+
 UCLASS()
 class TELEPORTHOO_API ABaseCharacter : public ACharacter
 {
@@ -49,12 +51,17 @@ protected:
 	UFUNCTION()
 	void OnRep_SetHealth();
 	UFUNCTION()
+	void OnRep_SetMomentum();
+
+	UFUNCTION()
 	void OnRep_SetState();
 	UFUNCTION()
 	void OnRep_SetTargeting();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_SetHealth(float Value);
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_SetMomentum(float Value);
 	UFUNCTION(Server, UnReliable, BlueprintCallable)
 	void Server_SetState(ECharacterStates NewState);
 	UFUNCTION(Server, Unreliable, BlueprintCallable)
@@ -99,11 +106,17 @@ protected:
 	float CurrentHealth;
 	UPROPERTY()
 	class UHealthBarWidget* HealthBarWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
+	float MaxMomentum;
+	UPROPERTY(ReplicatedUsing = OnRep_SetMomentum, EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
+	float CurrentMomentum;
+	UPROPERTY()
+	class UHealthBarWidget* MomentumBarWidget;
+
 	UPROPERTY(ReplicatedUsing = OnRep_SetState)
 	ECharacterStates CurrentState;
 	UPROPERTY(Replicated)
 	EDamageDirection CurrentDirection;
-
 
 	// Attacks
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
@@ -132,9 +145,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Hit")
 	TMap<EDamageDirection, class UAnimMontage*> HitMontages;
 
+	// Delegates
+	FOnDeadDelegate OnDeadDelegate;
+
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	class UWidgetComponent* HealthBarComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	class UWidgetComponent* MomentumBarComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	class UCharacterTrajectoryComponent* TrajectoryComponent;
 };

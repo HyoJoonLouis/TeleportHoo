@@ -56,6 +56,10 @@ ABaseCharacter::ABaseCharacter()
 	HealthBarComponent->SetRelativeLocation(FVector(0, 0, 200));
 	HealthBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
 
+	MomentumBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("MomentumBarComponent"));
+	MomentumBarComponent->SetupAttachment(GetMesh());
+	MomentumBarComponent->SetRelativeLocation(FVector(0, 0, 190));
+	MomentumBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
 
 	TrajectoryComponent = CreateDefaultSubobject<UCharacterTrajectoryComponent>(TEXT("TrajectoryComponent"));
 	TrajectoryComponent->SetIsReplicated(true);
@@ -67,6 +71,7 @@ void ABaseCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
+	MomentumBarWidget = Cast<UHealthBarWidget>(MomentumBarComponent->GetWidget());
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
@@ -77,6 +82,7 @@ void ABaseCharacter::BeginPlay()
 	}
 
 	Server_SetHealth(MaxHealth);
+	
 
 	// Timeline
 	if (TargetingCurve)
@@ -171,6 +177,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABaseCharacter, CurrentHealth);
+	DOREPLIFETIME(ABaseCharacter, CurrentMomentum);
 	DOREPLIFETIME(ABaseCharacter, CurrentState);
 	DOREPLIFETIME(ABaseCharacter, bTargeting);
 }
@@ -180,6 +187,14 @@ void ABaseCharacter::OnRep_SetHealth()
 	if (IsValid(HealthBarWidget))
 	{
 		HealthBarWidget->SetHealth(CurrentHealth / MaxHealth);
+	}
+}
+
+void ABaseCharacter::OnRep_SetMomentum()
+{
+	if(IsValid(MomentumBarWidget))
+	{
+		MomentumBarWidget->SetHealth(CurrentMomentum / MaxMomentum);
 	}
 }
 
@@ -203,12 +218,22 @@ void ABaseCharacter::OnRep_SetTargeting()
 	}
 }
 
+
 void ABaseCharacter::Server_SetHealth_Implementation(float Value)
 {
 	if (HasAuthority())
 	{
 		CurrentHealth = Value;
 		OnRep_SetHealth();
+	}
+}
+
+void ABaseCharacter::Server_SetMomentum_Implementation(float Value)
+{
+	if (HasAuthority())
+	{
+		CurrentMomentum = Value;
+		OnRep_SetMomentum();
 	}
 }
 
@@ -245,6 +270,8 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		if (CurrentHealth <= 0)
 		{
 			Server_SetState(ECharacterStates::DEAD);
+			if (OnDeadDelegate.IsBound())
+				OnDeadDelegate.Broadcast(this);
 		}
 	}
 }
