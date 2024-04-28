@@ -1,5 +1,6 @@
 #include "BaseCharacter.h"
-#include "../HealthBarWidget.h"
+#include "../UI/HealthBarWidget.h"
+#include "../UI/DirectionWidget.h"
 #include "CharacterTrajectoryComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Camera/CameraComponent.h"
@@ -61,6 +62,12 @@ ABaseCharacter::ABaseCharacter()
 	MomentumBarComponent->SetRelativeLocation(FVector(0, 0, 190));
 	MomentumBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
 
+	DirectionComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("DirectionComponent"));
+	DirectionComponent->SetupAttachment(GetMesh());
+	DirectionComponent->SetRelativeLocation(FVector(0, 0, 130));
+	DirectionComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	DirectionComponent->SetVisibility(false, true);
+
 	TrajectoryComponent = CreateDefaultSubobject<UCharacterTrajectoryComponent>(TEXT("TrajectoryComponent"));
 	TrajectoryComponent->SetIsReplicated(true);
 
@@ -72,6 +79,7 @@ void ABaseCharacter::BeginPlay()
 
 	HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
 	MomentumBarWidget = Cast<UHealthBarWidget>(MomentumBarComponent->GetWidget());
+	DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
@@ -82,7 +90,7 @@ void ABaseCharacter::BeginPlay()
 	}
 
 	Server_SetHealth(MaxHealth);
-	
+	Server_SetMomentum(MaxMomentum);
 
 	// Timeline
 	if (TargetingCurve)
@@ -178,6 +186,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 
 	DOREPLIFETIME(ABaseCharacter, CurrentHealth);
 	DOREPLIFETIME(ABaseCharacter, CurrentMomentum);
+	DOREPLIFETIME(ABaseCharacter, CurrentDirection);
 	DOREPLIFETIME(ABaseCharacter, CurrentState);
 	DOREPLIFETIME(ABaseCharacter, bTargeting);
 }
@@ -198,6 +207,14 @@ void ABaseCharacter::OnRep_SetMomentum()
 	}
 }
 
+void ABaseCharacter::OnRep_SetDirection()
+{
+	if (IsValid(DirectionWidget))
+	{
+		DirectionWidget->ChangeDirection(CurrentDirection);
+	}
+}
+
 void ABaseCharacter::OnRep_SetState()
 {
 }
@@ -207,17 +224,30 @@ void ABaseCharacter::OnRep_SetTargeting()
 	if (bTargeting)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 200.0f;
+		DirectionComponent->SetVisibility(true, true);
 		TargetingTimeline.PlayFromStart();
 		ChangeToControllerDesiredRotation();
 	}
 	else
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 400.0f;
+		DirectionComponent->SetVisibility(false, true);
 		TargetingTimeline.Reverse();
 		ChangeToRotationToMovement();
 	}
 }
 
+
+void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
+{
+	if (HasAuthority())
+	{
+		if (CurrentState == NewState)
+			return;
+		CurrentState = NewState;
+		OnRep_SetState();
+	}
+}
 
 void ABaseCharacter::Server_SetHealth_Implementation(float Value)
 {
@@ -237,14 +267,14 @@ void ABaseCharacter::Server_SetMomentum_Implementation(float Value)
 	}
 }
 
-void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
+void ABaseCharacter::Server_SetDirection_Implementation(EDamageDirection Value)
 {
 	if (HasAuthority())
 	{
-		if (CurrentState == NewState)
+		if (CurrentDirection == Value)
 			return;
-		CurrentState = NewState;
-		OnRep_SetState();
+		CurrentDirection = Value;
+		OnRep_SetDirection();
 	}
 }
 
@@ -338,18 +368,30 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 
 void ABaseCharacter::Look(const FInputActionValue& Value)
 {
-	if (bTargeting && IsValid(TargetActor))
-		return;
-
 	if (!CheckCurrentState({ ECharacterStates::IDLE }))
 		return;
 
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
+	
+	if (bTargeting && IsValid(TargetActor))
 	{
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+		if (LookAxisVector.X <= -0.5f)
+		{
+			Server_SetDirection(EDamageDirection::LEFT);
+		}
+		else if (LookAxisVector.X >= 0.5f)
+		{
+			Server_SetDirection(EDamageDirection::RIGHT);
+		}
+	}
+
+	else
+	{
+		if (Controller != nullptr)
+		{
+			AddControllerYawInput(LookAxisVector.X);
+			AddControllerPitchInput(LookAxisVector.Y);
+		}
 	}
 }
 

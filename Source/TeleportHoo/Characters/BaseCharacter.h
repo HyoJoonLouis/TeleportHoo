@@ -49,21 +49,24 @@ protected:
 	
 	// Servers
 	UFUNCTION()
+	void OnRep_SetState();
+	UFUNCTION()
 	void OnRep_SetHealth();
 	UFUNCTION()
 	void OnRep_SetMomentum();
-
 	UFUNCTION()
-	void OnRep_SetState();
+	void OnRep_SetDirection();
 	UFUNCTION()
 	void OnRep_SetTargeting();
 
+	UFUNCTION(Server, UnReliable, BlueprintCallable)
+	void Server_SetState(ECharacterStates NewState);
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_SetHealth(float Value);
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_SetMomentum(float Value);
-	UFUNCTION(Server, UnReliable, BlueprintCallable)
-	void Server_SetState(ECharacterStates NewState);
+	UFUNCTION(Server, Unreliable, BlueprintCallable)
+	void Server_SetDirection(EDamageDirection Value);
 	UFUNCTION(Server, Unreliable, BlueprintCallable)
 	void Server_Targeting();
 
@@ -115,8 +118,10 @@ protected:
 
 	UPROPERTY(ReplicatedUsing = OnRep_SetState)
 	ECharacterStates CurrentState;
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_SetDirection)
 	EDamageDirection CurrentDirection;
+	UPROPERTY()
+	class UDirectionWidget* DirectionWidget;
 
 	// Attacks
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
@@ -153,6 +158,8 @@ protected:
 	class UWidgetComponent* HealthBarComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	class UWidgetComponent* MomentumBarComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+	class UWidgetComponent* DirectionComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	class UCharacterTrajectoryComponent* TrajectoryComponent;
 };
