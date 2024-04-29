@@ -59,6 +59,7 @@ Build/*/**
 
 # Don't ignore icon files in Build
 !Build/**/*.ico
+!Build/**/*.icns
 
 # Built data for maps
 *_BuiltData.uasset
@@ -72,3 +73,11 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Packaging Folder
+Packaged/*
+
+# Rider files
+.idea/*
+*.DotSettings.user
+Plugins/Developer/RiderLink/*
