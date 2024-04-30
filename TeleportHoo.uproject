@@ -9,8 +9,7 @@
 			"Type": "Runtime",
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
-				"Engine",
-				"UMG"
+				"Engine"
 			]
 		}
 	],
@@ -31,7 +30,7 @@
 			"Enabled": true
 		},
 		{
-			"Name": "OnlineSubsystemSteam",
+			"Name": "PCG",
 			"Enabled": true
 		}
 	]
