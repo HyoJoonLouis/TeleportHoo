@@ -25,7 +25,7 @@ void AMainMenuPC::HostSession()
 {
 	UE_LOG(LogTemp, Warning, TEXT("HostSession"));
 
-	bool OnSuccess;
+	//bool OnSuccess;
 
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
@@ -48,24 +48,26 @@ void AMainMenuPC::HostSession()
 			SessionSettings.bShouldAdvertise = true; 					// 세션이 다른 플레이어에게 광고(노출)되는지 여부
 			SessionSettings.bUseLobbiesVoiceChatIfAvailable = false;	// 가능한 경우 로비에서 음성 채팅을 사용할지 여부
 
-
-				
 			Sessions->CreateSession(0, L"JeonginSession", SessionSettings);
 			// OnSuccess = Sessions->CreateSession(0, L"JeonginSession", SessionSettings);
 			UE_LOG(LogTemp, Warning, TEXT("CreateSession"));
 	
-			// UGameplayStatics::OpenLevel(GetWorld(), "L_Lobby");
-			// UE_LOG(LogTemp, Warning, TEXT("OpenLevel : L_Lobby"));
+			 UGameplayStatics::OpenLevel(GetWorld(), "L_Lobby");
+			 UE_LOG(LogTemp, Warning, TEXT("OpenLevel : L_Lobby"));
 
 			// 세션 생성 성공 여부에 따라 다른 로그를 출력합니다.
-			if (OnSuccess)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("CreateSession succeeded."));
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("CreateSession failed."));
-			}
+			//if (OnSuccess)
+			//{
+			//	UE_LOG(LogTemp, Warning, TEXT("CreateSession succeeded."));
+			//}
+			//else
+			//{
+			//	UE_LOG(LogTemp, Warning, TEXT("CreateSession failed."));
+			//}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed : Sessions.IsValid"));
 		}
 	}
 
@@ -99,11 +101,12 @@ void AMainMenuPC::JoinSession()
 			// 세션 검색 시작
 			Sessions->FindSessions(0, SessionSearch.ToSharedRef());
 
-			// 비동기적으로 진행되므로, 여기서는 검색이 바로 완료되지 않습니다.
-			// 제대로하려면 검색 완료시 결과 처리를 위해 델리게이트(콜백)써야함
-
 			// UGameplayStatics::OpenLevel(GetWorld(), "L_Lobby");
 			// UE_LOG(LogTemp, Warning, TEXT("OpenLevel : L_Lobby"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed : Sessions.IsValid"));
 		}
 	}
 }
