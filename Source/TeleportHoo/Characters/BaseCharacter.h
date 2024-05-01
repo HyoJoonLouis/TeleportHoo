@@ -3,13 +3,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "../Structs/CharacterStructs.h"
+#include "../Interfaces/CharacterInterface.h"
 #include <Components/TimelineComponent.h>
 #include "BaseCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeadDelegate, AActor*, DeadCharacter);
 
 UCLASS()
-class TELEPORTHOO_API ABaseCharacter : public ACharacter
+class TELEPORTHOO_API ABaseCharacter : public ACharacter, public ICharacterInterface
 {
 	GENERATED_BODY()
 
@@ -25,6 +26,10 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
+	//Interfaces
+	virtual void OnTargeted_Implementation(const AActor* CauseActor) override;
+	virtual void OnUntargeted_Implementation() override;
+
 	//Client
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE ECharacterStates GetState() const { return CurrentState; }
@@ -131,10 +136,12 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	FDamageInfo CurrentDamageInfo;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	AActor* TargetActor;
 	UPROPERTY(ReplicatedUsing = OnRep_SetTargeting, BlueprintReadOnly)
 	bool bTargeting;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UDecalComponent* TargetDecal;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline | Curve")
 	UCurveFloat* TargetingCurve;
 	FTimeline TargetingTimeline;
