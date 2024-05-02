@@ -16,13 +16,13 @@ void AInGameGameMode::PostLogin(APlayerController* NewPlayer)
 
 	//UE_LOG(LogTemp, Warning, TEXT("=========================="));
 	//UE_LOG(LogTemp, Warning, TEXT("PostLogin"));
-	//UE_LOG(LogTemp, Warning, TEXT("ÇöÀç Á¢¼ÓÇÑ ÀÎ¿ø : %d"), GetNumPlayers());
+	//UE_LOG(LogTemp, Warning, TEXT("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Î¿ï¿½ : %d"), GetNumPlayers());
 	//UE_LOG(LogTemp, Warning, TEXT("%s"), *GetMatchState().ToString());
 	//UE_LOG(LogTemp, Warning, TEXT("=========================="));
 	//
 	//if (MaxPlayer <= GetNumPlayers())
 	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("°ÔÀÓ ½ÃÀÛ"));
+	//	UE_LOG(LogTemp, Warning, TEXT("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½"));
 	//	//bDelayedStart = false;
 	//	HandleMatchHasStarted();
 	//}
