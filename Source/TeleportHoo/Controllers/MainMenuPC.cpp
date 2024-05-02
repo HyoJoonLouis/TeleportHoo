@@ -4,9 +4,25 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSessionSettings.h"
 
+// 세션 생성을 위한 성공 및 실패 콜백
+FOnCreateSessionCompleteDelegate OnCreateSessionCompleteDelegate;
+FDelegateHandle OnCreateSessionCompleteDelegateHandle;
+
+FOnFindSessionsCompleteDelegate OnFindSessionsCompleteDelegate;
+FDelegateHandle OnFindSessionsCompleteDelegateHandle;
+
+FOnJoinSessionCompleteDelegate OnJoinSessionCompleteDelegate;
+FDelegateHandle OnJoinSessionCompleteDelegateHandle;
+
 AMainMenuPC::AMainMenuPC()
 {
 	UE_LOG(LogTemp, Warning, TEXT("AMainMenuPC Constructor"));
+	
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+	if (OnlineSub != nullptr)
+	{
+		Sessions = OnlineSub->GetSessionInterface();
+	}
 }
 
 void AMainMenuPC::BeginPlay()
@@ -17,22 +33,28 @@ void AMainMenuPC::BeginPlay()
 	this->bShowMouseCursor = true;
 
 	MainMenuWidget = CreateWidget(this, MainMenuWidgetClass);
-	MainMenuWidget->AddToViewport();
 	UE_LOG(LogTemp, Warning, TEXT("CreateWidget : MainMenuWidget"));
+	if (IsValid(MainMenuWidget))
+	{
+		MainMenuWidget->AddToViewport();
+	}
 }
 
 void AMainMenuPC::HostSession()
 {
 	UE_LOG(LogTemp, Warning, TEXT("HostSession"));
 
-	//bool OnSuccess;
-
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
 	{
-		IOnlineSessionPtr Sessions = OnlineSub->GetSessionInterface();
+		Sessions = OnlineSub->GetSessionInterface();
 		if (Sessions.IsValid())
 		{
+			OnCreateSessionCompleteDelegate
+				= FOnCreateSessionCompleteDelegate::CreateUObject(this, &AMainMenuPC::OnCreateSessionComplete);
+			OnCreateSessionCompleteDelegateHandle 
+				= Sessions->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
+
 			FOnlineSessionSettings SessionSettings;
 			SessionSettings.NumPublicConnections = 2;					// 공개 세션에서 허용되는 플레이어 최대 수
 			SessionSettings.NumPrivateConnections = 2;					// 비공개 세션에서 허용되는 플레이어 최대 수
@@ -49,38 +71,37 @@ void AMainMenuPC::HostSession()
 			SessionSettings.bUseLobbiesVoiceChatIfAvailable = false;	// 가능한 경우 로비에서 음성 채팅을 사용할지 여부
 
 			Sessions->CreateSession(0, L"JeonginSession", SessionSettings);
-			// OnSuccess = Sessions->CreateSession(0, L"JeonginSession", SessionSettings);
 			UE_LOG(LogTemp, Warning, TEXT("CreateSession"));
-	
-			 UGameplayStatics::OpenLevel(GetWorld(), "L_Lobby");
-			 UE_LOG(LogTemp, Warning, TEXT("OpenLevel : L_Lobby"));
-
-			// 세션 생성 성공 여부에 따라 다른 로그를 출력합니다.
-			//if (OnSuccess)
-			//{
-			//	UE_LOG(LogTemp, Warning, TEXT("CreateSession succeeded."));
-			//}
-			//else
-			//{
-			//	UE_LOG(LogTemp, Warning, TEXT("CreateSession failed."));
-			//}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed : Sessions.IsValid"));
 		}
 	}
+}
 
-	// if (OnSuccess)
-	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("CreateSession : Success"));
-	// 	UGameplayStatics::OpenLevel(GetWorld(), "L_Lobby");
-	// 	UE_LOG(LogTemp, Warning, TEXT("OpenLevel : L_Lobby"));
-	// }
-	// else
-	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("CreateSession : Failed"));
-	// }
+void AMainMenuPC::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		UGameplayStatics::OpenLevel(GetWorld(), "L_Lobby", true, "listen");
+		UE_LOG(LogTemp, Warning, TEXT("OpenLevel : L_Lobby"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CreateSession Failed"));
+	}
+}
+
+void AMainMenuPC::FindSession()
+{
+	UE_LOG(LogTemp, Warning, TEXT("FindSession"));
+
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+	if (OnlineSub)
+	{
+		Sessions = OnlineSub->GetSessionInterface();
+		if (Sessions.IsValid())
+		{
+			// 세션 검색 코드
+		}
+	}
 }
 
 void AMainMenuPC::JoinSession()
@@ -90,23 +111,62 @@ void AMainMenuPC::JoinSession()
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
 	{
-		IOnlineSessionPtr Sessions = OnlineSub->GetSessionInterface();
+		UE_LOG(LogTemp, Warning, TEXT("aaaaa"));
+		Sessions = OnlineSub->GetSessionInterface();
 		if (Sessions.IsValid())
 		{
-			//세션 검색 객체 생성
-			TSharedPtr<FOnlineSessionSearch> SessionSearch = MakeShareable(new FOnlineSessionSearch());
-			SessionSearch->bIsLanQuery = true; // LAN 검색 여부
-			SessionSearch->MaxSearchResults = 1; // 최대 검색 결과 수
+			OnJoinSessionCompleteDelegate 
+				= FOnJoinSessionCompleteDelegate::CreateUObject(this, &AMainMenuPC::OnJoinSessionComplete);
+			OnJoinSessionCompleteDelegateHandle 
+				= Sessions->AddOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegate);
 
-			// 세션 검색 시작
-			Sessions->FindSessions(0, SessionSearch.ToSharedRef());
-
-			// UGameplayStatics::OpenLevel(GetWorld(), "L_Lobby");
-			// UE_LOG(LogTemp, Warning, TEXT("OpenLevel : L_Lobby"));
+			// 세션 검색 및 참여 코드
+			
+			////세션 검색 객체 생성
+			//TSharedPtr<FOnlineSessionSearch> SessionSearch = MakeShareable(new FOnlineSessionSearch());
+			//SessionSearch->bIsLanQuery = true; // LAN 검색 여부
+			//SessionSearch->MaxSearchResults = 1; // 최대 검색 결과 수
 		}
-		else
+	}
+}
+
+
+void AMainMenuPC::OnFindSessionsComplete(bool bWasSuccessful)
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnFindSessionsComplete: %s"), bWasSuccessful ? TEXT("TRUE") : TEXT("FALSE"));
+
+	//IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+	//if (OnlineSub)
+	//{
+	//	IOnlineSessionPtr Sessions = OnlineSub->GetSessionInterface();
+	//	if (Sessions.IsValid() && SessionSearch.IsValid() && bWasSuccessful && SessionSearch->SearchResults.Num() > 0)
+	//	{
+	//		// 가장 첫 번째 검색 결과에 참여 시도
+	//		Sessions->JoinSession(0, L"JeonginSession", SessionSearch->SearchResults[0]);
+	//	}
+	//	else
+	//	{
+	//		UE_LOG(LogTemp, Warning, TEXT("No sessions found or search unsuccessful."));
+	//	}
+	//}
+}
+
+void AMainMenuPC::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (Result == EOnJoinSessionCompleteResult::Success)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Succeed : OnJoinSessionComplete"));
+
+		APlayerController* PlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
+		FString JoinAddress;
+
+		if (PlayerController && Sessions->GetResolvedConnectString(SessionName, JoinAddress))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed : Sessions.IsValid"));
+			PlayerController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed : OnJoinSessionComplete"));
 	}
 }
