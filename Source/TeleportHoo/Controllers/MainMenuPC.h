@@ -12,7 +12,7 @@ class TELEPORTHOO_API AMainMenuPC : public APlayerController
 public:
 	AMainMenuPC();
 
-protected:
+protected:	
 	virtual void BeginPlay() override;
 	
 protected:
@@ -32,11 +32,11 @@ public:
 	UFUNCTION()
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
 	UFUNCTION()
-	void FindSession();
-	UFUNCTION()
 	void JoinSession();
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+	UFUNCTION()
+	void FindSession();
 	UFUNCTION()
 	void OnFindSessionsComplete(bool bWasSuccessful);
 
-	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 };
