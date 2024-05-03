@@ -16,12 +16,12 @@ void UMainMenuWidget::HostButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("HostButtonClicked"));
 
-	Cast<AMainMenuPC>(GetWorld()->GetFirstPlayerController())->HostSession();
+	Cast<AMainMenuPC>(GetWorld()->GetFirstPlayerController())->StartOnlineGmae();
 }
 
  void UMainMenuWidget::JoinButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("JoinButtonClicked"));
 	
-	Cast<AMainMenuPC>(GetWorld()->GetFirstPlayerController())->JoinSession();
+	Cast<AMainMenuPC>(GetWorld()->GetFirstPlayerController())->FindOnlineGames();
 }
