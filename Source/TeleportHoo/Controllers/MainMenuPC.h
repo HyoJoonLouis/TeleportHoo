@@ -19,26 +19,22 @@ protected:
 	// VARIABLES
 	UPROPERTY()
 	class UUserWidget* MainMenuWidget;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
 	class TSubclassOf<UUserWidget> MainMenuWidgetClass;
 
 	IOnlineSessionPtr Sessions;
-
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;			// 세션 검색을 위한 변수 선언
+	
 public:
 	// Functions
 	UFUNCTION()
 	void HostSession();
-
 	UFUNCTION()
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
-
 	UFUNCTION()
 	void FindSession();
-
 	UFUNCTION()
 	void JoinSession();
-	
 	UFUNCTION()
 	void OnFindSessionsComplete(bool bWasSuccessful);
 

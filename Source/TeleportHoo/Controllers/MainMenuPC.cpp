@@ -2,7 +2,9 @@
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "Online/OnlineSessionNames.h"
 
 // 세션 생성을 위한 성공 및 실패 콜백
 FOnCreateSessionCompleteDelegate OnCreateSessionCompleteDelegate;
@@ -99,7 +101,18 @@ void AMainMenuPC::FindSession()
 		Sessions = OnlineSub->GetSessionInterface();
 		if (Sessions.IsValid())
 		{
-			// 세션 검색 코드
+			SessionSearch = MakeShareable(new FOnlineSessionSearch());
+			SessionSearch->bIsLanQuery = true; // LAN에서만 검색
+			SessionSearch->MaxSearchResults = 20; // 최대 20개의 결과
+			SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals); // 온라인 상태에 따른 검색
+
+			OnFindSessionsCompleteDelegate
+				= FOnFindSessionsCompleteDelegate::CreateUObject(this, &AMainMenuPC::OnFindSessionsComplete);
+			OnFindSessionsCompleteDelegateHandle
+				= Sessions->AddOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegate);
+
+			Sessions->FindSessions(0, SessionSearch.ToSharedRef());
+			UE_LOG(LogTemp, Warning, TEXT("Searching for sessions..."));
 		}
 	}
 }
@@ -111,7 +124,6 @@ void AMainMenuPC::JoinSession()
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("aaaaa"));
 		Sessions = OnlineSub->GetSessionInterface();
 		if (Sessions.IsValid())
 		{
@@ -130,25 +142,19 @@ void AMainMenuPC::JoinSession()
 	}
 }
 
-
 void AMainMenuPC::OnFindSessionsComplete(bool bWasSuccessful)
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnFindSessionsComplete: %s"), bWasSuccessful ? TEXT("TRUE") : TEXT("FALSE"));
-
-	//IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
-	//if (OnlineSub)
-	//{
-	//	IOnlineSessionPtr Sessions = OnlineSub->GetSessionInterface();
-	//	if (Sessions.IsValid() && SessionSearch.IsValid() && bWasSuccessful && SessionSearch->SearchResults.Num() > 0)
-	//	{
-	//		// 가장 첫 번째 검색 결과에 참여 시도
-	//		Sessions->JoinSession(0, L"JeonginSession", SessionSearch->SearchResults[0]);
-	//	}
-	//	else
-	//	{
-	//		UE_LOG(LogTemp, Warning, TEXT("No sessions found or search unsuccessful."));
-	//	}
-	//}
+   
+    if (bWasSuccessful && SessionSearch.IsValid() && SessionSearch->SearchResults.Num() > 0)
+    {
+    	// 가장 첫 번째 검색 결과에 참여 시도
+    	Sessions->JoinSession(0, L"JeonginSession", SessionSearch->SearchResults[0]);
+    }
+    else
+    {
+    	UE_LOG(LogTemp, Warning, TEXT("No sessions found or search unsuccessful."));
+    }
 }
 
 void AMainMenuPC::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
