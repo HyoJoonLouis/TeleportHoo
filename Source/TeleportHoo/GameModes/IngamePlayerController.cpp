@@ -13,7 +13,6 @@ void AIngamePlayerController::BeginPlay()
 	{
 		HUD = Cast<UIngameHUD>(CreateWidget(this, HUDClass));
 		HUD->AddToViewport();
-		SetShowMouseCursor(true);
 	}
 }
 
