@@ -1,8 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "HooGameInstance.h"
-
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "OnlineSubsystem.h"
@@ -11,6 +9,7 @@
 
 UHooGameInstance::UHooGameInstance()
 {
+	UE_LOG(LogTemp, Warning, TEXT("UHooGameInstance Constructor"));
 }
 
 void UHooGameInstance::Init()
@@ -34,6 +33,10 @@ void UHooGameInstance::OnCreateSessionComplete(FName ServerName, bool bSucceeded
 	{
 		GetWorld()->ServerTravel("/Game/Levels/L_Lobby?listen");
 	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed : OnCreateSessionComplete"));
+	}
 }
 
 void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
@@ -45,6 +48,10 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 		{
 			SessionInterface->JoinSession(0, FName("Session"), SearchResults[0]);
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed : OnFindSessionsComplete"));
 	}
 }
 
@@ -58,11 +65,17 @@ void UHooGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 		{
 			PlayerController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed : JoinAddress is \"\""));
+		}
 	}
 }
 
 void UHooGameInstance::CreateServer()
 {
+	UE_LOG(LogTemp, Warning, TEXT("CreateServer"));
+
 	FOnlineSessionSettings SessionSettings;
 	SessionSettings.bAllowJoinInProgress = true;
 	SessionSettings.bIsDedicated = false;
@@ -76,6 +89,8 @@ void UHooGameInstance::CreateServer()
 
 void UHooGameInstance::JoinServer()
 {
+	UE_LOG(LogTemp, Warning, TEXT("JoinServer"));
+
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->bIsLanQuery = true;
 	SessionSearch->MaxSearchResults = 1000;

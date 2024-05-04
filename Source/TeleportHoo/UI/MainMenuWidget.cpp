@@ -1,13 +1,12 @@
 #include "MainMenuWidget.h"
-#include "TeleportHoo/Controllers/MainMenuPC.h"
 #include "Components/Button.h"
+#include "TeleportHoo/GameModes/HooGameInstance.h"
 
 void UMainMenuWidget::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
 
 	UE_LOG(LogTemp, Warning, TEXT("UMainMenuWidget Constructor"));
-
 	HostButton->OnClicked.AddDynamic(this, &UMainMenuWidget::HostButtonClicked);
 	JoinButton->OnClicked.AddDynamic(this, &UMainMenuWidget::JoinButtonClicked);
 }
@@ -15,13 +14,11 @@ void UMainMenuWidget::NativeOnInitialized()
 void UMainMenuWidget::HostButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("HostButtonClicked"));
-
-	Cast<AMainMenuPC>(GetWorld()->GetFirstPlayerController())->StartOnlineGmae();
+	Cast<UHooGameInstance>(GetWorld()->GetGameInstance())->CreateServer();
 }
 
  void UMainMenuWidget::JoinButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("JoinButtonClicked"));
-	
-	Cast<AMainMenuPC>(GetWorld()->GetFirstPlayerController())->FindOnlineGames();
+	Cast<UHooGameInstance>(GetWorld()->GetGameInstance())->JoinServer();
 }
