@@ -319,7 +319,7 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		if (CurrentHealth <= 0)
 		{
 			Server_SetState(ECharacterStates::DEAD);
-			if (OnDeadDelegate.IsBound())
+			if (OnDeadDelegate.IsBound())	
 				OnDeadDelegate.Broadcast(this);
 		}
 	}
