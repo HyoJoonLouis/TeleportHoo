@@ -3,6 +3,7 @@
 #include "../UI/DirectionWidget.h"
 #include "CharacterTrajectoryComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/DecalComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
@@ -18,7 +19,10 @@ ABaseCharacter::ABaseCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	GetMesh()->SetReceivesDecals(false);
+
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
+	GetCapsuleComponent()->SetReceivesDecals(false);
 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -48,9 +52,15 @@ ABaseCharacter::ABaseCharacter()
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
 	WeaponMesh->SetupAttachment(GetMesh(), FName("Sword"));
 	WeaponMesh->SetCollisionProfileName(FName("NoCollision"), false);
+	WeaponMesh->SetReceivesDecals(false);
 
 	bTargeting = false;
 	bActivateCollision = false;
+	TargetDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("TargetDecal"));
+	TargetDecal->SetupAttachment(GetMesh());
+	TargetDecal->DecalSize = FVector(100, 100, 100);
+	TargetDecal->SetRelativeRotation(FVector(0,90,0).Rotation().Quaternion());
+	TargetDecal->SetVisibility(false, true);
 
 	HealthBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarComponent"));
 	HealthBarComponent->SetupAttachment(GetMesh());
@@ -129,6 +139,10 @@ void ABaseCharacter::Tick(float DeltaTime)
 			if (Result)
 			{
 				TargetActor = HitResult.GetActor();
+				DirectionComponent->SetVisibility(true, true);
+				auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
+				if (TargetActorInterface)
+					TargetActorInterface->Execute_OnTargeted(TargetActor, this);
 			}
 		}
 	}
@@ -191,6 +205,16 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	DOREPLIFETIME(ABaseCharacter, bTargeting);
 }
 
+void ABaseCharacter::OnTargeted_Implementation(const AActor* CauseActor)
+{
+	DirectionComponent->SetVisibility(true, true);
+	TargetDecal->SetVisibility(true, true);
+}
+
+void ABaseCharacter::OnUntargeted_Implementation()
+{
+}
+
 void ABaseCharacter::OnRep_SetHealth()
 {
 	if (IsValid(HealthBarWidget))
@@ -224,14 +248,12 @@ void ABaseCharacter::OnRep_SetTargeting()
 	if (bTargeting)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 200.0f;
-		DirectionComponent->SetVisibility(true, true);
 		TargetingTimeline.PlayFromStart();
 		ChangeToControllerDesiredRotation();
 	}
 	else
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 400.0f;
-		DirectionComponent->SetVisibility(false, true);
 		TargetingTimeline.Reverse();
 		ChangeToRotationToMovement();
 	}
@@ -282,10 +304,7 @@ void ABaseCharacter::Server_Targeting_Implementation()
 {
 	if (HasAuthority())
 	{
-		if (bTargeting)
-			bTargeting = false;
-		else
-			bTargeting = true;
+		bTargeting = !bTargeting;
 		OnRep_SetTargeting();
 	}
 }
@@ -318,7 +337,7 @@ void ABaseCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* Anim
 
 void ABaseCharacter::TargetingTimelineFunction(float Value)
 {
-	CameraBoom->SocketOffset = FVector(0, UKismetMathLibrary::Lerp(50, 70, Value), 0);
+	CameraBoom->SocketOffset = FVector(0, UKismetMathLibrary::Lerp(50, 100, Value), 0);
 	CameraBoom->TargetOffset = FVector(0, 0, UKismetMathLibrary::Lerp(65, 40, Value));
 	FollowCamera->FieldOfView = UKismetMathLibrary::Lerp(78, 60, Value);
 	
