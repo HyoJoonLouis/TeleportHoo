@@ -55,6 +55,11 @@ ABaseCharacter::ABaseCharacter()
 	WeaponMesh->SetCollisionProfileName(FName("NoCollision"), false);
 	WeaponMesh->SetReceivesDecals(false);
 
+	ShieldMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
+	ShieldMesh->SetupAttachment(GetMesh(), FName("Shield"));
+	ShieldMesh->SetCollisionProfileName(FName("NoCollision"), false);
+	ShieldMesh->SetReceivesDecals(false);
+
 	bTargeting = false;
 	bActivateCollision = false;
 	TargetDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("TargetDecal"));
@@ -163,7 +168,7 @@ void ABaseCharacter::Tick(float DeltaTime)
 		IgnoreActors.Add(GetOwner());
 		TArray<FHitResult> HitResults;
 
-		bool Result = UKismetSystemLibrary::SphereTraceMultiForObjects(this, WeaponMesh->GetSocketLocation(FName("Start")), WeaponMesh->GetSocketLocation(FName("End")), 30.0f, ObjectTypes, false, IgnoreActors, EDrawDebugTrace::ForDuration, HitResults, true);
+		bool Result = UKismetSystemLibrary::SphereTraceMultiForObjects(this, WeaponMesh->GetSocketLocation(FName("Start")), WeaponMesh->GetSocketLocation(FName("End")), 30.0f, ObjectTypes, false, IgnoreActors, EDrawDebugTrace::None, HitResults, true);
 		if (Result)
 		{
 			for (const auto& HitResult : HitResults)
@@ -249,7 +254,17 @@ void ABaseCharacter::OnRep_SetDirection()
 {
 	if (IsValid(DirectionWidget))
 	{
-		DirectionWidget->ChangeDirection(CurrentDirection);
+		if (IsLocallyControlled())
+		{
+			DirectionWidget->ChangeDirection(CurrentDirection);
+		}
+		else
+		{
+			if(CurrentDirection == EDamageDirection::LEFT)
+				DirectionWidget->ChangeDirection(EDamageDirection::RIGHT);
+			else if(CurrentDirection == EDamageDirection::RIGHT)
+				DirectionWidget->ChangeDirection(EDamageDirection::LEFT);
+		}
 	}
 }
 
@@ -336,6 +351,27 @@ void ABaseCharacter::Server_WeakAttack_Implementation()
 	}
 }
 
+void ABaseCharacter::Server_TargetBlockAttack_Implementation(AActor* Attacker, AActor* Blocker, EDamageDirection Direction)
+{
+	ABaseCharacter* AttackActor = Cast<ABaseCharacter>(Attacker);
+	ABaseCharacter* BlockActor = Cast<ABaseCharacter>(Blocker);
+
+	AttackActor->Server_SetState(ECharacterStates::STUN);
+	BlockActor->Server_SetState(ECharacterStates::BLOCK);
+
+	if (Direction == EDamageDirection::LEFT)
+	{
+		AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::LEFT]);
+		BlockActor->Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
+	}
+	else if (Direction == EDamageDirection::RIGHT)
+	{
+		AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::RIGHT]);
+		BlockActor->Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
+	}
+
+}
+
 void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
 {
 	if (HasAuthority())
@@ -345,14 +381,6 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 
 		ABaseCharacter* DamageActor = Cast<ABaseCharacter>(CauseActor);
 	
-		// If can block
-		if (CurrentDirection != DamageActor->GetActorDirection())
-		{
-			Server_SetState(ECharacterStates::BLOCK);
-			Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
-			return;
-		}
-
 		CurrentHealth -= DamageInfo.Amount;
 		DamageActor->Server_SetMomentum(DamageActor->GetCurrentMomentum() + DamageActor->GetActorMomentumValues().OnHitSucceedAddAmount);
 
@@ -401,6 +429,21 @@ void ABaseCharacter::EndWeaponCollision()
 {
 	bActivateCollision = false;
 }
+
+bool ABaseCharacter::CanTargetBlockAttack()
+{
+	if(bTargeting && IsValid(TargetActor))
+	{
+		ABaseCharacter* Target = Cast<ABaseCharacter>(TargetActor);
+		if (CurrentDirection != Target->GetActorDirection())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+
 
 void ABaseCharacter::ChangeToControllerDesiredRotation()
 {

@@ -35,9 +35,13 @@ protected:
 	FORCEINLINE ECharacterStates GetState() const { return CurrentState; }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE bool CheckCurrentState(TArray<ECharacterStates> States) const { return States.Contains(CurrentState); }
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetCurrentHealth() const { return CurrentHealth; }
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetCurrentMomentum() const { return CurrentMomentum; }
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE FMomentumValues GetActorMomentumValues() const { return MomentumValues; }
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE EDamageDirection GetActorDirection() const { return CurrentDirection; }
 
 
@@ -47,6 +51,9 @@ protected:
 	virtual void StartWeaponCollision();
 	UFUNCTION(BlueprintCallable)
 	virtual void EndWeaponCollision();
+	UFUNCTION(BlueprintCallable)
+	bool CanTargetBlockAttack();
+
 	void ChangeToControllerDesiredRotation();
 	void ChangeToRotationToMovement();
 
@@ -88,7 +95,8 @@ protected:
 	void Server_Targeting();
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_WeakAttack();
-
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_TargetBlockAttack(AActor* Attacker, AActor* Blocker, EDamageDirection Direction);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_TakeDamage(AActor* CauseActor, FDamageInfo DamageInfo);
@@ -149,6 +157,9 @@ protected:
 	// Attacks
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
 	class UStaticMeshComponent* WeaponMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
+	class UStaticMeshComponent* ShieldMesh;
+
 	TArray<AActor*> AlreadyHitActors;
 	bool bActivateCollision;
 	UPROPERTY(BlueprintReadWrite)
@@ -166,6 +177,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Weak")
 	TMap<EDamageDirection, class UAnimMontage*> WeakAttackMontages;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Weak")
+	TMap<EDamageDirection, class UAnimMontage*> WeakAttackBlockedMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Heavy")
 	TMap<EDamageDirection, class UAnimMontage*>	HeavyAttackMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Block")
