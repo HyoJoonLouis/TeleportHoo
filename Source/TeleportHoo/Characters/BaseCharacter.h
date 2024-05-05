@@ -35,6 +35,12 @@ protected:
 	FORCEINLINE ECharacterStates GetState() const { return CurrentState; }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE bool CheckCurrentState(TArray<ECharacterStates> States) const { return States.Contains(CurrentState); }
+	FORCEINLINE float GetCurrentHealth() const { return CurrentHealth; }
+	FORCEINLINE float GetCurrentMomentum() const { return CurrentMomentum; }
+	FORCEINLINE FMomentumValues GetActorMomentumValues() const { return MomentumValues; }
+	FORCEINLINE EDamageDirection GetActorDirection() const { return CurrentDirection; }
+
+
 	UFUNCTION()
 	void TargetingTimelineFunction(float Value);
 	UFUNCTION(BlueprintCallable)
@@ -51,6 +57,12 @@ protected:
 	void Look(const FInputActionValue& Value);
 	UFUNCTION()
 	void Targeting();
+	UFUNCTION()
+	void Dodge();
+	UFUNCTION()
+	void WeakAttack();
+	UFUNCTION()
+	void Skill();
 	
 	// Servers
 	UFUNCTION()
@@ -74,6 +86,8 @@ protected:
 	void Server_SetDirection(EDamageDirection Value);
 	UFUNCTION(Server, Unreliable, BlueprintCallable)
 	void Server_Targeting();
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_WeakAttack();
 
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
@@ -106,6 +120,8 @@ protected:
 	class UInputAction* HeavyAttackAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	class UInputAction* DodgeAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	class UInputAction* SkillAction;
 
 	// Status
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Health")
@@ -120,6 +136,8 @@ protected:
 	float CurrentMomentum;
 	UPROPERTY()
 	class UHealthBarWidget* MomentumBarWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
+	FMomentumValues MomentumValues;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SetState)
 	ECharacterStates CurrentState;
@@ -153,9 +171,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Block")
 	TMap<EDamageDirection, class UAnimMontage*> BlockMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dodge")
+	class UAnimMontage* ForwardDodgeMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dodge")
 	TMap<EDamageDirection, class UAnimMontage*> DodgeMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Hit")
 	TMap<EDamageDirection, class UAnimMontage*> HitMontages;
+	UPROPERTY(EditAnywhere, BLueprintReadWrite, Category = "Attack | Skill")
+	class UAnimMontage* SkillMontage;
+
 
 	// Delegates
 	FOnDeadDelegate OnDeadDelegate;

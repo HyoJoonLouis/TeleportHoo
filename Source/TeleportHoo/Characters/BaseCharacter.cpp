@@ -31,6 +31,7 @@ ABaseCharacter::ABaseCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 300.0f, 0.0f);
 	GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+	GetCharacterMovement()->bAllowPhysicsRotationDuringAnimRootMotion = true;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -91,6 +92,9 @@ void ABaseCharacter::BeginPlay()
 	MomentumBarWidget = Cast<UHealthBarWidget>(MomentumBarComponent->GetWidget());
 	DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
 
+	CurrentHealth = MaxHealth;
+	CurrentMomentum = MaxMomentum / 2;
+
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -98,9 +102,6 @@ void ABaseCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-
-	Server_SetHealth(MaxHealth);
-	Server_SetMomentum(MaxMomentum);
 
 	// Timeline
 	if (TargetingCurve)
@@ -111,6 +112,7 @@ void ABaseCharacter::BeginPlay()
 		TargetingTimeline.AddInterpFloat(TargetingCurve, TargetingCurveCallback);
 		TargetingTimeline.SetTimelineLength(0.4f);
 	}
+
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
@@ -124,6 +126,7 @@ void ABaseCharacter::Tick(float DeltaTime)
 	{
 		if (IsValid(TargetActor) && FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) <= 1000)
 		{
+			//SetActorRotation(UKismetMathLibrary::RInterpTo(GetActorRotation(), UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetActor->GetActorLocation()), DeltaTime, 5).Quaternion());
 			GetController()->SetControlRotation(UKismetMathLibrary::RInterpTo(GetActorRotation(), UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetActor->GetActorLocation()), DeltaTime, 5));
 		}
 		else
@@ -135,7 +138,7 @@ void ABaseCharacter::Tick(float DeltaTime)
 			IgnoreActors.Add(GetOwner());
 			FHitResult HitResult;
 
-			bool Result = UKismetSystemLibrary::SphereTraceSingleForObjects(this, GetActorLocation(), GetActorLocation(), 1000, ObjectTypes, false, IgnoreActors, EDrawDebugTrace::ForOneFrame, HitResult, true);
+			bool Result = UKismetSystemLibrary::SphereTraceSingleForObjects(this, GetActorLocation(), GetActorLocation(), 1000, ObjectTypes, false, IgnoreActors, EDrawDebugTrace::None, HitResult, true);
 			if (Result)
 			{
 				TargetActor = HitResult.GetActor();
@@ -187,6 +190,9 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABaseCharacter::Look);
 		EnhancedInputComponent->BindAction(TargetingAction, ETriggerEvent::Started, this, &ABaseCharacter::Targeting);
+		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ABaseCharacter::Dodge);
+		EnhancedInputComponent->BindAction(WeakAttackAction, ETriggerEvent::Started, this, &ABaseCharacter::WeakAttack);
+		EnhancedInputComponent->BindAction(SkillAction, ETriggerEvent::Started, this, &ABaseCharacter::Skill);
 	}
 	else
 	{
@@ -221,6 +227,10 @@ void ABaseCharacter::OnRep_SetHealth()
 	{
 		HealthBarWidget->SetHealth(CurrentHealth / MaxHealth);
 	}
+	else
+	{
+		HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
+	}
 }
 
 void ABaseCharacter::OnRep_SetMomentum()
@@ -228,6 +238,10 @@ void ABaseCharacter::OnRep_SetMomentum()
 	if(IsValid(MomentumBarWidget))
 	{
 		MomentumBarWidget->SetHealth(CurrentMomentum / MaxMomentum);
+	} 
+	else
+	{
+		MomentumBarWidget = Cast<UHealthBarWidget>(MomentumBarComponent->GetWidget());
 	}
 }
 
@@ -309,16 +323,50 @@ void ABaseCharacter::Server_Targeting_Implementation()
 	}
 }
 
+void ABaseCharacter::Server_WeakAttack_Implementation()
+{
+	Server_SetState(ECharacterStates::ATTACK);
+	if(CurrentDirection == EDamageDirection::RIGHT)
+	{
+		Server_PlayAnimMontage(*WeakAttackMontages.Find(EDamageDirection::RIGHT));
+	}
+	else if (CurrentDirection == EDamageDirection::LEFT)
+	{
+		Server_PlayAnimMontage(*WeakAttackMontages.Find(EDamageDirection::LEFT));
+	}
+}
+
 void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
 {
 	if (HasAuthority())
 	{
+		if (GetState() == ECharacterStates::DEAD)
+			return;
+
+		ABaseCharacter* DamageActor = Cast<ABaseCharacter>(CauseActor);
+	
+		// If can block
+		if (CurrentDirection != DamageActor->GetActorDirection())
+		{
+			Server_SetState(ECharacterStates::BLOCK);
+			Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
+			return;
+		}
+
 		CurrentHealth -= DamageInfo.Amount;
+		DamageActor->Server_SetMomentum(DamageActor->GetCurrentMomentum() + DamageActor->GetActorMomentumValues().OnHitSucceedAddAmount);
+
 		OnRep_SetHealth();
 		Server_SetState(ECharacterStates::HIT);
+		if (DamageInfo.DamageDirection == EDamageDirection::RIGHT)
+			Server_PlayAnimMontage(HitMontages[EDamageDirection::RIGHT]);
+		else if (DamageInfo.DamageDirection == EDamageDirection::LEFT)
+			Server_PlayAnimMontage(HitMontages[EDamageDirection::LEFT]);
+
 		if (CurrentHealth <= 0)
 		{
 			Server_SetState(ECharacterStates::DEAD);
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Dead"));
 			if (OnDeadDelegate.IsBound())	
 				OnDeadDelegate.Broadcast(this);
 		}
@@ -418,3 +466,42 @@ void ABaseCharacter::Targeting()
 {
 	Server_Targeting();
 }
+
+void ABaseCharacter::Dodge()
+{
+	if (GetState() != ECharacterStates::IDLE)
+		return;
+	if (bTargeting && IsValid(TargetActor))
+	{
+		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
+			return;
+		Server_SetState(ECharacterStates::DODGE);
+		Server_SetMomentum(CurrentMomentum - MomentumValues.OnDodgeRemoveAmount);
+		if (GetLastMovementInputVector().X > 0)
+			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::RIGHT]);
+		else if (GetLastMovementInputVector().X < 0)
+			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::LEFT]);
+	}
+	else
+	{
+		Server_SetState(ECharacterStates::DODGE);
+		Server_PlayAnimMontage(ForwardDodgeMontage);
+	}
+
+}
+
+void ABaseCharacter::WeakAttack()
+{
+	if (GetState() != ECharacterStates::IDLE)
+		return;
+	Server_WeakAttack();
+}
+
+void ABaseCharacter::Skill()
+{
+	if (GetState() != ECharacterStates::IDLE)
+		return;
+	Server_SetState(ECharacterStates::ATTACK);
+	Server_PlayAnimMontage(SkillMontage);
+}
+
