@@ -20,8 +20,10 @@ void UHooGameInstance::Init()
 		if (SessionInterface.IsValid())
 		{
 			// Bind Delegates
-			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UHooGameInstance::OnCreateSessionComplete);
-			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UHooGameInstance::OnFindSessionsComplete);
+			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(
+				this, &UHooGameInstance::OnCreateSessionComplete);
+			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(
+				this, &UHooGameInstance::OnFindSessionsComplete);
 			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UHooGameInstance::OnJoinSessionComplete);
 		}
 	}
@@ -79,7 +81,16 @@ void UHooGameInstance::CreateServer()
 	FOnlineSessionSettings SessionSettings;
 	SessionSettings.bAllowJoinInProgress = true;
 	SessionSettings.bIsDedicated = false;
-	SessionSettings.bIsLANMatch = true;
+
+	// 스팀, 엔진 테스트 전환하려면 DefaultEngine.ini에서 DefaultPlatformService 를 Steam, NULL 을 전환해주면 됨.
+	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
+	{
+		SessionSettings.bIsLANMatch = false;
+	}
+	else
+	{
+		SessionSettings.bIsLANMatch = true;		// Is LAN
+	}
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.NumPublicConnections = 5;
@@ -92,7 +103,14 @@ void UHooGameInstance::JoinServer()
 	UE_LOG(LogTemp, Warning, TEXT("JoinServer"));
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
-	SessionSearch->bIsLanQuery = true;
+	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
+	{
+		SessionSearch->bIsLanQuery = false;
+	}
+	else
+	{
+		SessionSearch->bIsLanQuery = true;		// Is LAN
+	}
 	SessionSearch->MaxSearchResults = 1000;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
