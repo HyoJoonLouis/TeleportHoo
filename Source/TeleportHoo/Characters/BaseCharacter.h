@@ -35,12 +35,25 @@ protected:
 	FORCEINLINE ECharacterStates GetState() const { return CurrentState; }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE bool CheckCurrentState(TArray<ECharacterStates> States) const { return States.Contains(CurrentState); }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE float GetCurrentHealth() const { return CurrentHealth; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE float GetCurrentMomentum() const { return CurrentMomentum; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE FMomentumValues GetActorMomentumValues() const { return MomentumValues; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE EDamageDirection GetActorDirection() const { return CurrentDirection; }
+
+
 	UFUNCTION()
 	void TargetingTimelineFunction(float Value);
 	UFUNCTION(BlueprintCallable)
 	virtual void StartWeaponCollision();
 	UFUNCTION(BlueprintCallable)
 	virtual void EndWeaponCollision();
+	UFUNCTION(BlueprintCallable)
+	bool CanTargetBlockAttack();
+
 	void ChangeToControllerDesiredRotation();
 	void ChangeToRotationToMovement();
 
@@ -51,6 +64,12 @@ protected:
 	void Look(const FInputActionValue& Value);
 	UFUNCTION()
 	void Targeting();
+	UFUNCTION()
+	void Dodge();
+	UFUNCTION()
+	void WeakAttack();
+	UFUNCTION()
+	void Skill();
 	
 	// Servers
 	UFUNCTION()
@@ -74,7 +93,10 @@ protected:
 	void Server_SetDirection(EDamageDirection Value);
 	UFUNCTION(Server, Unreliable, BlueprintCallable)
 	void Server_Targeting();
-
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_WeakAttack();
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_TargetBlockAttack(AActor* Attacker, AActor* Blocker, EDamageDirection Direction);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_TakeDamage(AActor* CauseActor, FDamageInfo DamageInfo);
@@ -106,6 +128,8 @@ protected:
 	class UInputAction* HeavyAttackAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	class UInputAction* DodgeAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	class UInputAction* SkillAction;
 
 	// Status
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Health")
@@ -120,6 +144,8 @@ protected:
 	float CurrentMomentum;
 	UPROPERTY()
 	class UHealthBarWidget* MomentumBarWidget;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
+	FMomentumValues MomentumValues;
 
 	UPROPERTY(ReplicatedUsing = OnRep_SetState)
 	ECharacterStates CurrentState;
@@ -131,6 +157,9 @@ protected:
 	// Attacks
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
 	class UStaticMeshComponent* WeaponMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
+	class UStaticMeshComponent* ShieldMesh;
+
 	TArray<AActor*> AlreadyHitActors;
 	bool bActivateCollision;
 	UPROPERTY(BlueprintReadWrite)
@@ -148,14 +177,21 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Weak")
 	TMap<EDamageDirection, class UAnimMontage*> WeakAttackMontages;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Weak")
+	TMap<EDamageDirection, class UAnimMontage*> WeakAttackBlockedMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Heavy")
 	TMap<EDamageDirection, class UAnimMontage*>	HeavyAttackMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Block")
 	TMap<EDamageDirection, class UAnimMontage*> BlockMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dodge")
+	class UAnimMontage* ForwardDodgeMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dodge")
 	TMap<EDamageDirection, class UAnimMontage*> DodgeMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Hit")
 	TMap<EDamageDirection, class UAnimMontage*> HitMontages;
+	UPROPERTY(EditAnywhere, BLueprintReadWrite, Category = "Attack | Skill")
+	class UAnimMontage* SkillMontage;
+
 
 	// Delegates
 	FOnDeadDelegate OnDeadDelegate;
