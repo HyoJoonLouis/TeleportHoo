@@ -46,9 +46,23 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 	if (bSucceeded)
 	{
 		TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
+
+		for(FOnlineSessionSearchResult Result : SearchResults)
+		{
+			if(!Result.IsValid())
+				continue;
+
+			FServerInfo Info;
+			Info.ServerName = "Test Server Name";
+			Info.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
+			Info.CurrentPlayers = Info.MaxPlayers -  Result.Session.NumOpenPublicConnections;
+			ServerListDel.Broadcast(Info);
+		}
+		
+		
 		if (SearchResults.Num())
 		{
-			SessionInterface->JoinSession(0, FName("Session"), SearchResults[0]);
+			// SessionInterface->JoinSession(0, FName("Session"), SearchResults[0]);
 		}
 	}
 	else

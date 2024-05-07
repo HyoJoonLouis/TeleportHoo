@@ -19,9 +19,9 @@ public:
 	void JoinButtonClicked();
 	
 protected:
-	UPROPERTY(meta = (BindWidget))
-	class UButton* HostButton;
-
-	UPROPERTY(meta = (BindWidget))
-	class UButton* JoinButton;
+	// UPROPERTY(meta = (BindWidget))
+	// class UButton* HostButton;
+	//
+	// UPROPERTY(meta = (BindWidget))
+	// class UButton* JoinButton;
 };
