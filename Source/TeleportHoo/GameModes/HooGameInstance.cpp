@@ -88,7 +88,7 @@ void UHooGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 	}
 }
 
-void UHooGameInstance::CreateServer()
+void UHooGameInstance::CreateServer(FString ServerName, FString HostName)
 {
 	UE_LOG(LogTemp, Warning, TEXT("CreateServer"));
 
@@ -109,6 +109,9 @@ void UHooGameInstance::CreateServer()
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.NumPublicConnections = 5;
 
+	SessionSettings.Set(L"SERVER_NAME_KEY", ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings.Set(L"SERVER_HOSTNAME_KEY", HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	
 	SessionInterface->CreateSession(0, FName("Session"), SessionSettings);
 }
 

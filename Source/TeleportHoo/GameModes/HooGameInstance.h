@@ -34,7 +34,7 @@ public:
 
 	// FUNCTION
 	UFUNCTION(BlueprintCallable)
-	void CreateServer();
+	void CreateServer(FString ServerName, FString HostName);
 	UFUNCTION(BlueprintCallable)
 	void JoinServer();
 	
