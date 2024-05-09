@@ -53,9 +53,17 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 				continue;
 
 			FServerInfo Info;
-			Info.ServerName = "Test Server Name";
+			FString ServerName = "Empty Server Name";
+			FString HostName = "Empty Host Name";
+			
+			Result.Session.SessionSettings.Get(FName("SERVER_NAME_KEY"), ServerName);
+			Result.Session.SessionSettings.Get(FName("SERVER_HOSTNAME_KEY"), HostName);
+			
+			Info.ServerName = ServerName;
 			Info.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
 			Info.CurrentPlayers = Info.MaxPlayers -  Result.Session.NumOpenPublicConnections;
+			Info.SetPlayerCount();
+			
 			ServerListDel.Broadcast(Info);
 		}
 		

@@ -13,9 +13,16 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FString ServerName;
 	UPROPERTY(BlueprintReadOnly)
+	FString PlayerCountsString;
+	UPROPERTY(BlueprintReadOnly)
 	int32 CurrentPlayers;
 	UPROPERTY(BlueprintReadOnly)
 	int32 MaxPlayers;
+
+	void SetPlayerCount()
+	{
+		PlayerCountsString = (FString::FromInt(CurrentPlayers) + "/" + FString::FromInt(MaxPlayers));
+	}
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerDel, FServerInfo, ServerListDel);
