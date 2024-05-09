@@ -7,9 +7,13 @@
 #include "OnlineSessionSettings.h"
 #include <Online/OnlineSessionNames.h>
 
+#include "ISourceControlProvider.h"
+
 UHooGameInstance::UHooGameInstance()
 {
 	UE_LOG(LogTemp, Warning, TEXT("UHooGameInstance Constructor"));
+
+	MySessionName = FName("My Session");
 }
 
 void UHooGameInstance::Init()
@@ -29,7 +33,7 @@ void UHooGameInstance::Init()
 	}
 }
 
-void UHooGameInstance::OnCreateSessionComplete(FName ServerName, bool bSucceeded)
+void UHooGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded)
 {
 	if (bSucceeded)
 	{
@@ -43,12 +47,18 @@ void UHooGameInstance::OnCreateSessionComplete(FName ServerName, bool bSucceeded
 
 void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 {
+	SearchingForServerDel.Broadcast(false);
+
+	UE_LOG(LogTemp, Warning, TEXT("OnFindSessionsComplete, Succeeded : %d"), bSucceeded);
+
 	if (bSucceeded)
 	{
-		TArray<FOnlineSessionSearchResult> SearchResults = SessionSearch->SearchResults;
-
-		for(FOnlineSessionSearchResult Result : SearchResults)
+		int8 ArrayIndex = 0;
+		
+		for(FOnlineSessionSearchResult Result : SessionSearch->SearchResults)
 		{
+			ArrayIndex++;
+
 			if(!Result.IsValid())
 				continue;
 
@@ -62,13 +72,16 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 			Info.ServerName = ServerName;
 			Info.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
 			Info.CurrentPlayers = Info.MaxPlayers -  Result.Session.NumOpenPublicConnections;
+			Info.ServerArrayIndex = ArrayIndex;
+
 			Info.SetPlayerCount();
 			
 			ServerListDel.Broadcast(Info);
 		}
-		
-		
-		if (SearchResults.Num())
+
+		UE_LOG(LogTemp, Warning, TEXT("SearchResults, Server Count : %d"), SessionSearch->SearchResults.Num());
+
+		if (SessionSearch->SearchResults.Num())
 		{
 			// SessionInterface->JoinSession(0, FName("Session"), SearchResults[0]);
 		}
@@ -120,12 +133,14 @@ void UHooGameInstance::CreateServer(FString ServerName, FString HostName)
 	SessionSettings.Set(L"SERVER_NAME_KEY", ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	SessionSettings.Set(L"SERVER_HOSTNAME_KEY", HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	
-	SessionInterface->CreateSession(0, FName("Session"), SessionSettings);
+	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
 }
 
-void UHooGameInstance::JoinServer()
+void UHooGameInstance::FindServer()
 {
-	UE_LOG(LogTemp, Warning, TEXT("JoinServer"));
+	SearchingForServerDel.Broadcast(true);
+	
+	UE_LOG(LogTemp, Warning, TEXT("FindServer"));
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
@@ -140,4 +155,24 @@ void UHooGameInstance::JoinServer()
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+}
+
+void UHooGameInstance::JoinServer(int32 ArrayIndex)
+{
+	if (ArrayIndex < 0 || ArrayIndex >= SessionSearch->SearchResults.Num())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid ArrayIndex."));
+		return;
+	}
+	
+	FOnlineSessionSearchResult Result = SessionSearch->SearchResults[ArrayIndex];
+	if(Result.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("JOINING SERVER AT INDEX : %d"), ArrayIndex);
+		SessionInterface->JoinSession(0, MySessionName, Result);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("FAILED TO JOIN SERVER AT INDEX : %d"), ArrayIndex);
+	}
 }
