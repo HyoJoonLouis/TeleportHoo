@@ -13,6 +13,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<class UIngameHUD> HUDClass;
 	
+	UPROPERTY()
 	class UIngameHUD* HUD;
 
 public:
@@ -24,5 +25,6 @@ public:
 	void Client_SendChat(const FText& Name, const FText& TextToSend);
 
 	// Getters
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE class UIngameHUD* GetIngameHUD() { return HUD; }
 };

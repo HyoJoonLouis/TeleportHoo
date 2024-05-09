@@ -21,7 +21,7 @@ void AIngamePlayerController::Server_SendChat_Implementation(const FText& TextTo
 	TArray<TObjectPtr<APlayerState>> PlayerStates = UGameplayStatics::GetGameState(GetWorld())->PlayerArray;
 	for (const auto& PlayerStateForChat : PlayerStates)
 	{
-		Cast<AIngamePlayerController>(PlayerStateForChat->GetPlayerController())->Client_SendChat(FText::FromString(("fjoaisjdfioas")), TextToSend);
+		Cast<AIngamePlayerController>(PlayerStateForChat->GetPlayerController())->Client_SendChat(FText::FromString(PlayerStateForChat->GetName()), TextToSend);
 	}
 }
 

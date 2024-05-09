@@ -98,9 +98,10 @@ protected:
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_TargetBlockAttack(AActor* Attacker, AActor* Blocker, EDamageDirection Direction);
 
+	UFUNCTION(Client, UnReliable, BlueprintCallable)
+	void Client_TakeDamage(AActor* CauseActor, FDamageInfo DamageInfo);
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_TakeDamage(AActor* CauseActor, FDamageInfo DamageInfo);
-
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_PlayAnimMontage(class UAnimMontage* AnimMontage);
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
@@ -165,12 +166,17 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	FDamageInfo CurrentDamageInfo;
 
+	// Targeting
 	UPROPERTY(BlueprintReadOnly)
 	AActor* TargetActor;
 	UPROPERTY(ReplicatedUsing = OnRep_SetTargeting, BlueprintReadOnly)
 	bool bTargeting;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Targeting")
 	class UDecalComponent* TargetDecal;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Targeting")
+	class UMaterialInstance* TargetingOutline;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Targeting")
+	class UNiagaraSystem* TargetingParticle;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timeline | Curve")
 	UCurveFloat* TargetingCurve;
 	FTimeline TargetingTimeline;

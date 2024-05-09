@@ -18,6 +18,7 @@ enum class ECharacterStates : uint8
 UENUM(BlueprintType)
 enum class EDamageDirection : uint8
 {
+	NONE	UMETA(DisplayName = "None"),
 	LEFT	UMETA(DisplayName = "Left"),
 	RIGHT	UMETA(DisplayName = "Right")
 };
