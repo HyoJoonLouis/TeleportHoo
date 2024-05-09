@@ -1,6 +1,8 @@
 #include "BaseCharacter.h"
 #include "../UI/HealthBarWidget.h"
 #include "../UI/DirectionWidget.h"
+#include "../UI/IngameHUD.h"
+#include "../GameModes/IngamePlayerController.h"
 #include "CharacterTrajectoryComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/DecalComponent.h"
@@ -13,6 +15,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include <Kismet/KismetMathLibrary.h>
+#include "NiagaraFunctionLibrary.h"
 #include "Net/UnrealNetwork.h"
 
 ABaseCharacter::ABaseCharacter()
@@ -220,6 +223,11 @@ void ABaseCharacter::OnTargeted_Implementation(const AActor* CauseActor)
 {
 	DirectionComponent->SetVisibility(true, true);
 	TargetDecal->SetVisibility(true, true);
+	GetMesh()->SetOverlayMaterial(TargetingOutline);
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), TargetingParticle, GetActorLocation() );
+	
+	AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	PlayerController->GetIngameHUD()->PlayCinema(true);
 }
 
 void ABaseCharacter::OnUntargeted_Implementation()
@@ -345,7 +353,7 @@ void ABaseCharacter::Server_WeakAttack_Implementation()
 	{
 		Server_PlayAnimMontage(*WeakAttackMontages.Find(EDamageDirection::RIGHT));
 	}
-	else if (CurrentDirection == EDamageDirection::LEFT)
+	else
 	{
 		Server_PlayAnimMontage(*WeakAttackMontages.Find(EDamageDirection::LEFT));
 	}
@@ -372,6 +380,12 @@ void ABaseCharacter::Server_TargetBlockAttack_Implementation(AActor* Attacker, A
 
 }
 
+void ABaseCharacter::Client_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
+{
+	AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	PlayerController->GetIngameHUD()->OnHitEffect();
+}
+
 void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
 {
 	if (HasAuthority())
@@ -384,7 +398,9 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		CurrentHealth -= DamageInfo.Amount;
 		DamageActor->Server_SetMomentum(DamageActor->GetCurrentMomentum() + DamageActor->GetActorMomentumValues().OnHitSucceedAddAmount);
 
+		Client_TakeDamage(CauseActor, DamageInfo);
 		OnRep_SetHealth();
+
 		Server_SetState(ECharacterStates::HIT);
 		if (DamageInfo.DamageDirection == EDamageDirection::RIGHT)
 			Server_PlayAnimMontage(HitMontages[EDamageDirection::RIGHT]);
@@ -434,8 +450,11 @@ bool ABaseCharacter::CanTargetBlockAttack()
 {
 	if(bTargeting && IsValid(TargetActor))
 	{
+		if (FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) >= 300)
+			return false;
 		ABaseCharacter* Target = Cast<ABaseCharacter>(TargetActor);
-		if (CurrentDirection != Target->GetActorDirection())
+		if ((CurrentDirection == EDamageDirection::RIGHT && Target->GetActorDirection() == EDamageDirection::LEFT) 
+			|| CurrentDirection == EDamageDirection::LEFT && Target->GetActorDirection() == EDamageDirection::RIGHT)
 		{
 			return true;
 		}
@@ -547,4 +566,3 @@ void ABaseCharacter::Skill()
 	Server_SetState(ECharacterStates::ATTACK);
 	Server_PlayAnimMontage(SkillMontage);
 }
-
