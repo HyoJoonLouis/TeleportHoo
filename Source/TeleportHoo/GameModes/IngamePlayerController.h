@@ -18,6 +18,7 @@ protected:
 
 public:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(Server, Unreliable)
 	void Server_SendChat(const FText& TextToSend);

@@ -26,7 +26,15 @@ void UChatBox::ChatOnCommitted(const FText& Text, ETextCommit::Type CommitMethod
 		Cast<AIngamePlayerController>(GetOwningPlayer())->Server_SendChat(Text);
 		ChatEditText->SetText(FText::GetEmpty());
 	}
+	GetOwningPlayer()->SetShowMouseCursor(false);
 	GetOwningPlayer()->SetInputMode(FInputModeGameOnly());
+	ChatEditText->SetVisibility(ESlateVisibility::Collapsed);
+}
+
+void UChatBox::SetFocus()
+{
+	ChatEditText->SetVisibility(ESlateVisibility::Visible);
+	ChatEditText->SetFocus();
 }
 
 

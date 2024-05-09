@@ -31,4 +31,5 @@ public:
 
 	UFUNCTION()
 	void ChatOnCommitted(const FText& Text, ETextCommit::Type CommitMethod);
+	void SetFocus();
 };

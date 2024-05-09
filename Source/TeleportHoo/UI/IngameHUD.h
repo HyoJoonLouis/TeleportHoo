@@ -26,4 +26,6 @@ public:
 	void PlayCinema(bool bStart);
 	UFUNCTION(BlueprintCallable)
 	void OnHitEffect();
+
+	FORCEINLINE UChatBox* GetChatBox() { return WBP_ChatBox; }
 };
