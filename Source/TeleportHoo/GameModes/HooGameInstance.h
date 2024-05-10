@@ -6,6 +6,19 @@
 #include "HooGameInstance.generated.h"
 
 USTRUCT(BlueprintType)
+struct FCreateServerInfo
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(BlueprintReadWrite)
+	FString ServerName;
+	UPROPERTY(BlueprintReadWrite)
+	int32 MaxPlayers;
+	UPROPERTY(BlueprintReadWrite)
+	bool IsLan;
+};
+
+USTRUCT(BlueprintType)
 struct FServerInfo
 {
 	GENERATED_BODY()
@@ -15,11 +28,14 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FString PlayerCountsString;
 	UPROPERTY(BlueprintReadOnly)
-	int32 CurrentPlayers;
+	bool IsLan;
 	UPROPERTY(BlueprintReadOnly)
-	int32 MaxPlayers;
+	int32 Ping;
 	UPROPERTY(BlueprintReadOnly)
 	int32 ServerArrayIndex;
+	
+	int32 CurrentPlayers;
+	int32 MaxPlayers;
 	
 	void SetPlayerCount()
 	{
@@ -44,7 +60,7 @@ public:
 
 	// FUNCTION
 	UFUNCTION(BlueprintCallable)
-	void CreateServer(FString ServerName, FString HostName);
+	void CreateServer(FCreateServerInfo ServerInfo);
 	UFUNCTION(BlueprintCallable)
 	void FindServer();
 	UFUNCTION(BlueprintCallable)

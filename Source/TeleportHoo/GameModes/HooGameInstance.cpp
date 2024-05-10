@@ -63,19 +63,19 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 
 			FServerInfo Info;
 			FString ServerName = "Empty Server Name";
-			FString HostName = "Empty Host Name";
 
 			Result.Session.SessionSettings.Get(FName("SERVER_NAME_KEY"), ServerName);
-			Result.Session.SessionSettings.Get(FName("SERVER_HOSTNAME_KEY"), HostName);
 			
 			Info.ServerName = ServerName;
 			Info.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
 			Info.CurrentPlayers = Info.MaxPlayers -  Result.Session.NumOpenPublicConnections;
+			Info.SetPlayerCount();
+			Info.IsLan = Result.Session.SessionSettings.bIsLANMatch;
+			Info.Ping = Result.PingInMs;
 			Info.ServerArrayIndex = ArrayIndex;
 
-			Info.SetPlayerCount();
-			
 			ServerListDel.Broadcast(Info);
+			UE_LOG(LogTemp, Warning, TEXT("Ping : %d"), Info.Ping);
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("SearchResults, Server Count : %d"), SessionSearch->SearchResults.Num());
@@ -103,7 +103,7 @@ void UHooGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 	}
 }
 
-void UHooGameInstance::CreateServer(FString ServerName, FString HostName)
+void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
 {
 	UE_LOG(LogTemp, Warning, TEXT("CreateServer"));
 
@@ -112,20 +112,16 @@ void UHooGameInstance::CreateServer(FString ServerName, FString HostName)
 	SessionSettings.bIsDedicated = false;
 
 	// 스팀, 엔진 테스트 전환하려면 DefaultEngine.ini에서 DefaultPlatformService 를 Steam, NULL 을 전환해주면 됨.
+	// Set to use server Info for Lan in future
 	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
-	{
 		SessionSettings.bIsLANMatch = false;
-	}
 	else
-	{
 		SessionSettings.bIsLANMatch = true;		// Is LAN
-	}
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bUsesPresence = true;
-	SessionSettings.NumPublicConnections = 5;
+	SessionSettings.NumPublicConnections = ServerInfo.MaxPlayers;
 
-	SessionSettings.Set(L"SERVER_NAME_KEY", ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	SessionSettings.Set(L"SERVER_HOSTNAME_KEY", HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings.Set(L"SERVER_NAME_KEY", ServerInfo.ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	
 	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
 }
@@ -138,13 +134,9 @@ void UHooGameInstance::FindServer()
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
-	{
 		SessionSearch->bIsLanQuery = false;
-	}
 	else
-	{
 		SessionSearch->bIsLanQuery = true;		// Is LAN
-	}
 	SessionSearch->MaxSearchResults = 1000;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
