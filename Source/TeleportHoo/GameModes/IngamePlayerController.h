@@ -13,10 +13,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<class UIngameHUD> HUDClass;
 	
+	UPROPERTY()
 	class UIngameHUD* HUD;
 
 public:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(Server, Unreliable)
 	void Server_SendChat(const FText& TextToSend);
@@ -24,5 +26,6 @@ public:
 	void Client_SendChat(const FText& Name, const FText& TextToSend);
 
 	// Getters
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE class UIngameHUD* GetIngameHUD() { return HUD; }
 };
