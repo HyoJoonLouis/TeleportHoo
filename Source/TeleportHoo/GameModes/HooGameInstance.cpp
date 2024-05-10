@@ -6,7 +6,6 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include <Online/OnlineSessionNames.h>
-
 #include "ISourceControlProvider.h"
 
 UHooGameInstance::UHooGameInstance()
@@ -53,7 +52,7 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 
 	if (bSucceeded)
 	{
-		int32 ArrayIndex = 0;
+		int32 ArrayIndex = -1;
 		
 		for(FOnlineSessionSearchResult Result : SessionSearch->SearchResults)
 		{
@@ -65,7 +64,7 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 			FServerInfo Info;
 			FString ServerName = "Empty Server Name";
 			FString HostName = "Empty Host Name";
-			
+
 			Result.Session.SessionSettings.Get(FName("SERVER_NAME_KEY"), ServerName);
 			Result.Session.SessionSettings.Get(FName("SERVER_HOSTNAME_KEY"), HostName);
 			
@@ -80,11 +79,6 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("SearchResults, Server Count : %d"), SessionSearch->SearchResults.Num());
-
-		if (SessionSearch->SearchResults.Num())
-		{
-			// SessionInterface->JoinSession(0, FName("Session"), SearchResults[0]);
-		}
 	}
 	else
 	{
@@ -159,7 +153,7 @@ void UHooGameInstance::FindServer()
 
 void UHooGameInstance::JoinServer(int32 ArrayIndex)
 {
-	FOnlineSessionSearchResult Result = SessionSearch->SearchResults[ArrayIndex - 1];
+	FOnlineSessionSearchResult Result = SessionSearch->SearchResults[ArrayIndex];
 	if(Result.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("JOINING SERVER AT INDEX : %d"), ArrayIndex);
