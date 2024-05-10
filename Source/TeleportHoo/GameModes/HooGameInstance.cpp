@@ -53,11 +53,11 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 
 	if (bSucceeded)
 	{
-		int8 ArrayIndex = 0;
+		int32 ArrayIndex = 0;
 		
 		for(FOnlineSessionSearchResult Result : SessionSearch->SearchResults)
 		{
-			ArrayIndex++;
+			++ArrayIndex;
 
 			if(!Result.IsValid())
 				continue;
@@ -159,13 +159,7 @@ void UHooGameInstance::FindServer()
 
 void UHooGameInstance::JoinServer(int32 ArrayIndex)
 {
-	if (ArrayIndex < 0 || ArrayIndex >= SessionSearch->SearchResults.Num())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Invalid ArrayIndex."));
-		return;
-	}
-	
-	FOnlineSessionSearchResult Result = SessionSearch->SearchResults[ArrayIndex];
+	FOnlineSessionSearchResult Result = SessionSearch->SearchResults[ArrayIndex - 1];
 	if(Result.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("JOINING SERVER AT INDEX : %d"), ArrayIndex);
