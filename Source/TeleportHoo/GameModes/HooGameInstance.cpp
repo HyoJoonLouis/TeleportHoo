@@ -2,17 +2,40 @@
 
 #include "HooGameInstance.h"
 #include "Engine/World.h"
+#include "engine/Texture2D.h"
 #include "Kismet/GameplayStatics.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include <Online/OnlineSessionNames.h>
 #include "ISourceControlProvider.h"
+#include "UObject/ConstructorHelpers.h"
 
 UHooGameInstance::UHooGameInstance()
 {
 	UE_LOG(LogTemp, Warning, TEXT("UHooGameInstance Constructor"));
 
 	MySessionName = FName("My Session");
+	
+	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1Image(TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapImage"));
+	if(Map1Image.Object)
+	{
+		FMapInfo Map;
+		Map.MapName = "SnowCastle";
+		Map.MapURL = "/Game/Levels/L_SnowCastle";
+		Map.MapImage = Map1Image.Object;
+		MapList.Add(Map);
+		SelectedMapURL = Map.MapURL;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2Image(TEXT("/Game/UI/MainMenu/MapImages/AnimMapImage"));
+	if(Map2Image.Object)
+	{
+		FMapInfo Map;
+		Map.MapName = "Anim";
+		Map.MapURL = "/Game/Levels/L_Anim";
+		Map.MapImage = Map2Image.Object;
+		MapList.Add(Map);
+	}
 }
 
 void UHooGameInstance::Init()
@@ -37,6 +60,9 @@ void UHooGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceede
 	if (bSucceeded)
 	{
 		GetWorld()->ServerTravel("/Game/Levels/L_Lobby?listen");
+
+		// 선택한 맵으로 이동
+		// GetWorld()->ServerTravel(SelectedMapURL + "?Listen");
 	}
 	else
 	{
@@ -186,4 +212,27 @@ void UHooGameInstance::JoinServer(int32 ArrayIndex)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("FAILED TO JOIN SERVER AT INDEX : %d"), ArrayIndex);
 	}
+}
+
+void UHooGameInstance::FillMapList()
+{
+	for(FMapInfo Map : MapList)
+		FMapNameDel.Broadcast(Map.MapName);
+}
+
+UTexture2D* UHooGameInstance::GetMapImage(FString MapName)
+{
+	for(FMapInfo Map : MapList)
+	{
+		if(Map.MapName.Equals(MapName))
+			return  Map.MapImage;
+	}
+	return nullptr;
+}
+
+void UHooGameInstance::SetSelectedMap(FString MapName)
+{
+	for(FMapInfo Map : MapList)
+		if(Map.MapName.Equals(MapName))
+			SelectedMapURL = Map.MapURL;
 }

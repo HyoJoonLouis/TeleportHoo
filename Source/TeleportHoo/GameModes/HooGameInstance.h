@@ -43,8 +43,19 @@ public:
 	}
 };
 
+USTRUCT()
+struct FMapInfo
+{
+	GENERATED_BODY()
+public:
+	FString MapName;
+	FString MapURL;
+	class UTexture2D* MapImage;
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerDel, FServerInfo, ServerListDel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerSearchingDel, bool, SearchingForServerDel);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMapInfoDel, FString, FMapNameDel);
 
 UCLASS()
 class TELEPORTHOO_API UHooGameInstance : public UGameInstance
@@ -65,16 +76,26 @@ public:
 	void FindServer();
 	UFUNCTION(BlueprintCallable)
 	void JoinServer(int32 ArrayIndex);
+	UFUNCTION(BlueprintCallable)
+	void FillMapList();
+	UFUNCTION(BlueprintCallable)
+	class UTexture2D* GetMapImage(FString MapName);
+	UFUNCTION(BlueprintCallable)
+	void SetSelectedMap(FString MapName);
 	
 protected:
 	// VARIABLES
 	IOnlineSessionPtr SessionInterface;
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 	FName MySessionName;
-
+	TArray<FMapInfo> MapList;
+	FString SelectedMapURL;
+	
 	// Delegates
 	UPROPERTY(BlueprintAssignable)
 	FServerDel ServerListDel;
 	UPROPERTY(BlueprintAssignable)
 	FServerSearchingDel SearchingForServerDel;
+	UPROPERTY(BlueprintAssignable)
+	FMapInfoDel FMapNameDel;
 };
