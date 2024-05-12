@@ -7,7 +7,6 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include <Online/OnlineSessionNames.h>
-//#include "ISourceControlProvider.h"
 #include "UObject/ConstructorHelpers.h"
 
 UHooGameInstance::UHooGameInstance()
