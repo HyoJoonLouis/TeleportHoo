@@ -68,9 +68,25 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 			
 			Info.ServerName = ServerName;
 			Info.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
-			Info.CurrentPlayers = Info.MaxPlayers -  Result.Session.NumOpenPublicConnections;
+			Info.CurrentPlayers = Info.MaxPlayers - Result.Session.NumOpenPublicConnections;
+
+			// Lan 에서는 테스트가 안되는건지, 접속해있는 인월을 찾지 못함. 테스트해보면 순서대로 이렇게 나옴
+			// 2
+			// 2
+			// 2
+			// 0
+			UE_LOG(LogTemp, Warning, TEXT("MaxPlayers : %d"), Info.MaxPlayers);
+			UE_LOG(LogTemp, Warning, TEXT("NumPublicConnections : %d"), Result.Session.SessionSettings.NumPublicConnections);
+			UE_LOG(LogTemp, Warning, TEXT("NumOpenPublicConnections : %d"), Result.Session.NumOpenPublicConnections);
+			UE_LOG(LogTemp, Warning, TEXT("CurrentPlayers : %d"), Info.CurrentPlayers);	
 			Info.SetPlayerCount();
+
+			FString PlayerCountsString = Info.PlayerCountsString;
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *PlayerCountsString);
+
 			Info.IsLan = Result.Session.SessionSettings.bIsLANMatch;
+			UE_LOG(LogTemp, Warning, TEXT("IsLandddd : %d"), Result.Session.SessionSettings.bIsLANMatch);
+			UE_LOG(LogTemp, Warning, TEXT("IsLan : %d"), Info.IsLan);
 			Info.Ping = Result.PingInMs;
 			Info.ServerArrayIndex = ArrayIndex;
 
@@ -114,9 +130,18 @@ void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
 	// 스팀, 엔진 테스트 전환하려면 DefaultEngine.ini에서 DefaultPlatformService 를 Steam, NULL 을 전환해주면 됨.
 	// Set to use server Info for Lan in future
 	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
+	{
 		SessionSettings.bIsLANMatch = false;
+		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsSteam"));
+		// Steam으로 서버 만드려면, 이 옵션이 필수적으로 들어가야함
+		SessionSettings.bUseLobbiesIfAvailable = true;
+	}
 	else
+	{
 		SessionSettings.bIsLANMatch = true;		// Is LAN
+		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsLan"));
+		SessionSettings.bUseLobbiesIfAvailable = false;
+	}
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.NumPublicConnections = ServerInfo.MaxPlayers;
@@ -134,9 +159,15 @@ void UHooGameInstance::FindServer()
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
+	{
 		SessionSearch->bIsLanQuery = false;
+		UE_LOG(LogTemp, Warning, TEXT("FindServer -> IsSteam"));
+	}
 	else
+	{
 		SessionSearch->bIsLanQuery = true;		// Is LAN
+		UE_LOG(LogTemp, Warning, TEXT("FindServer -> IsLan"));
+	}
 	SessionSearch->MaxSearchResults = 1000;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
