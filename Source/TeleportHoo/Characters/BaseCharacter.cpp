@@ -82,7 +82,7 @@ ABaseCharacter::ABaseCharacter()
 	MomentumBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
 
 	DirectionComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("DirectionComponent"));
-	DirectionComponent->SetupAttachment(GetMesh());
+	DirectionComponent->SetupAttachment(GetMesh(), FName("DirectionWidget"));
 	DirectionComponent->SetRelativeLocation(FVector(0, 0, 130));
 	DirectionComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	DirectionComponent->SetVisibility(false, true);
@@ -200,6 +200,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(TargetingAction, ETriggerEvent::Started, this, &ABaseCharacter::Targeting);
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ABaseCharacter::Dodge);
 		EnhancedInputComponent->BindAction(WeakAttackAction, ETriggerEvent::Started, this, &ABaseCharacter::WeakAttack);
+		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ABaseCharacter::HeavyAttack);
 		EnhancedInputComponent->BindAction(SkillAction, ETriggerEvent::Started, this, &ABaseCharacter::Skill);
 	}
 	else
@@ -346,18 +347,33 @@ void ABaseCharacter::Server_Targeting_Implementation()
 	}
 }
 
-void ABaseCharacter::Server_WeakAttack_Implementation()
+void ABaseCharacter::Server_WeakAttack_Implementation(int Index)
 {
 	Server_SetState(ECharacterStates::ATTACK);
 	if(CurrentDirection == EDamageDirection::RIGHT)
 	{
-		Server_PlayAnimMontage(*WeakAttackMontages.Find(EDamageDirection::RIGHT));
+		Server_PlayAnimMontage(WeakAttackMontages[EDamageDirection::RIGHT].AttackMontages[Index]);
 	}
 	else
 	{
-		Server_PlayAnimMontage(*WeakAttackMontages.Find(EDamageDirection::LEFT));
+		Server_PlayAnimMontage(WeakAttackMontages[EDamageDirection::LEFT].AttackMontages[Index]);
 	}
 }
+
+
+void ABaseCharacter::Server_HeavyAttack_Implementation()
+{
+	Server_SetState(ECharacterStates::ATTACK);
+	if (CurrentDirection == EDamageDirection::RIGHT)
+	{
+		Server_PlayAnimMontage(HeavyAttackMontages[EDamageDirection::RIGHT]);
+	}
+	else
+	{
+		Server_PlayAnimMontage(HeavyAttackMontages[EDamageDirection::RIGHT]);
+	}
+}
+
 
 void ABaseCharacter::Server_TargetBlockAttack_Implementation(AActor* Attacker, AActor* Blocker, EDamageDirection Direction)
 {
@@ -488,7 +504,7 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
@@ -539,9 +555,9 @@ void ABaseCharacter::Dodge()
 			return;
 		Server_SetState(ECharacterStates::DODGE);
 		Server_SetMomentum(CurrentMomentum - MomentumValues.OnDodgeRemoveAmount);
-		if (GetLastMovementInputVector().X > 0)
+		if (RightDirection.X > 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::RIGHT]);
-		else if (GetLastMovementInputVector().X < 0)
+		else if (RightDirection.X < 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::LEFT]);
 	}
 	else
@@ -556,13 +572,27 @@ void ABaseCharacter::WeakAttack()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
-	Server_WeakAttack();
+	AttackIndex++;
+	if (AttackIndex > WeakAttackMontages[CurrentDirection].GetLength() - 1)
+		AttackIndex = 0;
+	Server_WeakAttack(AttackIndex);
+}
+
+void ABaseCharacter::HeavyAttack()
+{
+	if (GetState() != ECharacterStates::IDLE)
+		return;
+	AttackIndex = 0;
+	Server_HeavyAttack();
 }
 
 void ABaseCharacter::Skill()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
+	if (CurrentMomentum < MomentumValues.OnSkillRemoveAmount)
+		return;
 	Server_SetState(ECharacterStates::ATTACK);
+	Server_SetMomentum(CurrentMomentum - MomentumValues.OnSkillRemoveAmount);
 	Server_PlayAnimMontage(SkillMontage);
 }
