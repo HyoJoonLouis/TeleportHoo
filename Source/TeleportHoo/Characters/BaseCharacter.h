@@ -9,6 +9,18 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeadDelegate, AActor*, DeadCharacter);
 
+USTRUCT(Blueprintable)
+struct FAttackAnimMontages
+{
+public:
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<class UAnimMontage*> AttackMontages;
+
+	FORCEINLINE uint32 GetLength() { return AttackMontages.Num(); }
+};
+
 UCLASS()
 class TELEPORTHOO_API ABaseCharacter : public ACharacter, public ICharacterInterface
 {
@@ -69,6 +81,8 @@ protected:
 	UFUNCTION()
 	void WeakAttack();
 	UFUNCTION()
+	void HeavyAttack();
+	UFUNCTION()
 	void Skill();
 	
 	// Servers
@@ -94,7 +108,9 @@ protected:
 	UFUNCTION(Server, Unreliable, BlueprintCallable)
 	void Server_Targeting();
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void Server_WeakAttack();
+	void Server_WeakAttack(int Index);
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_HeavyAttack();
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_TargetBlockAttack(AActor* Attacker, AActor* Blocker, EDamageDirection Direction);
 
@@ -132,6 +148,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	class UInputAction* SkillAction;
 
+	UPROPERTY()
+	FVector RightDirection;
+
 	// Status
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Health")
 	float MaxHealth;
@@ -161,6 +180,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
 	class UStaticMeshComponent* ShieldMesh;
 
+	UPROPERTY(BlueprintReadWrite)
+	uint8 AttackIndex;
 	TArray<AActor*> AlreadyHitActors;
 	bool bActivateCollision;
 	UPROPERTY(BlueprintReadWrite)
@@ -182,7 +203,7 @@ protected:
 	FTimeline TargetingTimeline;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Weak")
-	TMap<EDamageDirection, class UAnimMontage*> WeakAttackMontages;
+	TMap<EDamageDirection, FAttackAnimMontages> WeakAttackMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Weak")
 	TMap<EDamageDirection, class UAnimMontage*> WeakAttackBlockedMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Heavy")
