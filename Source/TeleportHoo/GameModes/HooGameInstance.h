@@ -82,6 +82,8 @@ public:
 	class UTexture2D* GetMapImage(FString MapName);
 	UFUNCTION(BlueprintCallable)
 	void SetSelectedMap(FString MapName);
+	UFUNCTION(BlueprintCallable)
+	void GameStart();
 	
 protected:
 	// VARIABLES

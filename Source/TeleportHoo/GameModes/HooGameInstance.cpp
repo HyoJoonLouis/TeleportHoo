@@ -14,9 +14,9 @@ UHooGameInstance::UHooGameInstance()
 	UE_LOG(LogTemp, Warning, TEXT("UHooGameInstance Constructor"));
 
 	MySessionName = FName("My Session");
-	
+
 	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1Image(TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapImage"));
-	if(Map1Image.Object)
+	if (Map1Image.Object)
 	{
 		FMapInfo Map;
 		Map.MapName = "SnowCastle";
@@ -27,7 +27,7 @@ UHooGameInstance::UHooGameInstance()
 	}
 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2Image(TEXT("/Game/UI/MainMenu/MapImages/AnimMapImage"));
-	if(Map2Image.Object)
+	if (Map2Image.Object)
 	{
 		FMapInfo Map;
 		Map.MapName = "Anim";
@@ -59,9 +59,6 @@ void UHooGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceede
 	if (bSucceeded)
 	{
 		GetWorld()->ServerTravel("/Game/Levels/L_Lobby?listen");
-
-		// 선택한 맵으로 이동
-		// GetWorld()->ServerTravel(SelectedMapURL + "?Listen");
 	}
 	else
 	{
@@ -78,19 +75,19 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 	if (bSucceeded)
 	{
 		int32 ArrayIndex = -1;
-		
-		for(FOnlineSessionSearchResult Result : SessionSearch->SearchResults)
+
+		for (FOnlineSessionSearchResult Result : SessionSearch->SearchResults)
 		{
 			++ArrayIndex;
 
-			if(!Result.IsValid())
+			if (!Result.IsValid())
 				continue;
 
 			FServerInfo Info;
 			FString ServerName = "Empty Server Name";
 
 			Result.Session.SessionSettings.Get(FName("SERVER_NAME_KEY"), ServerName);
-			
+
 			Info.ServerName = ServerName;
 			Info.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
 			Info.CurrentPlayers = Info.MaxPlayers - Result.Session.NumOpenPublicConnections;
@@ -101,9 +98,10 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 			// 2
 			// 0
 			UE_LOG(LogTemp, Warning, TEXT("MaxPlayers : %d"), Info.MaxPlayers);
-			UE_LOG(LogTemp, Warning, TEXT("NumPublicConnections : %d"), Result.Session.SessionSettings.NumPublicConnections);
+			UE_LOG(LogTemp, Warning, TEXT("NumPublicConnections : %d"),
+			       Result.Session.SessionSettings.NumPublicConnections);
 			UE_LOG(LogTemp, Warning, TEXT("NumOpenPublicConnections : %d"), Result.Session.NumOpenPublicConnections);
-			UE_LOG(LogTemp, Warning, TEXT("CurrentPlayers : %d"), Info.CurrentPlayers);	
+			UE_LOG(LogTemp, Warning, TEXT("CurrentPlayers : %d"), Info.CurrentPlayers);
 			Info.SetPlayerCount();
 
 			FString PlayerCountsString = Info.PlayerCountsString;
@@ -163,7 +161,7 @@ void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
 	}
 	else
 	{
-		SessionSettings.bIsLANMatch = true;		// Is LAN
+		SessionSettings.bIsLANMatch = true; // Is LAN
 		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsLan"));
 		SessionSettings.bUseLobbiesIfAvailable = false;
 	}
@@ -171,15 +169,16 @@ void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.NumPublicConnections = ServerInfo.MaxPlayers;
 
-	SessionSettings.Set(L"SERVER_NAME_KEY", ServerInfo.ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	
+	SessionSettings.Set(L"SERVER_NAME_KEY", ServerInfo.ServerName,
+	                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
 	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
 }
 
 void UHooGameInstance::FindServer()
 {
 	SearchingForServerDel.Broadcast(true);
-	
+
 	UE_LOG(LogTemp, Warning, TEXT("FindServer"));
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
@@ -190,7 +189,7 @@ void UHooGameInstance::FindServer()
 	}
 	else
 	{
-		SessionSearch->bIsLanQuery = true;		// Is LAN
+		SessionSearch->bIsLanQuery = true; // Is LAN
 		UE_LOG(LogTemp, Warning, TEXT("FindServer -> IsLan"));
 	}
 	SessionSearch->MaxSearchResults = 1000;
@@ -202,7 +201,7 @@ void UHooGameInstance::FindServer()
 void UHooGameInstance::JoinServer(int32 ArrayIndex)
 {
 	FOnlineSessionSearchResult Result = SessionSearch->SearchResults[ArrayIndex];
-	if(Result.IsValid())
+	if (Result.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("JOINING SERVER AT INDEX : %d"), ArrayIndex);
 		SessionInterface->JoinSession(0, MySessionName, Result);
@@ -215,23 +214,33 @@ void UHooGameInstance::JoinServer(int32 ArrayIndex)
 
 void UHooGameInstance::FillMapList()
 {
-	for(FMapInfo Map : MapList)
+	for (FMapInfo Map : MapList)
 		FMapNameDel.Broadcast(Map.MapName);
 }
 
 UTexture2D* UHooGameInstance::GetMapImage(FString MapName)
 {
-	for(FMapInfo Map : MapList)
+	for (FMapInfo Map : MapList)
 	{
-		if(Map.MapName.Equals(MapName))
-			return  Map.MapImage;
+		if (Map.MapName.Equals(MapName))
+			return Map.MapImage;
 	}
 	return nullptr;
 }
 
 void UHooGameInstance::SetSelectedMap(FString MapName)
 {
-	for(FMapInfo Map : MapList)
-		if(Map.MapName.Equals(MapName))
+	for (FMapInfo Map : MapList)
+		if (Map.MapName.Equals(MapName))
+		{
 			SelectedMapURL = Map.MapURL;
+		}
+}
+
+
+void UHooGameInstance::GameStart()
+{
+	// 선택한 맵으로 이동
+	UE_LOG(LogTemp, Warning, TEXT("ServerTravel : %s"), *SelectedMapURL);
+	GetWorld()->ServerTravel(SelectedMapURL + "?Listen");
 }
