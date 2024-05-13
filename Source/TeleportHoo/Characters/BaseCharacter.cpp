@@ -150,7 +150,6 @@ void ABaseCharacter::Tick(float DeltaTime)
 			if (Result)
 			{
 				TargetActor = HitResult.GetActor();
-				DirectionComponent->SetVisibility(true, true);
 				auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
 				if (TargetActorInterface)
 					TargetActorInterface->Execute_OnTargeted(TargetActor, this);
@@ -226,13 +225,13 @@ void ABaseCharacter::OnTargeted_Implementation(const AActor* CauseActor)
 	TargetDecal->SetVisibility(true, true);
 	GetMesh()->SetOverlayMaterial(TargetingOutline);
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), TargetingParticle, GetActorLocation() );
-	
-	AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	PlayerController->GetIngameHUD()->PlayCinema(true);
 }
 
 void ABaseCharacter::OnUntargeted_Implementation()
 {
+	DirectionComponent->SetVisibility(false, true);
+	TargetDecal->SetVisibility(false, true);
+	GetMesh()->SetOverlayMaterial(nullptr);
 }
 
 void ABaseCharacter::OnRep_SetHealth()
@@ -288,12 +287,24 @@ void ABaseCharacter::OnRep_SetTargeting()
 		GetCharacterMovement()->MaxWalkSpeed = 200.0f;
 		TargetingTimeline.PlayFromStart();
 		ChangeToControllerDesiredRotation();
+		AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+		PlayerController->GetIngameHUD()->PlayCinema(true);
+		DirectionComponent->SetVisibility(true, true);
 	}
 	else
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 400.0f;
 		TargetingTimeline.Reverse();
 		ChangeToRotationToMovement();
+		AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+		PlayerController->GetIngameHUD()->PlayCinema(false);
+		DirectionComponent->SetVisibility(false, true);
+		if (IsValid(TargetActor))
+		{
+			auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
+			if (TargetActorInterface)
+				TargetActorInterface->Execute_OnUntargeted(TargetActor);
+		}
 	}
 }
 
@@ -580,8 +591,21 @@ void ABaseCharacter::HeavyAttack()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
+	
 	AttackIndex = 0;
+	
+	if (bTargeting && IsValid(TargetActor) && Cast<ABaseCharacter>(TargetActor)->GetState() == ECharacterStates::PARRIABLE)
+	{
+		Parry(TargetActor, this);
+		return;
+	}
+	
 	Server_HeavyAttack();
+}
+
+void ABaseCharacter::Parry(AActor* Attacker, AActor* Blocker)
+{
+	Server_TargetBlockAttack(Attacker, Blocker, CurrentDirection);
 }
 
 void ABaseCharacter::Skill()

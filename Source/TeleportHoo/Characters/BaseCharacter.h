@@ -83,6 +83,8 @@ protected:
 	UFUNCTION()
 	void HeavyAttack();
 	UFUNCTION()
+	void Parry(AActor* Attacker, AActor* Blocker);
+	UFUNCTION()
 	void Skill();
 	
 	// Servers
