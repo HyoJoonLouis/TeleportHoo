@@ -55,6 +55,8 @@ protected:
 	FORCEINLINE FMomentumValues GetActorMomentumValues() const { return MomentumValues; }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE EDamageDirection GetActorDirection() const { return CurrentDirection; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE FMomentumValues GetActorMomentumValues() const { return MomentumValues; }
 
 
 	UFUNCTION()

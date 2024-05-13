@@ -278,6 +278,7 @@ void ABaseCharacter::OnRep_SetDirection()
 
 void ABaseCharacter::OnRep_SetState()
 {
+	OnRep_SetDirection();
 }
 
 void ABaseCharacter::OnRep_SetTargeting()
@@ -317,7 +318,6 @@ void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
 			return;
 		CurrentState = NewState;
 		OnRep_SetState();
-		OnRep_SetDirection();
 	}
 }
 
@@ -395,6 +395,8 @@ void ABaseCharacter::Server_TargetBlockAttack_Implementation(AActor* Attacker, A
 	AttackActor->Server_SetState(ECharacterStates::STUN);
 	BlockActor->Server_SetState(ECharacterStates::BLOCK);
 
+	BlockActor->Server_SetMomentum(BlockActor->GetCurrentMomentum() + BlockActor->GetActorMomentumValues().OnBlockSucceedAddAmount);
+
 	if (Direction == EDamageDirection::LEFT)
 	{
 		AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::LEFT]);
@@ -426,7 +428,9 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		CurrentHealth -= DamageInfo.Amount;
 		DamageActor->Server_SetMomentum(DamageActor->GetCurrentMomentum() + DamageActor->GetActorMomentumValues().OnHitSucceedAddAmount);
 
+		ABaseCharacter* BaseCharacterCauseActor = Cast<ABaseCharacter>(CauseActor);
 		Client_TakeDamage(CauseActor, DamageInfo);
+		BaseCharacterCauseActor->Server_SetMomentum(BaseCharacterCauseActor->GetCurrentMomentum() + BaseCharacterCauseActor->GetActorMomentumValues().OnHitSucceedAddAmount);
 		OnRep_SetHealth();
 
 		Server_SetState(ECharacterStates::HIT);
