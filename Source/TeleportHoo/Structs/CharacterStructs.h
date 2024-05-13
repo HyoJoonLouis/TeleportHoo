@@ -6,13 +6,15 @@
 UENUM(BlueprintType)
 enum class ECharacterStates : uint8
 {
-	IDLE	UMETA(DisplayName = "Idle"),
-	ATTACK	UMETA(DisplayName = "Attack"),
-	BLOCK	UMETA(DisplayName = "Block"),
-	STUN	UMETA(DisplayName = "Stun"),
-	DODGE	UMETA(DisplayName = "Dodge"),
-	HIT		UMETA(DisplayName = "Hit"),
-	DEAD	UMETA(DisplayName = "Dead")
+	IDLE		UMETA(DisplayName = "Idle"),
+	ATTACK		UMETA(DisplayName = "Attack"),
+	SKILL		UMETA(DisplayName = "Skill"),
+	BLOCK		UMETA(DisplayName = "Block"),
+	STUN		UMETA(DisplayName = "Stun"),
+	PARRIABLE	UMETA(DisplayName = "Parriable"),
+	DODGE		UMETA(DisplayName = "Dodge"),
+	HIT			UMETA(DisplayName = "Hit"),
+	DEAD		UMETA(DisplayName = "Dead")
 };
 
 UENUM(BlueprintType)
@@ -28,6 +30,7 @@ enum class EDamageType : uint8
 {
 	WEAK	UMETA(DisplayName = "Weak"),
 	HEAVY	UMETA(DisplayName = "Heavy"),
+	SKILL	UMETA(DisplayName = "Skill")
 };
 
 USTRUCT(Blueprintable)

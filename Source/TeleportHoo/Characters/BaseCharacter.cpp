@@ -150,7 +150,6 @@ void ABaseCharacter::Tick(float DeltaTime)
 			if (Result)
 			{
 				TargetActor = HitResult.GetActor();
-				DirectionComponent->SetVisibility(true, true);
 				auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
 				if (TargetActorInterface)
 					TargetActorInterface->Execute_OnTargeted(TargetActor, this);
@@ -176,13 +175,13 @@ void ABaseCharacter::Tick(float DeltaTime)
 		{
 			for (const auto& HitResult : HitResults)
 			{
-				AActor* HitActor = HitResult.GetActor();
-				if (AlreadyHitActors.Contains(HitActor))
+				ABaseCharacter* HitActor = Cast<ABaseCharacter>(HitResult.GetActor());
+				if (AlreadyHitActors.Contains(HitActor) || HitActor->GetState() == ECharacterStates::DODGE)
 					continue;
 				AlreadyHitActors.AddUnique(HitActor);
 				if (IsValid(HitActor))
 				{
-					Cast<ABaseCharacter>(HitActor)->Server_TakeDamage(this, CurrentDamageInfo);
+					HitActor->Server_TakeDamage(this, CurrentDamageInfo);
 				}
 			}
 		}
@@ -226,13 +225,13 @@ void ABaseCharacter::OnTargeted_Implementation(const AActor* CauseActor)
 	TargetDecal->SetVisibility(true, true);
 	GetMesh()->SetOverlayMaterial(TargetingOutline);
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), TargetingParticle, GetActorLocation() );
-	
-	AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	PlayerController->GetIngameHUD()->PlayCinema(true);
 }
 
 void ABaseCharacter::OnUntargeted_Implementation()
 {
+	DirectionComponent->SetVisibility(false, true);
+	TargetDecal->SetVisibility(false, true);
+	GetMesh()->SetOverlayMaterial(nullptr);
 }
 
 void ABaseCharacter::OnRep_SetHealth()
@@ -265,14 +264,14 @@ void ABaseCharacter::OnRep_SetDirection()
 	{
 		if (IsLocallyControlled())
 		{
-			DirectionWidget->ChangeDirection(CurrentDirection);
+			DirectionWidget->ChangeDirection(CurrentDirection, CurrentState);
 		}
 		else
 		{
 			if(CurrentDirection == EDamageDirection::LEFT)
-				DirectionWidget->ChangeDirection(EDamageDirection::RIGHT);
+				DirectionWidget->ChangeDirection(EDamageDirection::RIGHT, CurrentState);
 			else if(CurrentDirection == EDamageDirection::RIGHT)
-				DirectionWidget->ChangeDirection(EDamageDirection::LEFT);
+				DirectionWidget->ChangeDirection(EDamageDirection::LEFT, CurrentState);
 		}
 	}
 }
@@ -288,12 +287,24 @@ void ABaseCharacter::OnRep_SetTargeting()
 		GetCharacterMovement()->MaxWalkSpeed = 200.0f;
 		TargetingTimeline.PlayFromStart();
 		ChangeToControllerDesiredRotation();
+		AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+		PlayerController->GetIngameHUD()->PlayCinema(true);
+		DirectionComponent->SetVisibility(true, true);
 	}
 	else
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 400.0f;
 		TargetingTimeline.Reverse();
 		ChangeToRotationToMovement();
+		AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+		PlayerController->GetIngameHUD()->PlayCinema(false);
+		DirectionComponent->SetVisibility(false, true);
+		if (IsValid(TargetActor))
+		{
+			auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
+			if (TargetActorInterface)
+				TargetActorInterface->Execute_OnUntargeted(TargetActor);
+		}
 	}
 }
 
@@ -306,6 +317,7 @@ void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
 			return;
 		CurrentState = NewState;
 		OnRep_SetState();
+		OnRep_SetDirection();
 	}
 }
 
@@ -494,17 +506,17 @@ void ABaseCharacter::ChangeToRotationToMovement()
 
 void ABaseCharacter::Move(const FInputActionValue& Value)
 {
+	MovementVector = Value.Get<FVector2D>();
 	if (!CheckCurrentState({ECharacterStates::IDLE}))
 		return;
 
-	FVector2D MovementVector = Value.Get<FVector2D>();
 	if (Controller != nullptr)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
@@ -553,16 +565,14 @@ void ABaseCharacter::Dodge()
 	{
 		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
 			return;
-		Server_SetState(ECharacterStates::DODGE);
 		Server_SetMomentum(CurrentMomentum - MomentumValues.OnDodgeRemoveAmount);
-		if (RightDirection.X > 0)
+		if (MovementVector.X > 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::RIGHT]);
-		else if (RightDirection.X < 0)
+		else if (MovementVector.X < 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::LEFT]);
 	}
 	else
 	{
-		Server_SetState(ECharacterStates::DODGE);
 		Server_PlayAnimMontage(ForwardDodgeMontage);
 	}
 
@@ -582,8 +592,21 @@ void ABaseCharacter::HeavyAttack()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
+	
 	AttackIndex = 0;
+	
+	if (bTargeting && IsValid(TargetActor) && Cast<ABaseCharacter>(TargetActor)->GetState() == ECharacterStates::PARRIABLE)
+	{
+		Parry(TargetActor, this);
+		return;
+	}
+	
 	Server_HeavyAttack();
+}
+
+void ABaseCharacter::Parry(AActor* Attacker, AActor* Blocker)
+{
+	Server_TargetBlockAttack(Attacker, Blocker, CurrentDirection);
 }
 
 void ABaseCharacter::Skill()
@@ -592,7 +615,7 @@ void ABaseCharacter::Skill()
 		return;
 	if (CurrentMomentum < MomentumValues.OnSkillRemoveAmount)
 		return;
-	Server_SetState(ECharacterStates::ATTACK);
+	Server_SetState(ECharacterStates::SKILL);
 	Server_SetMomentum(CurrentMomentum - MomentumValues.OnSkillRemoveAmount);
 	Server_PlayAnimMontage(SkillMontage);
 }

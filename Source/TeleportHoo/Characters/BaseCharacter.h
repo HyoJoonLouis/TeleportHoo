@@ -83,6 +83,8 @@ protected:
 	UFUNCTION()
 	void HeavyAttack();
 	UFUNCTION()
+	void Parry(AActor* Attacker, AActor* Blocker);
+	UFUNCTION()
 	void Skill();
 	
 	// Servers
@@ -149,7 +151,7 @@ protected:
 	class UInputAction* SkillAction;
 
 	UPROPERTY()
-	FVector RightDirection;
+	FVector2D MovementVector;
 
 	// Status
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Health")

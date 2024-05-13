@@ -16,6 +16,8 @@ class TELEPORTHOO_API UChatBox : public UUserWidget
 	
 protected:
 	UPROPERTY(meta = (BindWidget))
+	class UBorder* BoxBorder;
+	UPROPERTY(meta = (BindWidget))
 	class UScrollBox* ChatScrollBox;
 
 	UPROPERTY(meta = (BindWidget))

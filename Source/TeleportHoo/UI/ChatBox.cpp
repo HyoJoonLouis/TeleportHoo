@@ -1,4 +1,5 @@
 #include "ChatBox.h"
+#include "Components/Border.h"
 #include "Components/EditableTextBox.h"
 #include "Components/ScrollBox.h"
 #include "Chat.h"
@@ -23,16 +24,21 @@ void UChatBox::ChatOnCommitted(const FText& Text, ETextCommit::Type CommitMethod
 {
 	if (CommitMethod == ETextCommit::OnEnter)
 	{
-		Cast<AIngamePlayerController>(GetOwningPlayer())->Server_SendChat(Text);
+		if(!Text.IsEmpty())
+			Cast<AIngamePlayerController>(GetOwningPlayer())->Server_SendChat(Text);
 		ChatEditText->SetText(FText::GetEmpty());
 	}
 	GetOwningPlayer()->SetShowMouseCursor(false);
 	GetOwningPlayer()->SetInputMode(FInputModeGameOnly());
-	ChatEditText->SetVisibility(ESlateVisibility::Collapsed);
+	BoxBorder->SetBrushColor(FLinearColor(0.1f, 0.1f, 0.1f, 0));
+	ChatScrollBox->SetAlwaysShowScrollbar(false);
+	ChatEditText->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UChatBox::SetFocus()
 {
+	BoxBorder->SetBrushColor(FLinearColor(0.1f, 0.1f, 0.1f, 1.0f));
+	ChatScrollBox->SetAlwaysShowScrollbar(true);
 	ChatEditText->SetVisibility(ESlateVisibility::Visible);
 	ChatEditText->SetFocus();
 }
