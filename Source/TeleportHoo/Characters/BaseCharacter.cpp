@@ -264,14 +264,14 @@ void ABaseCharacter::OnRep_SetDirection()
 	{
 		if (IsLocallyControlled())
 		{
-			DirectionWidget->ChangeDirection(CurrentDirection);
+			DirectionWidget->ChangeDirection(CurrentDirection, CurrentState);
 		}
 		else
 		{
 			if(CurrentDirection == EDamageDirection::LEFT)
-				DirectionWidget->ChangeDirection(EDamageDirection::RIGHT);
+				DirectionWidget->ChangeDirection(EDamageDirection::RIGHT, CurrentState);
 			else if(CurrentDirection == EDamageDirection::RIGHT)
-				DirectionWidget->ChangeDirection(EDamageDirection::LEFT);
+				DirectionWidget->ChangeDirection(EDamageDirection::LEFT, CurrentState);
 		}
 	}
 }
@@ -317,6 +317,7 @@ void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
 			return;
 		CurrentState = NewState;
 		OnRep_SetState();
+		OnRep_SetDirection();
 	}
 }
 
@@ -614,7 +615,7 @@ void ABaseCharacter::Skill()
 		return;
 	if (CurrentMomentum < MomentumValues.OnSkillRemoveAmount)
 		return;
-	Server_SetState(ECharacterStates::ATTACK);
+	Server_SetState(ECharacterStates::SKILL);
 	Server_SetMomentum(CurrentMomentum - MomentumValues.OnSkillRemoveAmount);
 	Server_PlayAnimMontage(SkillMontage);
 }

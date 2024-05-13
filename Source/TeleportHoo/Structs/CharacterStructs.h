@@ -8,6 +8,7 @@ enum class ECharacterStates : uint8
 {
 	IDLE		UMETA(DisplayName = "Idle"),
 	ATTACK		UMETA(DisplayName = "Attack"),
+	SKILL		UMETA(DisplayName = "Skill"),
 	BLOCK		UMETA(DisplayName = "Block"),
 	STUN		UMETA(DisplayName = "Stun"),
 	PARRIABLE	UMETA(DisplayName = "Parriable"),
@@ -29,6 +30,7 @@ enum class EDamageType : uint8
 {
 	WEAK	UMETA(DisplayName = "Weak"),
 	HEAVY	UMETA(DisplayName = "Heavy"),
+	SKILL	UMETA(DisplayName = "Skill")
 };
 
 USTRUCT(Blueprintable)
