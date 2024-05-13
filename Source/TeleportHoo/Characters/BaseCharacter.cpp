@@ -176,13 +176,13 @@ void ABaseCharacter::Tick(float DeltaTime)
 		{
 			for (const auto& HitResult : HitResults)
 			{
-				AActor* HitActor = HitResult.GetActor();
-				if (AlreadyHitActors.Contains(HitActor))
+				ABaseCharacter* HitActor = Cast<ABaseCharacter>(HitResult.GetActor());
+				if (AlreadyHitActors.Contains(HitActor) || HitActor->GetState() == ECharacterStates::DODGE)
 					continue;
 				AlreadyHitActors.AddUnique(HitActor);
 				if (IsValid(HitActor))
 				{
-					Cast<ABaseCharacter>(HitActor)->Server_TakeDamage(this, CurrentDamageInfo);
+					HitActor->Server_TakeDamage(this, CurrentDamageInfo);
 				}
 			}
 		}
@@ -494,17 +494,17 @@ void ABaseCharacter::ChangeToRotationToMovement()
 
 void ABaseCharacter::Move(const FInputActionValue& Value)
 {
+	MovementVector = Value.Get<FVector2D>();
 	if (!CheckCurrentState({ECharacterStates::IDLE}))
 		return;
 
-	FVector2D MovementVector = Value.Get<FVector2D>();
 	if (Controller != nullptr)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
@@ -553,16 +553,14 @@ void ABaseCharacter::Dodge()
 	{
 		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
 			return;
-		Server_SetState(ECharacterStates::DODGE);
 		Server_SetMomentum(CurrentMomentum - MomentumValues.OnDodgeRemoveAmount);
-		if (RightDirection.X > 0)
+		if (MovementVector.X > 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::RIGHT]);
-		else if (RightDirection.X < 0)
+		else if (MovementVector.X < 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::LEFT]);
 	}
 	else
 	{
-		Server_SetState(ECharacterStates::DODGE);
 		Server_PlayAnimMontage(ForwardDodgeMontage);
 	}
 
