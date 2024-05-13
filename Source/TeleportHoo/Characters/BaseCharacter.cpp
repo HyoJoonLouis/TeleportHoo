@@ -424,7 +424,10 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 			return;
 
 		ABaseCharacter* DamageActor = Cast<ABaseCharacter>(CauseActor);
-	
+		if ((CurrentDirection == EDamageDirection::RIGHT && DamageActor->GetActorDirection() == EDamageDirection::LEFT)
+			|| CurrentDirection == EDamageDirection::LEFT && DamageActor->GetActorDirection() == EDamageDirection::RIGHT)
+			return;
+
 		CurrentHealth -= DamageInfo.Amount;
 		DamageActor->Server_SetMomentum(DamageActor->GetCurrentMomentum() + DamageActor->GetActorMomentumValues().OnHitSucceedAddAmount);
 
