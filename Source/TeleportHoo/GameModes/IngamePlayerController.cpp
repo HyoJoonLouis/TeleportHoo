@@ -1,5 +1,6 @@
 #include "IngamePlayerController.h"
 #include "../UI/IngameHUD.h"
+#include "../UI/ChatBox.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/GameState.h"
 #include "GameFramework/PlayerState.h"
@@ -13,7 +14,17 @@ void AIngamePlayerController::BeginPlay()
 	{
 		HUD = Cast<UIngameHUD>(CreateWidget(this, HUDClass));
 		HUD->AddToViewport();
+	}
+}
+
+void AIngamePlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	if (IsInputKeyDown(EKeys::Enter))
+	{
 		SetShowMouseCursor(true);
+		SetInputMode(FInputModeUIOnly());
+		GetIngameHUD()->GetChatBox()->SetFocus();
 	}
 }
 
@@ -22,7 +33,7 @@ void AIngamePlayerController::Server_SendChat_Implementation(const FText& TextTo
 	TArray<TObjectPtr<APlayerState>> PlayerStates = UGameplayStatics::GetGameState(GetWorld())->PlayerArray;
 	for (const auto& PlayerStateForChat : PlayerStates)
 	{
-		Cast<AIngamePlayerController>(PlayerStateForChat->GetPlayerController())->Client_SendChat(FText::FromString(("fjoaisjdfioas")), TextToSend);
+		Cast<AIngamePlayerController>(PlayerStateForChat->GetPlayerController())->Client_SendChat(FText::FromString(PlayerStateForChat->GetName()), TextToSend);
 	}
 }
 
