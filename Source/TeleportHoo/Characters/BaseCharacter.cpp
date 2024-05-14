@@ -24,6 +24,9 @@ ABaseCharacter::ABaseCharacter()
 
 	GetMesh()->SetReceivesDecals(false);
 
+	AttackIndex = 0;
+	CurrentState = ECharacterStates::IDLE;
+
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
 	GetCapsuleComponent()->SetReceivesDecals(false);
 
@@ -589,10 +592,10 @@ void ABaseCharacter::WeakAttack()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
-	AttackIndex++;
-	if (AttackIndex > WeakAttackMontages[CurrentDirection].GetLength() - 1)
-		AttackIndex = 0;
 	Server_WeakAttack(AttackIndex);
+	AttackIndex++;
+	if (AttackIndex > 1)
+		AttackIndex = 0;
 }
 
 void ABaseCharacter::HeavyAttack()
