@@ -72,25 +72,8 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 			Info.ServerName = ServerName;
 			Info.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
 			Info.CurrentPlayers = Info.MaxPlayers - Result.Session.NumOpenPublicConnections;
-
-			// Lan 에서는 테스트가 안되는건지, 접속해있는 인월을 찾지 못함. 테스트해보면 순서대로 이렇게 나옴
-			// 2
-			// 2
-			// 2
-			// 0
-			UE_LOG(LogTemp, Warning, TEXT("MaxPlayers : %d"), Info.MaxPlayers);
-			UE_LOG(LogTemp, Warning, TEXT("NumPublicConnections : %d"),
-			       Result.Session.SessionSettings.NumPublicConnections);
-			UE_LOG(LogTemp, Warning, TEXT("NumOpenPublicConnections : %d"), Result.Session.NumOpenPublicConnections);
-			UE_LOG(LogTemp, Warning, TEXT("CurrentPlayers : %d"), Info.CurrentPlayers);
 			Info.SetPlayerCount();
-
-			FString PlayerCountsString = Info.PlayerCountsString;
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *PlayerCountsString);
-
-			Info.IsLan = Result.Session.SessionSettings.bIsLANMatch;
-			UE_LOG(LogTemp, Warning, TEXT("IsLandddd : %d"), Result.Session.SessionSettings.bIsLANMatch);
-			UE_LOG(LogTemp, Warning, TEXT("IsLan : %d"), Info.IsLan);
+			Info.SelectedMapName = SelectedMapName;
 			Info.Ping = Result.PingInMs;
 			Info.ServerArrayIndex = ArrayIndex;
 
@@ -146,6 +129,7 @@ void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
 		SessionSettings.bUseLobbiesIfAvailable = false;
 		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsLan"));
 	}
+	
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.NumPublicConnections = ServerInfo.MaxPlayers;
@@ -216,6 +200,7 @@ void UHooGameInstance::SetSelectedMap(FString MapName)
 	for (FMapInfo Map : MapList)
 		if (Map.MapName.Equals(MapName))
 		{
+			SelectedMapName = Map.MapName;
 			SelectedMapURL = Map.MapURL;
 		}
 }
@@ -242,6 +227,7 @@ void UHooGameInstance::InitializeMaps()
 		Map.MapURL = "/Game/Levels/L_SnowCastle";
 		Map.MapImage = Map1Image.Object;
 		MapList.Add(Map);
+		SelectedMapName = Map.MapName;
 		SelectedMapURL = Map.MapURL;
 		UE_LOG(LogTemp, Warning, TEXT("4"));
 	}

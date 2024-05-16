@@ -14,8 +14,6 @@ public:
 	FString ServerName;
 	UPROPERTY(BlueprintReadWrite)
 	int32 MaxPlayers;
-	UPROPERTY(BlueprintReadWrite)
-	bool IsLan;
 };
 
 USTRUCT(BlueprintType)
@@ -28,7 +26,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FString PlayerCountsString;
 	UPROPERTY(BlueprintReadOnly)
-	bool IsLan;
+	FString SelectedMapName;
 	UPROPERTY(BlueprintReadOnly)
 	int32 Ping;
 	UPROPERTY(BlueprintReadOnly)
@@ -96,6 +94,7 @@ protected:
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 	FName MySessionName;
 	TArray<FMapInfo> MapList;
+	FString SelectedMapName;
 	FString SelectedMapURL;
 	
 	// Delegates
@@ -105,5 +104,4 @@ protected:
 	FServerSearchingDel SearchingForServerDel;
 	UPROPERTY(BlueprintAssignable)
 	FMapInfoDel FMapNameDel;
-	
 };
