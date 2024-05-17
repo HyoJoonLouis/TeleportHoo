@@ -195,6 +195,16 @@ UTexture2D* UHooGameInstance::GetMapImage(FString MapName)
 	return nullptr;
 }
 
+UTexture2D* UHooGameInstance::GetMapOverviewImage(FString MapName)
+{
+	for(FMapInfo Map : MapList)
+	{
+		if(Map.MapName.Equals(MapName))
+			return Map.MapOverviewImage;
+	}
+	return nullptr;
+}
+
 void UHooGameInstance::SetSelectedMap(FString MapName)
 {
 	for (FMapInfo Map : MapList)
@@ -205,7 +215,6 @@ void UHooGameInstance::SetSelectedMap(FString MapName)
 		}
 }
 
-
 void UHooGameInstance::GameStart()
 {
 	// 선택한 맵으로 이동
@@ -215,31 +224,29 @@ void UHooGameInstance::GameStart()
 
 void UHooGameInstance::InitializeMaps()
 {
-	UE_LOG(LogTemp, Warning, TEXT("1"));
-
 	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1Image(TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapImage"));
-	UE_LOG(LogTemp, Warning, TEXT("2"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1OverviewImage(TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapOverviewImage"));
 	if (Map1Image.Object)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("3"));
 		FMapInfo Map;
 		Map.MapName = "SnowCastle";
 		Map.MapURL = "/Game/Levels/L_SnowCastle";
 		Map.MapImage = Map1Image.Object;
+		Map.MapOverviewImage = Map1OverviewImage.Object;
 		MapList.Add(Map);
 		SelectedMapName = Map.MapName;
 		SelectedMapURL = Map.MapURL;
-		UE_LOG(LogTemp, Warning, TEXT("4"));
 	}
-	UE_LOG(LogTemp, Warning, TEXT("5"));
 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2Image(TEXT("/Game/UI/MainMenu/MapImages/AnimMapImage"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2OverviewImage(TEXT("/Game/UI/MainMenu/MapImages/AnimMapOverviewImage"));
 	if (Map2Image.Object)
 	{
 		FMapInfo Map;
 		Map.MapName = "Anim";
 		Map.MapURL = "/Game/Levels/L_Anim";
 		Map.MapImage = Map2Image.Object;
+		Map.MapOverviewImage = Map2OverviewImage.Object;
 		MapList.Add(Map);
 	}
 }

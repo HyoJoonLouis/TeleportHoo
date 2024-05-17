@@ -49,6 +49,7 @@ public:
 	FString MapName;
 	FString MapURL;
 	class UTexture2D* MapImage;
+	class UTexture2D* MapOverviewImage;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerDel, FServerInfo, ServerListDel);
@@ -79,6 +80,8 @@ public:
 	void FillMapList();
 	UFUNCTION(BlueprintCallable)
 	class UTexture2D* GetMapImage(FString MapName);
+	UFUNCTION(BlueprintCallable)
+	class UTexture2D* GetMapOverviewImage(FString MapName);
 	UFUNCTION(BlueprintCallable)
 	void SetSelectedMap(FString MapName);
 	UFUNCTION(BlueprintCallable)
