@@ -14,7 +14,7 @@ UHooGameInstance::UHooGameInstance()
 	UE_LOG(LogTemp, Warning, TEXT("UHooGameInstance Constructor"));
 
 	MySessionName = FName("My Session");
-	
+
 	InitializeMaps();
 
 	SelectedMapName = "SnowCastle";
@@ -82,7 +82,6 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 			Info.CurrentPlayers = Info.MaxPlayers - Result.Session.NumOpenPublicConnections;
 			Info.SetPlayerCount();
 			Info.SelectedMapName = SelectedMapName;
-			UE_LOG(LogTemp, Warning, TEXT("SelectedMapNameeeeeee : %s"), *Info.SelectedMapName);
 
 			Info.Ping = Result.PingInMs;
 			Info.ServerArrayIndex = ArrayIndex;
@@ -139,7 +138,7 @@ void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
 		SessionSettings.bUseLobbiesIfAvailable = false;
 		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsLan"));
 	}
-	
+
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.NumPublicConnections = ServerInfo.MaxPlayers;
@@ -209,9 +208,9 @@ UTexture2D* UHooGameInstance::GetMapImage(FString MapName)
 
 UTexture2D* UHooGameInstance::GetMapOverviewImage(FString MapName)
 {
-	for(FMapInfo Map : MapList)
+	for (FMapInfo Map : MapList)
 	{
-		if(Map.MapName.Equals(MapName))
+		if (Map.MapName.Equals(MapName))
 			return Map.MapOverviewImage;
 	}
 	return nullptr;
@@ -227,7 +226,6 @@ void UHooGameInstance::SetSelectedMap(FString MapName)
 
 			SelectedMapURL = Map.MapURL;
 			UE_LOG(LogTemp, Warning, TEXT("SelectedMapURL : %s"), *SelectedMapURL);
-
 		}
 }
 
@@ -240,8 +238,10 @@ void UHooGameInstance::GameStart()
 
 void UHooGameInstance::InitializeMaps()
 {
-	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1Image(TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapImage"));
-	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1OverviewImage(TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapOverviewImage"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1Image(
+		TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapImage"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1OverviewImage(
+		TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapOverviewImage"));
 	if (Map1Image.Object)
 	{
 		FMapInfo Map;
@@ -253,7 +253,8 @@ void UHooGameInstance::InitializeMaps()
 	}
 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2Image(TEXT("/Game/UI/MainMenu/MapImages/AnimMapImage"));
-	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2OverviewImage(TEXT("/Game/UI/MainMenu/MapImages/AnimMapOverviewImage"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2OverviewImage(
+		TEXT("/Game/UI/MainMenu/MapImages/AnimMapOverviewImage"));
 	if (Map2Image.Object)
 	{
 		FMapInfo Map;
