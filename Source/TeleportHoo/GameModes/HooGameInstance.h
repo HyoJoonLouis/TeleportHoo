@@ -95,6 +95,11 @@ public:
 	class UTexture2D* GetMapOverviewImage(FString MapName);
 	UFUNCTION(BlueprintCallable)
 	void SetSelectedMap(FString MapName);
+	
+	UFUNCTION(BlueprintCallable)
+	void SetSelectedServerSlotIndex(int32 index);
+	UFUNCTION(BlueprintCallable)
+	int32 GetSelectedServerSlotIndex();
 
 protected:
 	// FUNCTION
@@ -108,6 +113,7 @@ protected:
 	TArray<FMapInfo> MapList;
 	FString SelectedMapName;
 	FString SelectedMapURL;
+	int32 SelectedServerSlotIndex;
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable)

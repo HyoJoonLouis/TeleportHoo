@@ -229,6 +229,16 @@ void UHooGameInstance::SetSelectedMap(FString MapName)
 		}
 }
 
+void UHooGameInstance::SetSelectedServerSlotIndex(int32 index)
+{
+	SelectedServerSlotIndex = index;
+}
+
+int32 UHooGameInstance::GetSelectedServerSlotIndex()
+{
+	return SelectedServerSlotIndex;
+}
+
 void UHooGameInstance::GameStart()
 {
 	// 선택한 맵으로 이동
