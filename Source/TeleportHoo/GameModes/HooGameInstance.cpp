@@ -16,6 +16,9 @@ UHooGameInstance::UHooGameInstance()
 	MySessionName = FName("My Session");
 	
 	InitializeMaps();
+
+	SelectedMapName = "SnowCastle";
+	SelectedMapURL = "/Game/Levels/L_SnowCastle";
 }
 
 void UHooGameInstance::Init()
@@ -66,14 +69,21 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 
 			FServerInfo Info;
 			FString ServerName = "Empty Server Name";
+			FString ServerMapName = "Empty Server MapName";
 
 			Result.Session.SessionSettings.Get(FName("SERVER_NAME_KEY"), ServerName);
+			Result.Session.SessionSettings.Get(FName("SERVER_MAPNAME_KEY"), ServerMapName);
 
 			Info.ServerName = ServerName;
+			Info.ServerMapName = ServerMapName;
+			UE_LOG(LogTemp, Warning, TEXT("ServerMapName : %s"), *Info.ServerMapName);
+
 			Info.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
 			Info.CurrentPlayers = Info.MaxPlayers - Result.Session.NumOpenPublicConnections;
 			Info.SetPlayerCount();
 			Info.SelectedMapName = SelectedMapName;
+			UE_LOG(LogTemp, Warning, TEXT("SelectedMapNameeeeeee : %s"), *Info.SelectedMapName);
+
 			Info.Ping = Result.PingInMs;
 			Info.ServerArrayIndex = ArrayIndex;
 
@@ -134,6 +144,8 @@ void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.NumPublicConnections = ServerInfo.MaxPlayers;
 	SessionSettings.Set(L"SERVER_NAME_KEY", ServerInfo.ServerName,
+	                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings.Set(L"SERVER_MAPNAME_KEY", ServerInfo.ServerMapName,
 	                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
@@ -211,7 +223,11 @@ void UHooGameInstance::SetSelectedMap(FString MapName)
 		if (Map.MapName.Equals(MapName))
 		{
 			SelectedMapName = Map.MapName;
+			UE_LOG(LogTemp, Warning, TEXT("SelectedMapName : %s"), *SelectedMapName);
+
 			SelectedMapURL = Map.MapURL;
+			UE_LOG(LogTemp, Warning, TEXT("SelectedMapURL : %s"), *SelectedMapURL);
+
 		}
 }
 
@@ -234,8 +250,6 @@ void UHooGameInstance::InitializeMaps()
 		Map.MapImage = Map1Image.Object;
 		Map.MapOverviewImage = Map1OverviewImage.Object;
 		MapList.Add(Map);
-		SelectedMapName = Map.MapName;
-		SelectedMapURL = Map.MapURL;
 	}
 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2Image(TEXT("/Game/UI/MainMenu/MapImages/AnimMapImage"));

@@ -13,6 +13,8 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	FString ServerName;
 	UPROPERTY(BlueprintReadWrite)
+	FString ServerMapName;
+	UPROPERTY(BlueprintReadWrite)
 	int32 MaxPlayers;
 };
 
@@ -23,6 +25,8 @@ struct FServerInfo
 public:
 	UPROPERTY(BlueprintReadOnly)
 	FString ServerName;
+	UPROPERTY(BlueprintReadOnly)
+	FString ServerMapName;
 	UPROPERTY(BlueprintReadOnly)
 	FString PlayerCountsString;
 	UPROPERTY(BlueprintReadOnly)
