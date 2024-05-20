@@ -87,6 +87,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void GameStart();
 
+	// UFUNCTION(BlueprintCallable)
+	// FString GetServerName()
+	
 	UFUNCTION(BlueprintCallable)
 	void FillMapList();
 	UFUNCTION(BlueprintCallable)
@@ -95,6 +98,8 @@ public:
 	class UTexture2D* GetMapOverviewImage(FString MapName);
 	UFUNCTION(BlueprintCallable)
 	void SetSelectedMap(FString MapName);
+	UFUNCTION(BlueprintCallable)
+	FString GetSelectedMapName();
 	
 	UFUNCTION(BlueprintCallable)
 	void SetSelectedServerSlotIndex(int32 index);

@@ -229,6 +229,11 @@ void UHooGameInstance::SetSelectedMap(FString MapName)
 		}
 }
 
+FString UHooGameInstance::GetSelectedMapName()
+{
+	return SelectedMapName;
+}
+
 void UHooGameInstance::SetSelectedServerSlotIndex(int32 index)
 {
 	SelectedServerSlotIndex = index;
