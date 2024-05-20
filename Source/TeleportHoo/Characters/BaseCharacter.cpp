@@ -337,7 +337,7 @@ void ABaseCharacter::Server_SetMomentum_Implementation(float Value)
 {
 	if (HasAuthority())
 	{
-		CurrentMomentum = Value;
+		CurrentMomentum = FMath::Clamp(Value, 0, MaxMomentum);
 		OnRep_SetMomentum();
 	}
 }
@@ -427,17 +427,15 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 			return;
 
 		ABaseCharacter* DamageActor = Cast<ABaseCharacter>(CauseActor);
-		if ((CurrentDirection == EDamageDirection::RIGHT && DamageActor->GetActorDirection() == EDamageDirection::LEFT)
-			|| CurrentDirection == EDamageDirection::LEFT && DamageActor->GetActorDirection() == EDamageDirection::RIGHT)
+		if (((CurrentDirection == EDamageDirection::RIGHT && DamageActor->GetActorDirection() == EDamageDirection::LEFT)
+			|| (CurrentDirection == EDamageDirection::LEFT && DamageActor->GetActorDirection() == EDamageDirection::RIGHT))
+			&& CurrentState == ECharacterStates::IDLE)
 			return;
 
 		CurrentHealth -= DamageInfo.Amount;
-		DamageActor->Server_SetMomentum(DamageActor->GetCurrentMomentum() + DamageActor->GetActorMomentumValues().OnHitSucceedAddAmount);
-
-		ABaseCharacter* BaseCharacterCauseActor = Cast<ABaseCharacter>(CauseActor);
-		Client_TakeDamage(CauseActor, DamageInfo);
-		BaseCharacterCauseActor->Server_SetMomentum(BaseCharacterCauseActor->GetCurrentMomentum() + BaseCharacterCauseActor->GetActorMomentumValues().OnHitSucceedAddAmount);
 		OnRep_SetHealth();
+		Client_TakeDamage(CauseActor, DamageInfo);
+		DamageActor->Server_SetMomentum(DamageActor->GetCurrentMomentum() + DamageActor->GetActorMomentumValues().OnHitSucceedAddAmount);
 
 		Server_SetState(ECharacterStates::HIT);
 		if (DamageInfo.DamageDirection == EDamageDirection::RIGHT)
@@ -571,6 +569,7 @@ void ABaseCharacter::Dodge()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
+	Server_SetState(ECharacterStates::DODGE);
 	if (bTargeting && IsValid(TargetActor))
 	{
 		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
@@ -607,7 +606,12 @@ void ABaseCharacter::HeavyAttack()
 	
 	if (bTargeting && IsValid(TargetActor) && Cast<ABaseCharacter>(TargetActor)->GetState() == ECharacterStates::PARRIABLE)
 	{
-		Parry(TargetActor, this);
+		ABaseCharacter* Target = Cast<ABaseCharacter>(TargetActor);
+		if ((CurrentDirection == EDamageDirection::RIGHT && Target->GetActorDirection() == EDamageDirection::LEFT)
+			|| CurrentDirection == EDamageDirection::LEFT && Target->GetActorDirection() == EDamageDirection::RIGHT)
+		{
+			Parry(TargetActor, this);
+		}
 		return;
 	}
 	
