@@ -232,10 +232,14 @@ void UHooGameInstance::SetSelectedMap(FString MapName)
 void UHooGameInstance::SetSelectedServerSlotIndex(int32 index)
 {
 	SelectedServerSlotIndex = index;
+	UE_LOG(LogTemp, Warning, TEXT("Set : SelectedServerSlotIndex : %d"), SelectedServerSlotIndex);
+	
 }
 
 int32 UHooGameInstance::GetSelectedServerSlotIndex()
 {
+	UE_LOG(LogTemp, Warning, TEXT("return : SelectedServerSlotIndex : %d"), SelectedServerSlotIndex);
+
 	return SelectedServerSlotIndex;
 }
 
