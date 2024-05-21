@@ -78,6 +78,8 @@ public:
 	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 
 	// FUNCTION
+public:
+	// Server
 	UFUNCTION(BlueprintCallable)
 	void CreateServer(FCreateServerInfo ServerInfo);
 	UFUNCTION(BlueprintCallable)
@@ -89,29 +91,33 @@ public:
 
 	// UFUNCTION(BlueprintCallable)
 	// FString GetServerName()
-	
+
+	// Map
 	UFUNCTION(BlueprintCallable)
 	void FillMapList();
+	UFUNCTION(BlueprintCallable)
+	void SetSelectedMap(FString MapName);
 	UFUNCTION(BlueprintCallable)
 	class UTexture2D* GetMapImage(FString MapName);
 	UFUNCTION(BlueprintCallable)
 	class UTexture2D* GetMapOverviewImage(FString MapName);
 	UFUNCTION(BlueprintCallable)
-	void SetSelectedMap(FString MapName);
-	UFUNCTION(BlueprintCallable)
 	FString GetSelectedMapName();
-	
+
+	// ServerSlot
 	UFUNCTION(BlueprintCallable)
 	void SetSelectedServerSlotIndex(int32 index);
 	UFUNCTION(BlueprintCallable)
 	int32 GetSelectedServerSlotIndex();
 
 protected:
-	// FUNCTION
 	void InitializeMaps();
 
-protected:
+private:
+
+
 	// VARIABLES
+protected:
 	IOnlineSessionPtr SessionInterface;
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 	FName MySessionName;
