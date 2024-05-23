@@ -18,12 +18,15 @@ protected:
 	class UWidgetAnimation* BloodAnimation;
 	UPROPERTY(meta = (BindWidget))
 	class UCinemaWidget* WBP_Cinema;
+	UPROPERTY(meta = (BindWidget))
+	class UScoreBoard* WBP_ScoreBoard;
 
 public:
 	virtual void NativeConstruct() override;
 
 	void SendChat(const FText& Name, const FText& TextToSend);
 	void PlayCinema(bool bStart);
+	void UpdateScore();
 	UFUNCTION(BlueprintCallable)
 	void OnHitEffect();
 

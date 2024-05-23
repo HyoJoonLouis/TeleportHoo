@@ -423,8 +423,10 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 {
 	if (HasAuthority())
 	{
-		if (GetState() == ECharacterStates::DEAD)
+		if (GetState() == ECharacterStates::DEAD || GetState() == ECharacterStates::DODGE)
+		{
 			return;
+		}
 
 		ABaseCharacter* DamageActor = Cast<ABaseCharacter>(CauseActor);
 		if (((CurrentDirection == EDamageDirection::RIGHT && DamageActor->GetActorDirection() == EDamageDirection::LEFT)
@@ -446,9 +448,11 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		if (CurrentHealth <= 0)
 		{
 			Server_SetState(ECharacterStates::DEAD);
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Dead"));
-			if (OnDeadDelegate.IsBound())	
-				OnDeadDelegate.Broadcast(this);
+			// 박정환 죽는 애니메이션 넣기
+			AIngamePlayerController* DeadPlayerController = Cast<AIngamePlayerController>(GetController());
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("%s"), DeadPlayerController->GetControllerTeam() == ETeam::RED? "RED": "BLUE"));
+			if (DeadPlayerController->OnDeadDelegate.IsBound())
+				Cast<AIngamePlayerController>(GetController())->OnDeadDelegate.Broadcast(DeadPlayerController);
 		}
 	}
 }
@@ -575,14 +579,17 @@ void ABaseCharacter::Dodge()
 		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
 			return;
 		Server_SetMomentum(CurrentMomentum - MomentumValues.OnDodgeRemoveAmount);
-		if (MovementVector.X > 0)
+		if (MovementVector.X >= 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::RIGHT]);
 		else if (MovementVector.X < 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::LEFT]);
 	}
 	else
 	{
-		Server_PlayAnimMontage(ForwardDodgeMontage);
+		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
+			return;
+		else
+			Server_PlayAnimMontage(ForwardDodgeMontage);
 	}
 
 }
@@ -604,7 +611,7 @@ void ABaseCharacter::HeavyAttack()
 	
 	AttackIndex = 0;
 	
-	if (bTargeting && IsValid(TargetActor) && Cast<ABaseCharacter>(TargetActor)->GetState() == ECharacterStates::PARRIABLE)
+	if (bTargeting && IsValid(TargetActor) && Cast<ABaseCharacter>(TargetActor)->GetState() == ECharacterStates::PARRIABLE && FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) <= 200)
 	{
 		ABaseCharacter* Target = Cast<ABaseCharacter>(TargetActor);
 		if ((CurrentDirection == EDamageDirection::RIGHT && Target->GetActorDirection() == EDamageDirection::LEFT)

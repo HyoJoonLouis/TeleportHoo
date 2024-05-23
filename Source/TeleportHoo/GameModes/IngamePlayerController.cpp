@@ -1,6 +1,7 @@
 #include "IngamePlayerController.h"
 #include "../UI/IngameHUD.h"
 #include "../UI/ChatBox.h"
+#include "../UI/ScoreBoard.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/GameState.h"
 #include "GameFramework/PlayerState.h"
@@ -42,5 +43,13 @@ void AIngamePlayerController::Client_SendChat_Implementation(const FText& Name, 
 	if (IsValid(GetIngameHUD()))
 	{
 		GetIngameHUD()->SendChat(Name, TextToSend);
+	}
+}
+
+void AIngamePlayerController::Client_UpdateScore_Implementation()
+{
+	if (IsValid(GetIngameHUD()))
+	{
+		GetIngameHUD()->UpdateScore();
 	}
 }

@@ -7,7 +7,6 @@
 #include <Components/TimelineComponent.h>
 #include "BaseCharacter.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeadDelegate, AActor*, DeadCharacter);
 
 USTRUCT(Blueprintable)
 struct FAttackAnimMontages
@@ -219,12 +218,11 @@ protected:
 	TMap<EDamageDirection, class UAnimMontage*> DodgeMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Hit")
 	TMap<EDamageDirection, class UAnimMontage*> HitMontages;
-	UPROPERTY(EditAnywhere, BLueprintReadWrite, Category = "Attack | Skill")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Skill")
 	class UAnimMontage* SkillMontage;
 
 
-	// Delegates
-	FOnDeadDelegate OnDeadDelegate;
+
 
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")

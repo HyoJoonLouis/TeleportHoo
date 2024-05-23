@@ -6,9 +6,6 @@
 #include "GameFramework/GameMode.h"
 #include "InGameGameMode.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class TELEPORTHOO_API AInGameGameMode : public AGameMode
 {
@@ -16,15 +13,27 @@ class TELEPORTHOO_API AInGameGameMode : public AGameMode
 	
 public:
 	AInGameGameMode();
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
-	virtual void RestartPlayer(AController* NewPlayer) override;
-	virtual void HandleMatchHasStarted() override;
+	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
+	UFUNCTION()
+	void OnPlayerDiedDelegate(class AIngamePlayerController* DeadCharacter);
 
-public:
+
+protected:
+	UPROPERTY(VisibleAnywhere)
+	TArray<class AIngamePlayerController*> ConnectedPlayers;
+	UPROPERTY()
+	TArray<class AActor*> PlayerStarts;
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<APawn> PlayerPawnBPClass;
-
+	TSubclassOf<class ABaseCharacter> SpawnActor;
 	UPROPERTY(EditAnywhere)
 	uint8 MaxPlayer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game | Rule")
+	int32 MaxRound;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game | Rule")
+	int32 CurrentRound;
 };
