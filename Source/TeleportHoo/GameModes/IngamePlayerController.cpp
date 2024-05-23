@@ -1,7 +1,6 @@
 #include "IngamePlayerController.h"
 #include "../UI/IngameHUD.h"
 #include "../UI/ChatBox.h"
-#include "../UI/ScoreBoard.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/GameState.h"
 #include "GameFramework/PlayerState.h"
