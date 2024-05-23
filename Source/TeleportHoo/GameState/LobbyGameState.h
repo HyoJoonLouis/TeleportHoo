@@ -6,8 +6,6 @@
 #include "GameFramework/GameState.h"
 #include "LobbyGameState.generated.h"
 
-// USTRUCT(BlueprintType)
-
 USTRUCT(BlueprintType)
 struct FPlayerLobbyInfo
 {
@@ -38,16 +36,25 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AddPlayerInfo(const FPlayerLobbyInfo& NewPlayerInfo);
 	UFUNCTION(BlueprintCallable)
+	void RemovePlayerInfo(const FString& PlayerName);
+	UFUNCTION(BlueprintCallable)
 	void SetPlayerReady(int32 PlayerIndex, bool bReady);
-	
+	UFUNCTION(BlueprintCallable)
+	FPlayerLobbyInfo GetPlayerLobbyInfo(int32 PlayerIndex) const;
+	UFUNCTION(BlueprintCallable)
+	int32 GetPlayerIndexByName(const FString& PlayerName) const;
+	UFUNCTION(BlueprintCallable)
+	bool AreAllPlayersReady() const;
+	UFUNCTION(BlueprintCallable)
+	void UpdatePlayerInfo(int32 PlayerIndex, const FString& NewPlayerName, UTexture2D* NewAvatarImage);
+
+	UFUNCTION()
+	void OnRep_PlayerLobbyInfoArray();
 	
 // VARIABLES
 public:
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "GameState")
-	TArray<FPlayerLobbyInfo> PlayerInfoArray;
-
-
-
-
-	
+	TArray<FPlayerLobbyInfo> PlayerLobbyInfoArray;
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "GameState")
+	bool bIsLobbyOpen;
 };

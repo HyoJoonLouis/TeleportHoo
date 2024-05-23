@@ -4,12 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
-// #include "LobbyPlayerPlatform.h"
 #include "LobbyGameMode.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class TELEPORTHOO_API ALobbyGameMode : public AGameMode
 {
@@ -19,9 +15,22 @@ public:
 	ALobbyGameMode();
 
 	//FUNCTION
-	void SetUpPlatforms();
+	virtual void StartPlay() override;
+	virtual void BeginPlay() override;
+	virtual void HandleMatchHasStarted() override;
+	virtual void HandleMatchIsWaitingToStart() override;
+	virtual bool IsMatchInProgress() const override;
+	virtual void HandleMatchHasEnded() override;
+	virtual void HandleLeavingMap() override;
+	virtual void HandleMatchAborted() override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
 
+
+
+	
 protected:
 	// VARIABLES
-	bool IsPlatformsSetUpDone;
+
+	
 };

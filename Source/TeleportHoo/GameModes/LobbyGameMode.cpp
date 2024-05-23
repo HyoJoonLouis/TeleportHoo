@@ -3,27 +3,82 @@
 
 #include "LobbyGameMode.h"
 #include "Kismet/GameplayStatics.h"
+#include "TeleportHoo/GameState/LobbyGameState.h"
 
 ALobbyGameMode::ALobbyGameMode()
-	: IsPlatformsSetUpDone(false)
 {
 }
 
-void ALobbyGameMode::SetUpPlatforms()
+void ALobbyGameMode::StartPlay()
 {
-	// TArray<AActor*> FoundPlatforms;
-	// UGameplayStatics::GetAllActorsOfClass(GetWorld(), ALobbyPlayerPlatform::StaticClass(), FoundPlatforms);
-	//
-	// for (AActor* Actor : FoundPlatforms)
-	// {
-	// 	ALobbyPlayerPlatform* Platform = Cast<ALobbyPlayerPlatform>(Actor);
-	// 	if (Platform)
-	// 	{
-	// 		// 플랫폼에 필요한 설정을 수행
-	// 		// 예: 플레이어 할당, 리소스 로드, 초기화 등
-	// 	}
-	// }
-	//
-	// // 모든 플랫폼 설정이 완료되면 플래그를 true로 설정
-	// IsPlatformsSetUpDone = true;
+	Super::StartPlay();
+	// 게임 시작 시 초기화 작업
+}
+
+void ALobbyGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+	// 게임 시작 시 첫 번째로 호출되는 초기화 작업
+}
+
+void ALobbyGameMode::HandleMatchHasStarted()
+{
+	Super::HandleMatchHasStarted();
+	// 게임 시작 처리
+}
+
+void ALobbyGameMode::HandleMatchIsWaitingToStart()
+{
+	Super::HandleMatchIsWaitingToStart();
+	// 게임 대기 상태 처리
+}
+
+bool ALobbyGameMode::IsMatchInProgress() const
+{
+	return Super::IsMatchInProgress();
+	// 게임 진행 중인지 확인
+}
+
+void ALobbyGameMode::HandleMatchHasEnded()
+{
+	Super::HandleMatchHasEnded();
+	// 게임 종료 처리
+}
+
+void ALobbyGameMode::HandleLeavingMap()
+{
+	Super::HandleLeavingMap();
+	// 맵 떠날 때 처리
+}
+
+void ALobbyGameMode::HandleMatchAborted()
+{
+	Super::HandleMatchAborted();
+	// 게임 중단 처리
+}
+
+void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+	// 플레이어 로그인 처리
+
+	FString PlayerName = "PlayerDefaultName";
+	UTexture2D* AvatarImage = nullptr;
+
+	ALobbyGameState* LobbyGameState = GetWorld()->GetGameState<ALobbyGameState>();
+	if(LobbyGameState)
+	{
+		FPlayerLobbyInfo PlayerLobbyInfo;
+		PlayerLobbyInfo.PlayerName = PlayerName;
+		PlayerLobbyInfo.AvatarImage = AvatarImage;
+		PlayerLobbyInfo.bIsReady = false;
+
+		LobbyGameState->AddPlayerInfo(PlayerLobbyInfo);
+	}
+}
+
+void ALobbyGameMode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+	// 플레이어 로그아웃 처리
 }
