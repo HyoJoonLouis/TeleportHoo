@@ -31,19 +31,20 @@ class TELEPORTHOO_API ALobbyGameState : public AGameState
 public:
 	ALobbyGameState();
 
-	virtual void BeginPlay() override;
-
+// FUNCTION
 public:
-	// FUNCTION
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 	UFUNCTION(BlueprintCallable)
 	void AddPlayerInfo(const FPlayerLobbyInfo& NewPlayerInfo);
 	UFUNCTION(BlueprintCallable)
 	void SetPlayerReady(int32 PlayerIndex, bool bReady);
 	
+	
+// VARIABLES
 public:
-	// VARIABLES
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
-	TArray<FPlayerLobbyInfo> PlayersInfo;
+	UPROPERTY(BlueprintReadWrite, Replicated, Category = "GameState")
+	TArray<FPlayerLobbyInfo> PlayerInfoArray;
 
 
 

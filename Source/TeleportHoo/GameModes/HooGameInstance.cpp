@@ -7,6 +7,7 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include <Online/OnlineSessionNames.h>
+#include "interfaces/OnlineIdentityInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
 UHooGameInstance::UHooGameInstance()
@@ -283,4 +284,25 @@ void UHooGameInstance::InitializeMaps()
 		Map.MapOverviewImage = Map2OverviewImage.Object;
 		MapList.Add(Map);
 	}
+}
+
+void UHooGameInstance::CCC()
+{
+	FString DisplayName;
+
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+	if (OnlineSub)
+	{
+		IOnlineIdentityPtr Identity = OnlineSub->GetIdentityInterface();
+		if (Identity.IsValid())
+		{
+			TSharedPtr<const FUniqueNetId> UserId = Identity->GetUniquePlayerId(0);
+			if (UserId.IsValid())
+			{
+				DisplayName = Identity->GetPlayerNickname(*UserId);
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Player Display Name: %s"), *DisplayName);
 }

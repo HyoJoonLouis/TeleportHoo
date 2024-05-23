@@ -59,10 +59,21 @@ public:
 	class UTexture2D* MapOverviewImage;
 };
 
+USTRUCT(BlueprintType)
+struct FMyStruct
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
+	FString PlayerName;
+	
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
+	UTexture2D* AvatarImage;
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerDel, FServerInfo, ServerListDel);
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerSearchingDel, bool, SearchingForServerDel);
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMapInfoDel, FString, FMapNameDel);
 
 UCLASS()
@@ -88,9 +99,6 @@ public:
 	void JoinServer(int32 ArrayIndex);
 	UFUNCTION(BlueprintCallable)
 	void GameStart();
-
-	// UFUNCTION(BlueprintCallable)
-	// FString GetServerName()
 
 	// Map
 	UFUNCTION(BlueprintCallable)
@@ -133,4 +141,11 @@ protected:
 	FServerSearchingDel SearchingForServerDel;
 	UPROPERTY(BlueprintAssignable)
 	FMapInfoDel FMapNameDel;
+
+
+
+
+public:
+	UFUNCTION(BlueprintCallable)
+	void CCC();
 };

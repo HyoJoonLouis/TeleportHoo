@@ -3,26 +3,27 @@
 
 #include "LobbyGameState.h"
 
+#include "Net/UnrealNetwork.h"
+
 ALobbyGameState::ALobbyGameState()
 {
 }
 
-void ALobbyGameState::BeginPlay()
+void ALobbyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Super::BeginPlay();
-
-	
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ALobbyGameState, PlayerInfoArray);
 }
 
 void ALobbyGameState::AddPlayerInfo(const FPlayerLobbyInfo& NewPlayerInfo)
 {
-	PlayersInfo.Add(NewPlayerInfo);
+	// PlayersInfo.Add(NewPlayerInfo);
 }
 
 void ALobbyGameState::SetPlayerReady(int32 PlayerIndex, bool bReady)
 {
-	if(PlayersInfo.IsValidIndex(PlayerIndex))
-	{
-		PlayersInfo[PlayerIndex].bIsReady = bReady;
-	}
+	// if(PlayersInfo.IsValidIndex(PlayerIndex))
+	// {
+	// 	PlayersInfo[PlayerIndex].bIsReady = bReady;
+	// }
 }
