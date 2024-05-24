@@ -18,18 +18,19 @@ protected:
 	UPROPERTY()
 	class UIngameHUD* HUD;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	ETeam PlayerTeam;
 
 public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
 	UFUNCTION(Server, Unreliable)
 	void Server_SendChat(const FText& TextToSend);
 	UFUNCTION(Client, Unreliable)
 	void Client_SendChat(const FText& Name, const FText& TextToSend);
-	UFUNCTION(Client, Unreliable)
+	UFUNCTION(Client, Reliable)
 	void Client_UpdateScore();
 
 	// Delegates

@@ -11,15 +11,21 @@ AInGameGameMode::AInGameGameMode()
 {
 	//UE_LOG(LogTemp, Warning, TEXT("AInGameGameMode Constructor"));
 
+	bStartPlayersAsSpectators = false;
+
 	CurrentRound = 1;
+	MaxRound = 5;
 	MaxPlayer = 2;
+	isMatchEnd = false;
+	TeamScore.Add(ETeam::NONE, 0);
+	TeamScore.Add(ETeam::RED, 0);
+	TeamScore.Add(ETeam::BLUE, 0);
 }
 
-void AInGameGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+void AInGameGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
 {
-	Super::InitGame(MapName, Options, ErrorMessage);
-
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), PlayerStarts);
+	if (ConnectedPlayers.Num() >= MaxPlayer)
+		ErrorMessage = "Max Player Exceeded";
 }
 
 void AInGameGameMode::PostLogin(APlayerController* NewPlayer)
@@ -35,24 +41,6 @@ void AInGameGameMode::PostLogin(APlayerController* NewPlayer)
 	}
 }
 
-void AInGameGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
-{
-	AIngamePlayerController* IncomePlayer = Cast<AIngamePlayerController>(NewPlayer);
-	ABaseCharacter* SpawnedActor = nullptr;
-	if (ConnectedPlayers.Num() % 2 == 1)
-	{
-		IncomePlayer->SetControllerTeam(ETeam::RED);
-		SpawnedActor = GetWorld()->SpawnActor<ABaseCharacter>(SpawnActor, PlayerStarts[0]->GetActorLocation(), PlayerStarts[0]->GetActorRotation());
-	}
-	else
-	{
-		IncomePlayer->SetControllerTeam(ETeam::BLUE);
-		SpawnedActor = GetWorld()->SpawnActor<ABaseCharacter>(SpawnActor, PlayerStarts[0]->GetActorLocation(), PlayerStarts[0]->GetActorRotation());
-	}
-
-	IncomePlayer->Possess(SpawnedActor);
-}
-
 void AInGameGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
@@ -61,32 +49,68 @@ void AInGameGameMode::Logout(AController* Exiting)
 	{
 		ConnectedPlayers.Remove(ExitingPlayer);
 	}
+	ReturnToMainMenuHost();
 }
+
+bool AInGameGameMode::ReadyToStartMatch_Implementation()
+{
+	if (ConnectedPlayers.Num() == MaxPlayer)
+	{
+		GetGameState<AIngameGameState>()->SetTeamScore(ETeam::RED, *TeamScore.Find(ETeam::RED));
+		GetGameState<AIngameGameState>()->SetTeamScore(ETeam::BLUE, *TeamScore.Find(ETeam::BLUE));
+		for (int i = 0; i < ConnectedPlayers.Num(); i++)
+		{
+			ABaseCharacter* SpawnedActor = nullptr;
+
+			AActor* PlayerStart = FindPlayerStart(ConnectedPlayers[i], i % MaxPlayer == 1 ? "Red" : "Blue");
+			if (i % MaxPlayer == 1)
+				ConnectedPlayers[i]->SetControllerTeam(ETeam::RED);
+			else if (i % MaxPlayer == 0)
+				ConnectedPlayers[i]->SetControllerTeam(ETeam::BLUE);
+			SpawnedActor = GetWorld()->SpawnActor<ABaseCharacter>(SpawnActor, PlayerStart->GetActorLocation(), PlayerStart->GetActorRotation());
+
+			ConnectedPlayers[i]->Possess(SpawnedActor);
+		}
+		return true;
+	}
+	else
+		return false;
+}
+
+bool AInGameGameMode::ReadyToEndMatch_Implementation()
+{
+	return isMatchEnd;
+}
+
+void AInGameGameMode::HandleMatchHasEnded()
+{
+	ReturnToMainMenuHost();
+}
+
 
 void AInGameGameMode::OnPlayerDiedDelegate(AIngamePlayerController* DeadCharacter)
 {
+	CurrentRound++;
+
 	if (DeadCharacter->GetControllerTeam() == ETeam::RED)
 	{
+		TeamScore[ETeam::BLUE]++;
 		GetGameState<AIngameGameState>()->AddTeamScore(ETeam::BLUE);
-		if (GetGameState<AIngameGameState>()->GetTeamScore(ETeam::RED) >= MaxRound)
-		{
-
-		}
-		for (const auto Player : ConnectedPlayers)
-		{
-			Player->Client_UpdateScore();
-		}
 	}
 	else if (DeadCharacter->GetControllerTeam() == ETeam::BLUE)
 	{
+		TeamScore[ETeam::RED]++;
 		GetGameState<AIngameGameState>()->AddTeamScore(ETeam::RED);
-		if (GetGameState<AIngameGameState>()->GetTeamScore(ETeam::BLUE) >= MaxRound)
-		{
+	}
 
-		}
-		for (const auto Player : ConnectedPlayers)
-		{
-			Player->Client_UpdateScore();
-		}
+	if (TeamScore[ETeam::RED] >= 3 || TeamScore[ETeam::BLUE] >= 3)
+	{
+		isMatchEnd = true;
+	}
+	else
+	{
+		Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0))->Client_UpdateScore();
+		SetMatchState(MatchState::WaitingToStart);
+		ResetLevel();
 	}
 }

@@ -11,14 +11,21 @@ class TELEPORTHOO_API AIngameGameState : public AGameState
 	
 public:
 	AIngameGameState();
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION(BlueprintCallable)
 	void AddTeamScore(ETeam WinTeam);
 	
+	UFUNCTION()
+	void OnRep_ScoreChanged();
 
-	//Getters
-	FORCEINLINE int GetTeamScore(ETeam Team) { return TeamScore[Team]; }
+	// Setters
+	FORCEINLINE void SetTeamScore(ETeam Team, int Value) { Team == ETeam::RED ? RedTeamScore = Value : BlueTeamScore = Value; }
+	// Getters
+	FORCEINLINE int GetTeamScore(ETeam Team) { return  Team == ETeam::RED? RedTeamScore : BlueTeamScore; }
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Game | Rule")
-	TMap<ETeam, int> TeamScore;
+	UPROPERTY(ReplicatedUsing = OnRep_ScoreChanged, VisibleAnywhere, BlueprintReadWrite, Category = "Game | Score")
+	int RedTeamScore;
+	UPROPERTY(ReplicatedUsing = OnRep_ScoreChanged, VisibleAnywhere, BlueprintReadWrite, Category = "Game | Score")
+	int BlueTeamScore;	
 };
