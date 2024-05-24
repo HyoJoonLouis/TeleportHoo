@@ -56,16 +56,6 @@ ABaseCharacter::ABaseCharacter()
 	FollowCamera->FieldOfView = 78;
 	FollowCamera->SetIsReplicated(true);
 
-	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
-	WeaponMesh->SetupAttachment(GetMesh(), FName("Sword"));
-	WeaponMesh->SetCollisionProfileName(FName("NoCollision"), false);
-	WeaponMesh->SetReceivesDecals(false);
-
-	ShieldMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
-	ShieldMesh->SetupAttachment(GetMesh(), FName("Shield"));
-	ShieldMesh->SetCollisionProfileName(FName("NoCollision"), false);
-	ShieldMesh->SetReceivesDecals(false);
-
 	bTargeting = false;
 	bActivateCollision = false;
 	TargetDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("TargetDecal"));
@@ -86,7 +76,7 @@ ABaseCharacter::ABaseCharacter()
 
 	DirectionComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("DirectionComponent"));
 	DirectionComponent->SetupAttachment(GetMesh(), FName("DirectionWidget"));
-	DirectionComponent->SetRelativeLocation(FVector(0, 0, 130));
+	DirectionComponent->SetRelativeLocation(FVector(0, 0, 0));
 	DirectionComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	DirectionComponent->SetVisibility(false, true);
 
@@ -164,31 +154,6 @@ void ABaseCharacter::Tick(float DeltaTime)
 		TargetActor = nullptr;
 	}
 
-	if (HasAuthority() && bActivateCollision)
-	{
-		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-		TEnumAsByte<EObjectTypeQuery> Pawn = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn);
-		ObjectTypes.Add(Pawn);
-		TArray<AActor*> IgnoreActors;
-		IgnoreActors.Add(GetOwner());
-		TArray<FHitResult> HitResults;
-
-		bool Result = UKismetSystemLibrary::SphereTraceMultiForObjects(this, WeaponMesh->GetSocketLocation(FName("Start")), WeaponMesh->GetSocketLocation(FName("End")), 30.0f, ObjectTypes, false, IgnoreActors, EDrawDebugTrace::None, HitResults, true);
-		if (Result)
-		{
-			for (const auto& HitResult : HitResults)
-			{
-				ABaseCharacter* HitActor = Cast<ABaseCharacter>(HitResult.GetActor());
-				if (AlreadyHitActors.Contains(HitActor) || HitActor->GetState() == ECharacterStates::DODGE)
-					continue;
-				AlreadyHitActors.AddUnique(HitActor);
-				if (IsValid(HitActor))
-				{
-					HitActor->Server_TakeDamage(this, CurrentDamageInfo);
-				}
-			}
-		}
-	}
 }
 
 void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -450,7 +415,6 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 			Server_SetState(ECharacterStates::DEAD);
 			// 박정환 죽는 애니메이션 넣기
 			AIngamePlayerController* DeadPlayerController = Cast<AIngamePlayerController>(GetController());
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("%s"), DeadPlayerController->GetControllerTeam() == ETeam::RED? "RED": "BLUE"));
 			if (DeadPlayerController->OnDeadDelegate.IsBound())
 				Cast<AIngamePlayerController>(GetController())->OnDeadDelegate.Broadcast(DeadPlayerController);
 		}
@@ -475,16 +439,6 @@ void ABaseCharacter::TargetingTimelineFunction(float Value)
 	
 }
 
-void ABaseCharacter::StartWeaponCollision()
-{
-	bActivateCollision = true;
-	AlreadyHitActors.Empty();
-}
-
-void ABaseCharacter::EndWeaponCollision()
-{
-	bActivateCollision = false;
-}
 
 bool ABaseCharacter::CanTargetBlockAttack()
 {

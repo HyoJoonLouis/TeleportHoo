@@ -13,27 +13,34 @@ class TELEPORTHOO_API AInGameGameMode : public AGameMode
 	
 public:
 	AInGameGameMode();
-	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 
+	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
-	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
+
+	virtual bool ReadyToStartMatch_Implementation() override;
+	virtual bool ReadyToEndMatch_Implementation() override;
+
+	virtual void HandleMatchHasEnded() override;
+
 	UFUNCTION()
 	void OnPlayerDiedDelegate(class AIngamePlayerController* DeadCharacter);
 
-
+	FORCEINLINE int GetTeamScore(ETeam Team) { return TeamScore[Team]; }
 protected:
 	UPROPERTY(VisibleAnywhere)
 	TArray<class AIngamePlayerController*> ConnectedPlayers;
-	UPROPERTY()
-	TArray<class AActor*> PlayerStarts;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ABaseCharacter> SpawnActor;
+
+	UPROPERTY()
+	bool isMatchEnd;
 	UPROPERTY(EditAnywhere)
 	uint8 MaxPlayer;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game | Rule")
 	int32 MaxRound;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game | Rule")
 	int32 CurrentRound;
+	UPROPERTY()
+	TMap<ETeam, int> TeamScore;
 };

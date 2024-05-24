@@ -28,6 +28,13 @@ void AIngamePlayerController::Tick(float DeltaTime)
 	}
 }
 
+void AIngamePlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AIngamePlayerController, PlayerTeam);
+}
+
 void AIngamePlayerController::Server_SendChat_Implementation(const FText& TextToSend)
 {
 	TArray<TObjectPtr<APlayerState>> PlayerStates = UGameplayStatics::GetGameState(GetWorld())->PlayerArray;
