@@ -28,15 +28,13 @@ class TELEPORTHOO_API ABaseCharacter : public ACharacter, public ICharacterInter
 public:
 	ABaseCharacter();
 
-protected:
-	virtual void BeginPlay() override;
-
 public:	
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
-protected:
+public:
 	//Interfaces
 	virtual void OnTargeted_Implementation(const AActor* CauseActor) override;
 	virtual void OnUntargeted_Implementation() override;
@@ -59,15 +57,10 @@ protected:
 
 	UFUNCTION()
 	void TargetingTimelineFunction(float Value);
-	UFUNCTION(BlueprintCallable)
-	virtual void StartWeaponCollision();
-	UFUNCTION(BlueprintCallable)
-	virtual void EndWeaponCollision();
+
 	UFUNCTION(BlueprintCallable)
 	bool CanTargetBlockAttack();
 
-	void ChangeToControllerDesiredRotation();
-	void ChangeToRotationToMovement();
 
 	// Inputs
 	UFUNCTION()
@@ -125,6 +118,10 @@ protected:
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void Multicast_PlayAnimMontage(class UAnimMontage* AnimMontage);
 
+
+	void ChangeToControllerDesiredRotation();
+	void ChangeToRotationToMovement();
+
 protected:
 	// Cameras
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
@@ -177,10 +174,6 @@ protected:
 	class UDirectionWidget* DirectionWidget;
 
 	// Attacks
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
-	class UStaticMeshComponent* WeaponMesh;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
-	class UStaticMeshComponent* ShieldMesh;
 
 	UPROPERTY(BlueprintReadWrite)
 	uint8 AttackIndex;
