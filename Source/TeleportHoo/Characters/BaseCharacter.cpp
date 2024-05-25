@@ -27,7 +27,7 @@ ABaseCharacter::ABaseCharacter()
 	AttackIndex = 0;
 	CurrentState = ECharacterStates::IDLE;
 
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
+	GetCapsuleComponent()->InitCapsuleSize(53.f, 96.f);
 	GetCapsuleComponent()->SetReceivesDecals(false);
 
 	bUseControllerRotationPitch = false;
@@ -56,16 +56,6 @@ ABaseCharacter::ABaseCharacter()
 	FollowCamera->FieldOfView = 78;
 	FollowCamera->SetIsReplicated(true);
 
-	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
-	WeaponMesh->SetupAttachment(GetMesh(), FName("Sword"));
-	WeaponMesh->SetCollisionProfileName(FName("NoCollision"), false);
-	WeaponMesh->SetReceivesDecals(false);
-
-	ShieldMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
-	ShieldMesh->SetupAttachment(GetMesh(), FName("Shield"));
-	ShieldMesh->SetCollisionProfileName(FName("NoCollision"), false);
-	ShieldMesh->SetReceivesDecals(false);
-
 	bTargeting = false;
 	bActivateCollision = false;
 	TargetDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("TargetDecal"));
@@ -86,7 +76,7 @@ ABaseCharacter::ABaseCharacter()
 
 	DirectionComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("DirectionComponent"));
 	DirectionComponent->SetupAttachment(GetMesh(), FName("DirectionWidget"));
-	DirectionComponent->SetRelativeLocation(FVector(0, 0, 130));
+	DirectionComponent->SetRelativeLocation(FVector(0, 0, 0));
 	DirectionComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	DirectionComponent->SetVisibility(false, true);
 
@@ -106,13 +96,7 @@ void ABaseCharacter::BeginPlay()
 	CurrentHealth = MaxHealth;
 	CurrentMomentum = MaxMomentum / 2;
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
+	InputBind();
 
 	// Timeline
 	if (TargetingCurve)
@@ -156,39 +140,16 @@ void ABaseCharacter::Tick(float DeltaTime)
 				auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
 				if (TargetActorInterface)
 					TargetActorInterface->Execute_OnTargeted(TargetActor, this);
+				TargetingTimeline.PlayFromStart();
 			}
 		}
 	}
 	else
 	{
 		TargetActor = nullptr;
+		TargetingTimeline.Reverse();
 	}
 
-	if (HasAuthority() && bActivateCollision)
-	{
-		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-		TEnumAsByte<EObjectTypeQuery> Pawn = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn);
-		ObjectTypes.Add(Pawn);
-		TArray<AActor*> IgnoreActors;
-		IgnoreActors.Add(GetOwner());
-		TArray<FHitResult> HitResults;
-
-		bool Result = UKismetSystemLibrary::SphereTraceMultiForObjects(this, WeaponMesh->GetSocketLocation(FName("Start")), WeaponMesh->GetSocketLocation(FName("End")), 30.0f, ObjectTypes, false, IgnoreActors, EDrawDebugTrace::None, HitResults, true);
-		if (Result)
-		{
-			for (const auto& HitResult : HitResults)
-			{
-				ABaseCharacter* HitActor = Cast<ABaseCharacter>(HitResult.GetActor());
-				if (AlreadyHitActors.Contains(HitActor) || HitActor->GetState() == ECharacterStates::DODGE)
-					continue;
-				AlreadyHitActors.AddUnique(HitActor);
-				if (IsValid(HitActor))
-				{
-					HitActor->Server_TakeDamage(this, CurrentDamageInfo);
-				}
-			}
-		}
-	}
 }
 
 void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -289,25 +250,30 @@ void ABaseCharacter::OnRep_SetTargeting()
 	if (bTargeting)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 200.0f;
-		TargetingTimeline.PlayFromStart();
 		ChangeToControllerDesiredRotation();
-		AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		PlayerController->GetIngameHUD()->PlayCinema(true);
 		DirectionComponent->SetVisibility(true, true);
+		if (IsLocallyControlled())
+		{
+			AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+			PlayerController->GetIngameHUD()->PlayCinema(true);
+		}
 	}
 	else
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 400.0f;
-		TargetingTimeline.Reverse();
 		ChangeToRotationToMovement();
-		AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		PlayerController->GetIngameHUD()->PlayCinema(false);
 		DirectionComponent->SetVisibility(false, true);
-		if (IsValid(TargetActor))
+		if (IsLocallyControlled())
 		{
-			auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
-			if (TargetActorInterface)
-				TargetActorInterface->Execute_OnUntargeted(TargetActor);
+			AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+			PlayerController->GetIngameHUD()->PlayCinema(false);
+			TargetingTimeline.Reverse();
+			if (IsValid(TargetActor))
+			{
+				auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
+				if (TargetActorInterface)
+					TargetActorInterface->Execute_OnUntargeted(TargetActor);
+			}
 		}
 	}
 }
@@ -423,8 +389,10 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 {
 	if (HasAuthority())
 	{
-		if (GetState() == ECharacterStates::DEAD)
+		if (GetState() == ECharacterStates::DEAD || GetState() == ECharacterStates::DODGE)
+		{
 			return;
+		}
 
 		ABaseCharacter* DamageActor = Cast<ABaseCharacter>(CauseActor);
 		if (((CurrentDirection == EDamageDirection::RIGHT && DamageActor->GetActorDirection() == EDamageDirection::LEFT)
@@ -446,9 +414,10 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		if (CurrentHealth <= 0)
 		{
 			Server_SetState(ECharacterStates::DEAD);
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Dead"));
-			if (OnDeadDelegate.IsBound())	
-				OnDeadDelegate.Broadcast(this);
+			// 박정환 죽는 애니메이션 넣기
+			AIngamePlayerController* DeadPlayerController = Cast<AIngamePlayerController>(GetController());
+			if (DeadPlayerController->OnDeadDelegate.IsBound())
+				Cast<AIngamePlayerController>(GetController())->OnDeadDelegate.Broadcast(DeadPlayerController);
 		}
 	}
 }
@@ -463,23 +432,22 @@ void ABaseCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* Anim
 	PlayAnimMontage(AnimMontage);
 }
 
+void ABaseCharacter::InputBind()
+{
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+}
+
 void ABaseCharacter::TargetingTimelineFunction(float Value)
 {
-	CameraBoom->SocketOffset = FVector(0, UKismetMathLibrary::Lerp(50, 100, Value), 0);
+	CameraBoom->SocketOffset = FVector(0, UKismetMathLibrary::Lerp(50, 170, Value), 0);
 	CameraBoom->TargetOffset = FVector(0, 0, UKismetMathLibrary::Lerp(65, 40, Value));
 	FollowCamera->FieldOfView = UKismetMathLibrary::Lerp(78, 60, Value);
-	
-}
-
-void ABaseCharacter::StartWeaponCollision()
-{
-	bActivateCollision = true;
-	AlreadyHitActors.Empty();
-}
-
-void ABaseCharacter::EndWeaponCollision()
-{
-	bActivateCollision = false;
 }
 
 bool ABaseCharacter::CanTargetBlockAttack()
@@ -575,14 +543,17 @@ void ABaseCharacter::Dodge()
 		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
 			return;
 		Server_SetMomentum(CurrentMomentum - MomentumValues.OnDodgeRemoveAmount);
-		if (MovementVector.X > 0)
+		if (MovementVector.X >= 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::RIGHT]);
 		else if (MovementVector.X < 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::LEFT]);
 	}
 	else
 	{
-		Server_PlayAnimMontage(ForwardDodgeMontage);
+		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
+			return;
+		else
+			Server_PlayAnimMontage(ForwardDodgeMontage);
 	}
 
 }
@@ -604,7 +575,7 @@ void ABaseCharacter::HeavyAttack()
 	
 	AttackIndex = 0;
 	
-	if (bTargeting && IsValid(TargetActor) && Cast<ABaseCharacter>(TargetActor)->GetState() == ECharacterStates::PARRIABLE)
+	if (bTargeting && IsValid(TargetActor) && Cast<ABaseCharacter>(TargetActor)->GetState() == ECharacterStates::PARRIABLE && FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) <= 200)
 	{
 		ABaseCharacter* Target = Cast<ABaseCharacter>(TargetActor);
 		if ((CurrentDirection == EDamageDirection::RIGHT && Target->GetActorDirection() == EDamageDirection::LEFT)

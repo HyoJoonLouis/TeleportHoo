@@ -4,6 +4,14 @@
 #include "CharacterStructs.generated.h"
 
 UENUM(BlueprintType)
+enum class ETeam : uint8
+{
+	NONE	UMETA(DisplayName = "None"),
+	RED		UMETA(DisplayName = Red),
+	BLUE	UMETA(DisplayName = Blue)
+};
+
+UENUM(BlueprintType)
 enum class ECharacterStates : uint8
 {
 	IDLE		UMETA(DisplayName = "Idle"),

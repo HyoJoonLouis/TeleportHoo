@@ -2,6 +2,7 @@
 #include "ChatBox.h"
 #include "Components/Image.h"
 #include "CinemaWidget.h"
+#include "ScoreBoard.h"
 
 void UIngameHUD::NativeConstruct()
 {
@@ -17,6 +18,11 @@ void UIngameHUD::SendChat(const FText& Name, const FText& TextToSend)
 void UIngameHUD::PlayCinema(bool bStart)
 {
 	WBP_Cinema->PlayCinemaAnimation(bStart);
+}
+
+void UIngameHUD::UpdateScore()
+{
+	WBP_ScoreBoard->UpdateScore();
 }
 
 void UIngameHUD::OnHitEffect()
