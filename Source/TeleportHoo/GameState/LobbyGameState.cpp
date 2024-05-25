@@ -43,7 +43,8 @@ void ALobbyGameState::SetPlayerReady(int32 PlayerIndex, bool bReady)
 {
 	if (PlayerLobbyInfoArray.IsValidIndex(PlayerIndex))
 	{
-		PlayerLobbyInfoArray[PlayerIndex].bIsReady = !PlayerLobbyInfoArray[PlayerIndex].bIsReady;
+		// PlayerLobbyInfoArray[PlayerIndex].bIsReady = !PlayerLobbyInfoArray[PlayerIndex].bIsReady;
+		PlayerLobbyInfoArray[PlayerIndex].bIsReady = bReady;
 		OnRep_PlayerLobbyInfoArray();
 	}
 }
@@ -93,6 +94,11 @@ void ALobbyGameState::UpdatePlayerInfo(int32 PlayerIndex, const FString& NewPlay
 		PlayerLobbyInfoArray[PlayerIndex].AvatarImage = NewAvatarImage;
 		OnRep_PlayerLobbyInfoArray();
 	}
+}
+
+const TArray<FPlayerLobbyInfo>& ALobbyGameState::GetAllPlayerInfo() const
+{
+	return PlayerLobbyInfoArray;
 }
 
 void ALobbyGameState::OnRep_PlayerLobbyInfoArray()

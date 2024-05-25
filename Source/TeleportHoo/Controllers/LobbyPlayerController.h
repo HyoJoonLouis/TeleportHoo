@@ -17,6 +17,10 @@ class TELEPORTHOO_API ALobbyPlayerController : public APlayerController
 public:
 	ALobbyPlayerController();
 
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+	class TSubclassOf<UUserWidget> MainMenuWidgetClass;
+
 public:
 	// FUNCTION
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "PlayerInfo")

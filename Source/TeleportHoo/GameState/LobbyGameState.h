@@ -48,6 +48,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdatePlayerInfo(int32 PlayerIndex, const FString& NewPlayerName, UTexture2D* NewAvatarImage);
 
+
+	UFUNCTION(BlueprintPure)
+	const TArray<FPlayerLobbyInfo>& GetAllPlayerInfo() const;
+	
 	UFUNCTION()
 	void OnRep_PlayerLobbyInfoArray();
 	
