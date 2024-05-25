@@ -27,7 +27,7 @@ ABaseCharacter::ABaseCharacter()
 	AttackIndex = 0;
 	CurrentState = ECharacterStates::IDLE;
 
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
+	GetCapsuleComponent()->InitCapsuleSize(53.f, 96.f);
 	GetCapsuleComponent()->SetReceivesDecals(false);
 
 	bUseControllerRotationPitch = false;
@@ -96,13 +96,7 @@ void ABaseCharacter::BeginPlay()
 	CurrentHealth = MaxHealth;
 	CurrentMomentum = MaxMomentum / 2;
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
+	InputBind();
 
 	// Timeline
 	if (TargetingCurve)
@@ -146,12 +140,14 @@ void ABaseCharacter::Tick(float DeltaTime)
 				auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
 				if (TargetActorInterface)
 					TargetActorInterface->Execute_OnTargeted(TargetActor, this);
+				TargetingTimeline.PlayFromStart();
 			}
 		}
 	}
 	else
 	{
 		TargetActor = nullptr;
+		TargetingTimeline.Reverse();
 	}
 
 }
@@ -254,25 +250,30 @@ void ABaseCharacter::OnRep_SetTargeting()
 	if (bTargeting)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 200.0f;
-		TargetingTimeline.PlayFromStart();
 		ChangeToControllerDesiredRotation();
-		AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		PlayerController->GetIngameHUD()->PlayCinema(true);
 		DirectionComponent->SetVisibility(true, true);
+		if (IsLocallyControlled())
+		{
+			AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+			PlayerController->GetIngameHUD()->PlayCinema(true);
+		}
 	}
 	else
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 400.0f;
-		TargetingTimeline.Reverse();
 		ChangeToRotationToMovement();
-		AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		PlayerController->GetIngameHUD()->PlayCinema(false);
 		DirectionComponent->SetVisibility(false, true);
-		if (IsValid(TargetActor))
+		if (IsLocallyControlled())
 		{
-			auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
-			if (TargetActorInterface)
-				TargetActorInterface->Execute_OnUntargeted(TargetActor);
+			AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+			PlayerController->GetIngameHUD()->PlayCinema(false);
+			TargetingTimeline.Reverse();
+			if (IsValid(TargetActor))
+			{
+				auto TargetActorInterface = Cast<ICharacterInterface>(TargetActor);
+				if (TargetActorInterface)
+					TargetActorInterface->Execute_OnUntargeted(TargetActor);
+			}
 		}
 	}
 }
@@ -431,14 +432,23 @@ void ABaseCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* Anim
 	PlayAnimMontage(AnimMontage);
 }
 
-void ABaseCharacter::TargetingTimelineFunction(float Value)
+void ABaseCharacter::InputBind()
 {
-	CameraBoom->SocketOffset = FVector(0, UKismetMathLibrary::Lerp(50, 100, Value), 0);
-	CameraBoom->TargetOffset = FVector(0, 0, UKismetMathLibrary::Lerp(65, 40, Value));
-	FollowCamera->FieldOfView = UKismetMathLibrary::Lerp(78, 60, Value);
-	
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
 }
 
+void ABaseCharacter::TargetingTimelineFunction(float Value)
+{
+	CameraBoom->SocketOffset = FVector(0, UKismetMathLibrary::Lerp(50, 170, Value), 0);
+	CameraBoom->TargetOffset = FVector(0, 0, UKismetMathLibrary::Lerp(65, 40, Value));
+	FollowCamera->FieldOfView = UKismetMathLibrary::Lerp(78, 60, Value);
+}
 
 bool ABaseCharacter::CanTargetBlockAttack()
 {

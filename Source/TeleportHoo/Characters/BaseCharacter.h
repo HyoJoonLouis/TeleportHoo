@@ -54,6 +54,8 @@ public:
 	FORCEINLINE EDamageDirection GetActorDirection() const { return CurrentDirection; }
 
 
+	UFUNCTION()
+	void InputBind();
 
 	UFUNCTION()
 	void TargetingTimelineFunction(float Value);
@@ -213,8 +215,6 @@ protected:
 	TMap<EDamageDirection, class UAnimMontage*> HitMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Skill")
 	class UAnimMontage* SkillMontage;
-
-
 
 
 	// Components

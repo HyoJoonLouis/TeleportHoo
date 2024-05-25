@@ -15,6 +15,10 @@ class TELEPORTHOO_API UScoreBoard : public UUserWidget
 	GENERATED_BODY()
 	
 	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* Round;
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* Timer;
+	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* RedScore;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* BlueScore;

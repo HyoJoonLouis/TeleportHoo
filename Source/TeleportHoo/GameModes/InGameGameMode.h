@@ -6,6 +6,7 @@
 #include "GameFramework/GameMode.h"
 #include "InGameGameMode.generated.h"
 
+
 UCLASS()
 class TELEPORTHOO_API AInGameGameMode : public AGameMode
 {
@@ -24,9 +25,16 @@ public:
 	virtual void HandleMatchHasEnded() override;
 
 	UFUNCTION()
-	void OnPlayerDiedDelegate(class AIngamePlayerController* DeadCharacter);
+	void RoundStart();
 
-	FORCEINLINE int GetTeamScore(ETeam Team) { return TeamScore[Team]; }
+	UFUNCTION()
+	void RoundEnd();
+
+	UFUNCTION()
+	void OnGameTimeFinished();
+
+	UFUNCTION()
+	void OnPlayerDiedDelegate(class AIngamePlayerController* DeadCharacter);
 protected:
 	UPROPERTY(VisibleAnywhere)
 	TArray<class AIngamePlayerController*> ConnectedPlayers;
@@ -37,10 +45,7 @@ protected:
 	bool isMatchEnd;
 	UPROPERTY(EditAnywhere)
 	uint8 MaxPlayer;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game | Rule")
-	int32 MaxRound;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Game | Rule")
-	int32 CurrentRound;
-	UPROPERTY()
-	TMap<ETeam, int> TeamScore;
+
+	FTimerHandle RoundStartTimerHandle;
+	FTimerHandle RoundEndTimerHandle;
 };

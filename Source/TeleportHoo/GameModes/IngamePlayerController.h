@@ -26,6 +26,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
+	// UI
 	UFUNCTION(Server, Unreliable)
 	void Server_SendChat(const FText& TextToSend);
 	UFUNCTION(Client, Unreliable)
