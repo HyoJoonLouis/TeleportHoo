@@ -92,7 +92,7 @@ public:
 public:
 	// Server
 	UFUNCTION(BlueprintCallable)
-	void CreateServer(FCreateServerInfo ServerInfo);
+	void CreateServer();
 	UFUNCTION(BlueprintCallable)
 	void FindServer();
 	UFUNCTION(BlueprintCallable)
@@ -100,7 +100,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void GameStart();
 
-	// Map
+	// CreateServerInfo
+	UFUNCTION(BlueprintCallable)
+	void SetCreateServerInfo(FString ServerName, FString ServerMapName, int32 MaxPlayer);
+	UFUNCTION(BlueprintCallable)
+	FString GetCreateServerName();
+	
+	// Map 
 	UFUNCTION(BlueprintCallable)
 	void FillMapList();
 	UFUNCTION(BlueprintCallable)
@@ -121,19 +127,21 @@ public:
 protected:
 	void InitializeMaps();
 
-private:
-
-
 	// VARIABLES
 protected:
 	IOnlineSessionPtr SessionInterface;
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 	FName MySessionName;
+
+	// Map
 	TArray<FMapInfo> MapList;
 	FString SelectedMapName;
 	FString SelectedMapURL;
 	int32 SelectedServerSlotIndex;
 
+	// Create Server Info
+	FCreateServerInfo CreateServerInfo;
+	
 	// Delegates
 	UPROPERTY(BlueprintAssignable)
 	FServerDel ServerListDel;
@@ -142,10 +150,8 @@ protected:
 	UPROPERTY(BlueprintAssignable)
 	FMapInfoDel FMapNameDel;
 
-
-
-
 public:
+	// Test
 	UFUNCTION(BlueprintCallable)
 	void CCC();
 };

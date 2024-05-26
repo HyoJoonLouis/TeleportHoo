@@ -20,6 +20,10 @@ UHooGameInstance::UHooGameInstance()
 
 	SelectedMapName = "SnowCastle";
 	SelectedMapURL = "/Game/Levels/L_SnowCastle";
+
+	CreateServerInfo.ServerName = "DeafaultServer";
+	CreateServerInfo.ServerMapName = "DefaultMap";
+	CreateServerInfo.MaxPlayers = 2;
 }
 
 void UHooGameInstance::Init()
@@ -116,7 +120,7 @@ void UHooGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 	}
 }
 
-void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
+void UHooGameInstance::CreateServer()
 {
 	UE_LOG(LogTemp, Warning, TEXT("CreateServer"));
 
@@ -142,10 +146,10 @@ void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
 
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bUsesPresence = true;
-	SessionSettings.NumPublicConnections = ServerInfo.MaxPlayers;
-	SessionSettings.Set(L"SERVER_NAME_KEY", ServerInfo.ServerName,
+	SessionSettings.NumPublicConnections = CreateServerInfo.MaxPlayers;
+	SessionSettings.Set(L"SERVER_NAME_KEY", CreateServerInfo.ServerName,
 	                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	SessionSettings.Set(L"SERVER_MAPNAME_KEY", ServerInfo.ServerMapName,
+	SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName,
 	                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
@@ -254,6 +258,19 @@ void UHooGameInstance::GameStart()
 	// 선택한 맵으로 이동
 	UE_LOG(LogTemp, Warning, TEXT("ServerTravel : %s"), *SelectedMapURL);
 	GetWorld()->ServerTravel(SelectedMapURL + "?Listen");
+}
+
+void UHooGameInstance::SetCreateServerInfo(FString ServerName, FString ServerMapName, int32 MaxPlayer)
+{
+	CreateServerInfo.ServerName = ServerName;
+	CreateServerInfo.ServerMapName = ServerMapName;
+	CreateServerInfo.MaxPlayers = MaxPlayer;
+}
+
+
+FString UHooGameInstance::GetCreateServerName()
+{
+	return CreateServerInfo.ServerName;
 }
 
 void UHooGameInstance::InitializeMaps()
