@@ -2,9 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "OnlineSubsystem.h"
-#include "OnlineSubsystemTypes.h"
-
+#include "TeleportHoo/Structs/LobbyStructs.h"
 #include "LobbyPlayerController.generated.h"
 
 UCLASS()
@@ -15,30 +13,30 @@ class TELEPORTHOO_API ALobbyPlayerController : public APlayerController
 public:
 	ALobbyPlayerController();
 
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
-	class TSubclassOf<UUserWidget> MainMenuWidgetClass;
-
-public:
 	// FUNCTION
-	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "PlayerInfo")
-	void ServerSetPlayerInfo(const FString& PlayerName, UTexture2D* AvatarImage);
-
-	UFUNCTION(Client, Reliable)
-	void Client_UpdatePlayerInfo();
-
-private:
-	void UpdatePlayerInfoUI();
-
-private:
-	// VARIABLES
-	
-	
-	
-
-
-
-
-	
 public:
+	
+	UFUNCTION(Client, Reliable)
+	void Client_UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
+	
+	UFUNCTION()
+	FString GetPlayerName();
+
+	UFUNCTION()
+	UTexture2D* GetPlayerAvatar();
+
+private:
+	void UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
+
+	// VARIABLES
+protected:
+	// 플레이어 정보를 표시할 위젯 클래스
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<class UUserWidget> LobbyWidgetClass;
+
+	UPROPERTY()
+	class ULobbyWidget* LobbyWidget;
+	
+private:
+
 };
