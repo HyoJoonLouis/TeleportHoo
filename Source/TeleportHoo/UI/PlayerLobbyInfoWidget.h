@@ -8,6 +8,9 @@ UCLASS()
 class TELEPORTHOO_API UPlayerLobbyInfoWidget : public UUserWidget
 {
 	GENERATED_BODY()
+
+protected:
+	virtual void NativeConstruct() override;
 	
 public:
 	void UpdatePlayerInfo(const FPlayerInfo& PlayerInfo);

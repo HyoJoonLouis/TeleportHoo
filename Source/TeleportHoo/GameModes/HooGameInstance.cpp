@@ -321,5 +321,5 @@ void UHooGameInstance::CCC()
 		}
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Player Display Name: %s"), *DisplayName);
+	// UE_LOG(LogTemp, Warning, TEXT("Player Display Name: %s"), *DisplayName);
 }

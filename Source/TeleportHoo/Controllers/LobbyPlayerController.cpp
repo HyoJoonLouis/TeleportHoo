@@ -159,6 +159,8 @@ UTexture2D* ALobbyPlayerController::GetPlayerAvatar()
 // LobbyUI가 없다면 생성, PlayerLobbyInfo 정보 업데이트
 void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
+	UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerInfoUI 진입"));
+
 	if (!LobbyWidgetClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("LobbyWidgetClass가 설정되지 않았습니다!"));

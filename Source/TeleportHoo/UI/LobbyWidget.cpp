@@ -4,6 +4,27 @@
 void ULobbyWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::NativeConstruct"));
+
+	
+	if (WBP_PlayerLobbyInfoWidget_1)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WBP_PlayerLobbyInfoWidget_1 initialized"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("WBP_PlayerLobbyInfoWidget_1 is null"));
+	}
+
+	if (WBP_PlayerLobbyInfoWidget_2)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WBP_PlayerLobbyInfoWidget_2 initialized"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("WBP_PlayerLobbyInfoWidget_2 is null"));
+	}
 }
 
 void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
@@ -21,10 +42,19 @@ void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& Player
 		UE_LOG(LogTemp, Warning, TEXT("TargetWidget = WBP_PlayerLobbyInfoWidget_2"));
 		TargetWidget = WBP_PlayerLobbyInfoWidget_2;
 	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerIndex 이상함"));
+
+	}
 
 	if(TargetWidget)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TargetWidget->UpdatePlayerInfo"));
 		TargetWidget->UpdatePlayerInfo(PlayerInfo);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TargetWidget is nullptr"));
 	}
 }

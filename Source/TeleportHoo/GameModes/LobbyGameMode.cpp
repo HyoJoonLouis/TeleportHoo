@@ -32,6 +32,13 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 			if (IsValid(LobbyGameState))
 			{
 				LobbyGameState->ConnectedPlayers.AddUnique(PlayerState->PlayerInfo);
+
+				UE_LOG(LogTemp, Error, TEXT("PlayerName : %s"), *LobbyGameState->ConnectedPlayers[0].PlayerName);
+				if(LobbyGameState->ConnectedPlayers.Num() == 2)
+				{
+					UE_LOG(LogTemp, Error, TEXT("PlayerName : %s"), *LobbyGameState->ConnectedPlayers[1].PlayerName);
+				}
+
 				OnPlayerInfoUpdated();
 			}
 		}
