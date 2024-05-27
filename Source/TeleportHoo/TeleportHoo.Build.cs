@@ -24,13 +24,14 @@ public class TeleportHoo : ModuleRules
 			"OnlineSubsystemSteam", 
 			"Niagara"
 		});
-		
-		// Steam SDK 경로 설정
-		string SteamVersion = "Steamv157"; // 사용 중인 Steamworks SDK 버전
-		string SteamPath = Path.Combine(Target.UEThirdPartySourceDirectory, "Steamworks", SteamVersion);
 
-		PublicAdditionalLibraries.Add(Path.Combine(SteamPath, "sdk", "redistributable_bin", "win64", "steam_api64.lib"));
+        // Steam SDK 경로 설정
+        string SteamVersion = "Steamv157";
+        string EnginePath = Path.GetFullPath(Target.RelativeEnginePath);
+        string SteamPath = Path.Combine(EnginePath, "Source", "ThirdParty", "Steamworks", SteamVersion, "sdk");
 
-		PublicIncludePaths.Add(Path.Combine(SteamPath, "sdk", "public"));
-	}
+        PublicAdditionalLibraries.Add(Path.Combine(SteamPath, "redistributable_bin", "win64", "steam_api64.lib"));
+
+        PublicIncludePaths.Add(Path.Combine(SteamPath, "public"));
+    }
 }

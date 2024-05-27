@@ -15,7 +15,9 @@ public:
 
 	// FUNCTION
 public:
-	
+	virtual  void BeginPlay() override;
+	virtual  void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 	UFUNCTION(Client, Reliable)
 	void Client_UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
 	

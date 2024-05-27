@@ -25,7 +25,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 		if (IsValid(PlayerState))
 		{
 			PlayerState->PlayerInfo.PlayerName = IncomePlayer->GetPlayerName(); // 플레이어 이름 할당 로직
-			PlayerState->PlayerInfo.AvatarImage = nullptr; // 실제 이미지 할당 로직 (구현필요)
+			PlayerState->PlayerInfo.AvatarImage = IncomePlayer->GetPlayerAvatar(); // 실제 이미지 할당 로직 (구현필요)
 			PlayerState->PlayerInfo.bIsReady = false;
 
 			ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
