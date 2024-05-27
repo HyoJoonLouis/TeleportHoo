@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -25,6 +23,12 @@ public:
 	// FUNCTION
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable, Category = "PlayerInfo")
 	void ServerSetPlayerInfo(const FString& PlayerName, UTexture2D* AvatarImage);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdatePlayerInfo();
+
+private:
+	void UpdatePlayerInfoUI();
 
 private:
 	// VARIABLES

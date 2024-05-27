@@ -34,6 +34,7 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_UpdateScore();
 
+	
 	// Delegates
 	FOnDeadDelegate OnDeadDelegate;
 

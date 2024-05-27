@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "IngamePlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 AIngameGameState::AIngameGameState()
 {

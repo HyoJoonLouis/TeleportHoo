@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/GameState.h"
 #include "GameFramework/PlayerState.h"
+#include "Net/UnrealNetwork.h"
 
 
 void AIngamePlayerController::BeginPlay()

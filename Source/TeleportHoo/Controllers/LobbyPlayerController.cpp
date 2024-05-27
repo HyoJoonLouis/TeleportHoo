@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "LobbyPlayerController.h"
 #include "TeleportHoo/GameState/LobbyGameState.h"
 #include "Net/UnrealNetwork.h"
@@ -10,6 +7,19 @@
 ALobbyPlayerController::ALobbyPlayerController()
 {
 	
+}
+
+void ALobbyPlayerController::UpdatePlayerInfoUI()
+{
+	//UI 업데이트 로직
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController UpdatePlayerInfoUI"));
+	UE_LOG(LogTemp, Warning, TEXT("UI 업데이트!!!!"));
+}
+
+void ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation()
+{
+	// 클라이언트에서 플레이어 정보 갱신
+	UpdatePlayerInfoUI();
 }
 
 void ALobbyPlayerController::ServerSetPlayerInfo_Implementation(const FString& PlayerName, UTexture2D* AvatarImage)

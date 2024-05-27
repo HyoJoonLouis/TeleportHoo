@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "LobbyGameState.h"
 
 #include "Net/UnrealNetwork.h"
@@ -15,6 +12,8 @@ void ALobbyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ALobbyGameState, PlayerLobbyInfoArray);
 	DOREPLIFETIME(ALobbyGameState, bIsLobbyOpen);
+
+	DOREPLIFETIME(ALobbyGameState, ConnectedPlayers);
 }
 
 // 플레이어 정보 배열에 새롭게 추가
