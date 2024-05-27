@@ -7,7 +7,6 @@
 #include <Components/TimelineComponent.h>
 #include "BaseCharacter.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeadDelegate, AActor*, DeadCharacter);
 
 USTRUCT(Blueprintable)
 struct FAttackAnimMontages
@@ -29,15 +28,13 @@ class TELEPORTHOO_API ABaseCharacter : public ACharacter, public ICharacterInter
 public:
 	ABaseCharacter();
 
-protected:
-	virtual void BeginPlay() override;
-
 public:	
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
-protected:
+public:
 	//Interfaces
 	virtual void OnTargeted_Implementation(const AActor* CauseActor) override;
 	virtual void OnUntargeted_Implementation() override;
@@ -57,18 +54,15 @@ protected:
 	FORCEINLINE EDamageDirection GetActorDirection() const { return CurrentDirection; }
 
 
+	UFUNCTION()
+	void InputBind();
 
 	UFUNCTION()
 	void TargetingTimelineFunction(float Value);
-	UFUNCTION(BlueprintCallable)
-	virtual void StartWeaponCollision();
-	UFUNCTION(BlueprintCallable)
-	virtual void EndWeaponCollision();
+
 	UFUNCTION(BlueprintCallable)
 	bool CanTargetBlockAttack();
 
-	void ChangeToControllerDesiredRotation();
-	void ChangeToRotationToMovement();
 
 	// Inputs
 	UFUNCTION()
@@ -126,6 +120,10 @@ protected:
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void Multicast_PlayAnimMontage(class UAnimMontage* AnimMontage);
 
+
+	void ChangeToControllerDesiredRotation();
+	void ChangeToRotationToMovement();
+
 protected:
 	// Cameras
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera)
@@ -178,10 +176,6 @@ protected:
 	class UDirectionWidget* DirectionWidget;
 
 	// Attacks
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
-	class UStaticMeshComponent* WeaponMesh;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
-	class UStaticMeshComponent* ShieldMesh;
 
 	UPROPERTY(BlueprintReadWrite)
 	uint8 AttackIndex;
@@ -219,12 +213,9 @@ protected:
 	TMap<EDamageDirection, class UAnimMontage*> DodgeMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Hit")
 	TMap<EDamageDirection, class UAnimMontage*> HitMontages;
-	UPROPERTY(EditAnywhere, BLueprintReadWrite, Category = "Attack | Skill")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Skill")
 	class UAnimMontage* SkillMontage;
 
-
-	// Delegates
-	FOnDeadDelegate OnDeadDelegate;
 
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
