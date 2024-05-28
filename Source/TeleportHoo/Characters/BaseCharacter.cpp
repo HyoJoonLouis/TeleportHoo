@@ -396,9 +396,11 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		}
 
 		ABaseCharacter* DamageActor = Cast<ABaseCharacter>(CauseActor);
+
 		if (((CurrentDirection == EDamageDirection::RIGHT && DamageActor->GetActorDirection() == EDamageDirection::LEFT)
 			|| (CurrentDirection == EDamageDirection::LEFT && DamageActor->GetActorDirection() == EDamageDirection::RIGHT))
-			&& CurrentState == ECharacterStates::IDLE)
+			&& CurrentState == ECharacterStates::IDLE
+			&& DamageInfo.DamageType != EDamageType::SKILL)
 		{
 			Server_PlayAnimMontage(BlockMontages[DamageInfo.DamageType] );
 			return;
@@ -411,10 +413,6 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 
 		Server_SetState(ECharacterStates::HIT);
 		Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
-		//if (DamageInfo.DamageDirection == EDamageDirection::RIGHT)
-		//	Server_PlayAnimMontage(HitMontages[EDamageDirection::RIGHT]);
-		//else if (DamageInfo.DamageDirection == EDamageDirection::LEFT)
-		//	Server_PlayAnimMontage(HitMontages[EDamageDirection::LEFT]);
 
 		if (CurrentHealth <= 0)
 		{
