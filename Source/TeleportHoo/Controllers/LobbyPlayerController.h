@@ -5,6 +5,8 @@
 #include "TeleportHoo/Structs/LobbyStructs.h"
 #include "LobbyPlayerController.generated.h"
 
+class ULobbyWidget;
+
 UCLASS()
 class TELEPORTHOO_API ALobbyPlayerController : public APlayerController
 {
@@ -27,17 +29,20 @@ public:
 	UFUNCTION()
 	UTexture2D* GetPlayerAvatar();
 
+	UFUNCTION(BlueprintCallable)
+	ULobbyWidget* GetLobbyWidgetRef();
+
 private:
 	void UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
 
 	// VARIABLES
 protected:
-	// 플레이어 정보를 표시할 위젯 클래스
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<class UUserWidget> LobbyWidgetClass;
-
 	UPROPERTY()
 	class ULobbyWidget* LobbyWidget;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+	TSubclassOf<class UUserWidget> LobbyWidgetClass;
+
 	
 private:
 

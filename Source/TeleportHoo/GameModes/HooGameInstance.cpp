@@ -28,6 +28,8 @@ UHooGameInstance::UHooGameInstance()
 
 void UHooGameInstance::Init()
 {
+	Super::Init();
+
 	if (IOnlineSubsystem* SubSystem = IOnlineSubsystem::Get())
 	{
 		SessionInterface = SubSystem->GetSessionInterface();

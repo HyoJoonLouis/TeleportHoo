@@ -14,11 +14,12 @@ protected:
 	virtual void NativeConstruct() override;
 
 public:
-	// 플레이어 정보 갱신 함수
 	void UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
 	
 protected:
-
+	UPROPERTY(meta = (BindWidget))
+	class UWidgetSwitcher* WS_WidgetSwitcher;
+	
 	UPROPERTY(meta = (BindWidget))
 	class UPlayerLobbyInfoWidget* WBP_PlayerLobbyInfoWidget_1;
 

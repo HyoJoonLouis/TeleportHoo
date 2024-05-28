@@ -20,6 +20,7 @@
 
 ALobbyPlayerController::ALobbyPlayerController()
 {
+	SetActorHiddenInGame(false);
 }
 
 void ALobbyPlayerController::BeginPlay()
@@ -155,11 +156,23 @@ UTexture2D* ALobbyPlayerController::GetPlayerAvatar()
     return nullptr;
 }
 
+ULobbyWidget* ALobbyPlayerController::GetLobbyWidgetRef()
+{
+	if (LobbyWidget)
+	{
+		return LobbyWidget;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT(" ALobbyPlayerController::GetLobbyWidgetRef <- LobbyWidget 쓰레기임"));
+		return nullptr;
+	}
+}
 
 // LobbyUI가 없다면 생성, PlayerLobbyInfo 정보 업데이트
 void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
-	UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerInfoUI 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
 
 	if (!LobbyWidgetClass)
 	{
@@ -170,11 +183,25 @@ void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayer
 	if (!LobbyWidget && LobbyWidgetClass)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("CreateWidget ULobbyWidget"));
-		LobbyWidget = CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
+		LobbyWidget = Cast<ULobbyWidget>(CreateWidget(GetGameInstance(), LobbyWidgetClass));
+		//LobbyWidget = Cast<ULobbyWidget>(CreateWidget(this, LobbyWidgetClass));
+		
 		if (LobbyWidget)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("LobbyWidget->AddToViewport"));
 			LobbyWidget->AddToViewport();
+
+			// UI가 뷰포트에 추가되었는지 확인
+			if (LobbyWidget->IsInViewport())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("LobbyWidget is successfully added to viewport"));
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("LobbyWidget failed to add to viewport"));
+			}
+
+			LobbyWidget->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
 

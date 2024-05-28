@@ -33,10 +33,13 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 			{
 				LobbyGameState->ConnectedPlayers.AddUnique(PlayerState->PlayerInfo);
 
-				UE_LOG(LogTemp, Error, TEXT("PlayerName : %s"), *LobbyGameState->ConnectedPlayers[0].PlayerName);
+				UE_LOG(LogTemp, Error, TEXT("Player1 Name : %s"), *LobbyGameState->ConnectedPlayers[0].PlayerName);
+				UE_LOG(LogTemp, Error, TEXT("Player1 Ready : %s"), LobbyGameState->ConnectedPlayers[0].bIsReady ? TEXT("true") : TEXT("false"));
+
 				if(LobbyGameState->ConnectedPlayers.Num() == 2)
 				{
-					UE_LOG(LogTemp, Error, TEXT("PlayerName : %s"), *LobbyGameState->ConnectedPlayers[1].PlayerName);
+					UE_LOG(LogTemp, Error, TEXT("Player2 Name: %s"), *LobbyGameState->ConnectedPlayers[1].PlayerName);
+					UE_LOG(LogTemp, Error, TEXT("Player2 Ready : %s"), LobbyGameState->ConnectedPlayers[1].bIsReady ? TEXT("true") : TEXT("false"));
 				}
 
 				OnPlayerInfoUpdated();
@@ -79,8 +82,7 @@ void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 		{
 			const FPlayerInfo& PlayerInfo = LobbyGameState->ConnectedPlayers[i];
 
-			for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++
-			     Iterator)
+			for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 			{
 				ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
 				if (LobbyPlayerController)
