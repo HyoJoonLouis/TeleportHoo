@@ -6,9 +6,7 @@
 #include "GameFramework/GameMode.h"
 #include "InGameGameMode.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
 class TELEPORTHOO_API AInGameGameMode : public AGameMode
 {
@@ -17,14 +15,37 @@ class TELEPORTHOO_API AInGameGameMode : public AGameMode
 public:
 	AInGameGameMode();
 
+	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
-	virtual void RestartPlayer(AController* NewPlayer) override;
-	virtual void HandleMatchHasStarted() override;
+	virtual void Logout(AController* Exiting) override;
 
-public:
+	virtual bool ReadyToStartMatch_Implementation() override;
+	virtual bool ReadyToEndMatch_Implementation() override;
+
+	virtual void HandleMatchHasEnded() override;
+
+	UFUNCTION()
+	void RoundStart();
+
+	UFUNCTION()
+	void RoundEnd();
+
+	UFUNCTION()
+	void OnGameTimeFinished();
+
+	UFUNCTION()
+	void OnPlayerDiedDelegate(class AIngamePlayerController* DeadCharacter);
+protected:
+	UPROPERTY(VisibleAnywhere)
+	TArray<class AIngamePlayerController*> ConnectedPlayers;
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<APawn> PlayerPawnBPClass;
+	TSubclassOf<class ABaseCharacter> SpawnActor;
 
+	UPROPERTY()
+	bool isMatchEnd;
 	UPROPERTY(EditAnywhere)
 	uint8 MaxPlayer;
+
+	FTimerHandle RoundStartTimerHandle;
+	FTimerHandle RoundEndTimerHandle;
 };
