@@ -53,7 +53,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE EDamageDirection GetActorDirection() const { return CurrentDirection; }
 
-
 	UFUNCTION()
 	void InputBind();
 
@@ -206,7 +205,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Heavy")
 	TMap<EDamageDirection, class UAnimMontage*>	HeavyAttackMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Block")
-	TMap<EDamageDirection, class UAnimMontage*> BlockMontages;
+	TMap<EDamageType, class UAnimMontage*> BlockMontages;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Parry")
+	class UAnimMontage* ParryMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dodge")
 	class UAnimMontage* ForwardDodgeMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dodge")
@@ -215,7 +216,8 @@ protected:
 	TMap<EDamageDirection, class UAnimMontage*> HitMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Skill")
 	class UAnimMontage* SkillMontage;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dead")
+	class UAnimMontage* DeadMontage;
 
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")

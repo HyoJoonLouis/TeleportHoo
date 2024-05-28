@@ -117,7 +117,7 @@ void AInGameGameMode::OnGameTimeFinished()
 			WinTeam = Player->GetControllerTeam();
 			MaxHealth = PlayerPawn->GetCurrentHealth();
 		}
-		Player->UnPossess();
+		PlayerPawn->Server_SetState(ECharacterStates::DEAD);
 	}
 
 	AIngameGameState* CurrentGameState = GetGameState<AIngameGameState>();

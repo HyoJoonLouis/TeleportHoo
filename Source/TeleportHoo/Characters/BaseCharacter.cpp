@@ -93,8 +93,8 @@ void ABaseCharacter::BeginPlay()
 	MomentumBarWidget = Cast<UHealthBarWidget>(MomentumBarComponent->GetWidget());
 	DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
 
-	CurrentHealth = MaxHealth;
-	CurrentMomentum = MaxMomentum / 2;
+	Server_SetHealth(MaxHealth);
+	Server_SetMomentum(MaxMomentum / 2);
 
 	InputBind();
 
@@ -366,17 +366,18 @@ void ABaseCharacter::Server_TargetBlockAttack_Implementation(AActor* Attacker, A
 
 	BlockActor->Server_SetMomentum(BlockActor->GetCurrentMomentum() + BlockActor->GetActorMomentumValues().OnBlockSucceedAddAmount);
 
-	if (Direction == EDamageDirection::LEFT)
-	{
-		AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::LEFT]);
-		BlockActor->Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
-	}
-	else if (Direction == EDamageDirection::RIGHT)
-	{
-		AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::RIGHT]);
-		BlockActor->Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
-	}
-
+	AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[Direction]);
+	BlockActor->Server_PlayAnimMontage(ParryMontages);
+	//if (Direction == EDamageDirection::LEFT)
+	//{
+	//	AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::LEFT]);
+	//	BlockActor->Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
+	//}
+	//else if (Direction == EDamageDirection::RIGHT)
+	//{
+	//	AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::RIGHT]);
+	//	BlockActor->Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
+	//}
 }
 
 void ABaseCharacter::Client_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
@@ -395,10 +396,15 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		}
 
 		ABaseCharacter* DamageActor = Cast<ABaseCharacter>(CauseActor);
+
 		if (((CurrentDirection == EDamageDirection::RIGHT && DamageActor->GetActorDirection() == EDamageDirection::LEFT)
 			|| (CurrentDirection == EDamageDirection::LEFT && DamageActor->GetActorDirection() == EDamageDirection::RIGHT))
-			&& CurrentState == ECharacterStates::IDLE)
+			&& CurrentState == ECharacterStates::IDLE
+			&& DamageInfo.DamageType != EDamageType::SKILL)
+		{
+			Server_PlayAnimMontage(BlockMontages[DamageInfo.DamageType] );
 			return;
+		}
 
 		CurrentHealth -= DamageInfo.Amount;
 		OnRep_SetHealth();
@@ -406,15 +412,13 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		DamageActor->Server_SetMomentum(DamageActor->GetCurrentMomentum() + DamageActor->GetActorMomentumValues().OnHitSucceedAddAmount);
 
 		Server_SetState(ECharacterStates::HIT);
-		if (DamageInfo.DamageDirection == EDamageDirection::RIGHT)
-			Server_PlayAnimMontage(HitMontages[EDamageDirection::RIGHT]);
-		else if (DamageInfo.DamageDirection == EDamageDirection::LEFT)
-			Server_PlayAnimMontage(HitMontages[EDamageDirection::LEFT]);
+		Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
 
 		if (CurrentHealth <= 0)
 		{
 			Server_SetState(ECharacterStates::DEAD);
 			// 박정환 죽는 애니메이션 넣기
+			Server_PlayAnimMontage(DeadMontage);
 			AIngamePlayerController* DeadPlayerController = Cast<AIngamePlayerController>(GetController());
 			if (DeadPlayerController->OnDeadDelegate.IsBound())
 				Cast<AIngamePlayerController>(GetController())->OnDeadDelegate.Broadcast(DeadPlayerController);
