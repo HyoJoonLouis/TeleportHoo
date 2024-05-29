@@ -5,13 +5,14 @@
 #include "TeleportHoo/GameModes/LobbyGameMode.h"
 #include "TeleportHoo/PlayerState/LobbyPlayerState.h"
 
+#include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
 #include "Engine/Texture2D.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Modules/ModuleManager.h"
 #include "Interfaces/OnlineIdentityInterface.h"
 #include "RenderUtils.h"
-#include "EnhancedInputComponent.h" 
+#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
@@ -99,66 +100,72 @@ FString ALobbyPlayerController::GetPlayerName()
 
 UTexture2D* ALobbyPlayerController::GetPlayerAvatar()
 {
-    IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
-    if (OnlineSub && OnlineSub->GetSubsystemName() == STEAM_SUBSYSTEM)
-    {
-        IOnlineIdentityPtr Identity = OnlineSub->GetIdentityInterface();
-        if (Identity.IsValid())
-        {
-            APlayerState* LocalPlayerState = GetPlayerState<APlayerState>();
-            if (LocalPlayerState)
-            {
-                // 유니크 플레이어 ID 가져오기
-                TSharedPtr<const FUniqueNetId> UserId = Identity->GetUniquePlayerId(GetLocalPlayer()->GetControllerId());
-                if (UserId.IsValid())
-                {
-                    uint32 AvatarWidth = 0;
-                    uint32 AvatarHeight = 0;
-                    if (SteamFriends())
-                    {
-                        CSteamID SteamID(*(uint64*)UserId->GetBytes());
-                        int FriendAvatar = SteamFriends()->GetMediumFriendAvatar(SteamID);
-                        if (FriendAvatar > 0)
-                        {
-                            SteamUtils()->GetImageSize(FriendAvatar, &AvatarWidth, &AvatarHeight);
-                            uint32 AvatarSize = AvatarWidth * AvatarHeight * 4;
-                            uint8* AvatarRGBA = new uint8[AvatarSize];
-                            SteamUtils()->GetImageRGBA(FriendAvatar, AvatarRGBA, AvatarSize);
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+	if (OnlineSub && OnlineSub->GetSubsystemName() == STEAM_SUBSYSTEM)
+	{
+		IOnlineIdentityPtr Identity = OnlineSub->GetIdentityInterface();
+		if (Identity.IsValid())
+		{
+			APlayerState* LocalPlayerState = GetPlayerState<APlayerState>();
+			if (LocalPlayerState)
+			{
+				// 유니크 플레이어 ID 가져오기
+				TSharedPtr<const FUniqueNetId> UserId = Identity->
+					GetUniquePlayerId(GetLocalPlayer()->GetControllerId());
+				if (UserId.IsValid())
+				{
+					uint32 AvatarWidth = 0;
+					uint32 AvatarHeight = 0;
+					if (SteamFriends())
+					{
+						CSteamID SteamID(*(uint64*)UserId->GetBytes());
+						int FriendAvatar = SteamFriends()->GetMediumFriendAvatar(SteamID);
+						if (FriendAvatar > 0)
+						{
+							SteamUtils()->GetImageSize(FriendAvatar, &AvatarWidth, &AvatarHeight);
+							uint32 AvatarSize = AvatarWidth * AvatarHeight * 4;
+							uint8* AvatarRGBA = new uint8[AvatarSize];
+							SteamUtils()->GetImageRGBA(FriendAvatar, AvatarRGBA, AvatarSize);
 
-                            IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
-                            TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
+							IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<
+								IImageWrapperModule>(FName("ImageWrapper"));
+							TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(
+								EImageFormat::PNG);
 
-                            if (ImageWrapper.IsValid() && ImageWrapper->SetRaw(AvatarRGBA, AvatarSize, AvatarWidth, AvatarHeight, ERGBFormat::BGRA, 8))
-                            {
-                                TArray64<uint8> UncompressedRGBA;
-                                if (ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, UncompressedRGBA))
-                                {
-                                    UTexture2D* AvatarTexture = UTexture2D::CreateTransient(AvatarWidth, AvatarHeight, PF_B8G8R8A8);
+							if (ImageWrapper.IsValid() && ImageWrapper->SetRaw(
+								AvatarRGBA, AvatarSize, AvatarWidth, AvatarHeight, ERGBFormat::BGRA, 8))
+							{
+								TArray64<uint8> UncompressedRGBA;
+								if (ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, UncompressedRGBA))
+								{
+									UTexture2D* AvatarTexture = UTexture2D::CreateTransient(
+										AvatarWidth, AvatarHeight, PF_B8G8R8A8);
 
-                                    // 텍스처 데이터 설정
-                                    void* TextureData = AvatarTexture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
-                                    FMemory::Memcpy(TextureData, UncompressedRGBA.GetData(), UncompressedRGBA.Num());
-                                    AvatarTexture->GetPlatformData()->Mips[0].BulkData.Unlock();
-                                    AvatarTexture->UpdateResource();
+									// 텍스처 데이터 설정
+									void* TextureData = AvatarTexture->GetPlatformData()->Mips[0].BulkData.Lock(
+										LOCK_READ_WRITE);
+									FMemory::Memcpy(TextureData, UncompressedRGBA.GetData(), UncompressedRGBA.Num());
+									AvatarTexture->GetPlatformData()->Mips[0].BulkData.Unlock();
+									AvatarTexture->UpdateResource();
 
-                                    delete[] AvatarRGBA;
+									delete[] AvatarRGBA;
 
-                                	UE_LOG(LogTemp, Warning, TEXT("아바타 반환 성공!!!!!!!!!!!!!!!!!!!!!"));
+									UE_LOG(LogTemp, Warning, TEXT("아바타 반환 성공!!!!!!!!!!!!!!!!!!!!!"));
 
-                                    return AvatarTexture;
-                                }
-                            }
+									return AvatarTexture;
+								}
+							}
 
-                            delete[] AvatarRGBA;
-                        }
-                    }
-                }
-            }
-        }
-    }
+							delete[] AvatarRGBA;
+						}
+					}
+				}
+			}
+		}
+	}
 
 	UE_LOG(LogTemp, Warning, TEXT("아바타 반환 실패........"));
-    return nullptr;
+	return nullptr;
 }
 
 ULobbyWidget* ALobbyPlayerController::GetLobbyWidgetRef()
@@ -176,18 +183,31 @@ ULobbyWidget* ALobbyPlayerController::GetLobbyWidgetRef()
 
 void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 {
-	ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>();
-	if(LocalPlayerState)
+	if (HasAuthority())
 	{
-		LocalPlayerState->PlayerInfo.bIsReady = bIsReady;
-		UE_LOG(LogTemp, Error, TEXT("Ready : %s"), bIsReady ? TEXT("true") : TEXT("false"));
-
-		ALobbyGameMode* GameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
-		if(GameMode)
+		ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>();
+		if (LocalPlayerState)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("GameMode->OnPlayerInfoUpdated"));
-			GameMode->OnPlayerInfoUpdated();
+			LocalPlayerState->PlayerInfo.bIsReady = bIsReady;
+			LocalPlayerState->OnRep_PlayerInfo();
+
+			UE_LOG(LogTemp, Error, TEXT("Ready : %s"), bIsReady ? TEXT("true") : TEXT("false"));
+
+			ALobbyGameMode* GameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
+			if (GameMode)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("GameMode->OnPlayerInfoUpdated"));
+				GameMode->OnPlayerInfoUpdated();
+			}
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("LocalPlayerState가 유효하지 않음"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Server_ToggleReady_Implementation : 권한이 없어!"));
 	}
 }
 
@@ -242,11 +262,17 @@ void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayer
 void ALobbyPlayerController::ToggleReady()
 {
 	ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>();
-	if(LocalPlayerState)
+	if (LocalPlayerState)
 	{
-		UE_LOG(LogTemp, Error, TEXT("레디 전환"));
+		UE_LOG(LogTemp, Warning, TEXT("레디 전환"));
+		UE_LOG(LogTemp, Warning, TEXT("원래 레디 : %s"),
+		       LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
 		bool bIsReady = !LocalPlayerState->PlayerInfo.bIsReady;
 		Server_ToggleReady(bIsReady);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LocalPlayerState 가 유효하지 않음"));
 	}
 }

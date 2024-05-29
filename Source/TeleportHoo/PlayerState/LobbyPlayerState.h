@@ -11,13 +11,14 @@ class TELEPORTHOO_API ALobbyPlayerState : public APlayerState
 
 public:
 	// VARIABLES
-	UPROPERTY(ReplicatedUsing=OnRep_PlayerInfo, VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerInfo)
 	FPlayerInfo PlayerInfo;
 
 	// FUNCTION
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-protected:
 	UFUNCTION()
 	void OnRep_PlayerInfo();
+
+protected:
 };

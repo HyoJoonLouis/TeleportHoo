@@ -25,7 +25,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 		if (IsValid(PlayerState))
 		{
 			PlayerState->PlayerInfo.PlayerName = IncomePlayer->GetPlayerName(); // 플레이어 이름 할당 로직
-			PlayerState->PlayerInfo.AvatarImage = IncomePlayer->GetPlayerAvatar(); // 실제 이미지 할당 로직 (구현필요)
+			PlayerState->PlayerInfo.AvatarImage = IncomePlayer->GetPlayerAvatar(); // 실제 이미지 할당 로직
 			PlayerState->PlayerInfo.bIsReady = false;
 
 			ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
@@ -75,21 +75,37 @@ void ALobbyGameMode::Logout(AController* Exiting)
 // 모든 클라이언트에게 최신 플레이어 정보를 동기화
 void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 {
-	ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
-	if (IsValid(LobbyGameState))
+	if (HasAuthority())
 	{
-		for (int32 i = 0; i < LobbyGameState->ConnectedPlayers.Num(); i++)
-		{
-			const FPlayerInfo& PlayerInfo = LobbyGameState->ConnectedPlayers[i];
+		UE_LOG(LogTemp, Warning, TEXT("OnPlayerInfoUpdated_Implementation 진입"));
 
-			for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+		ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
+		if (IsValid(LobbyGameState))
+		{
+			for (int32 i = 0; i < LobbyGameState->ConnectedPlayers.Num(); i++)
 			{
-				ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
-				if (LobbyPlayerController)
+				const FPlayerInfo& PlayerInfo = LobbyGameState->ConnectedPlayers[i];
+
+				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 				{
-					LobbyPlayerController->Client_UpdatePlayerInfo(i, PlayerInfo);
+					ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
+					if (LobbyPlayerController)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("LobbyPlayerController->Client_UpdatePlayerInfo"));
+						UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"), 
+							i, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
+						LobbyPlayerController->Client_UpdatePlayerInfo(i, PlayerInfo);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("PlayerController가 유효하지 않음"));
+					}
 				}
 			}
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp,Error, TEXT("LobbyGameState가 유효하지 않음"));
 	}
 }

@@ -94,4 +94,8 @@ void ULobbyWidget::OnReadyButtonClicked()
 			LPC->ToggleReady();
 		}
 	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Owningplayer가 유효하지 않음"));
+	}
 }

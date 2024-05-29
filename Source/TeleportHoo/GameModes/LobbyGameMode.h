@@ -15,10 +15,7 @@ public:
 	//FUNCTION
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
-
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void OnPlayerInfoUpdated();
-
-protected:
-	
 };
