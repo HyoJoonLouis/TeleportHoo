@@ -18,6 +18,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StartGameTimer();
 	UFUNCTION(BlueprintCallable)
+	void ResetGameTimer();
+	UFUNCTION(BlueprintCallable)
+	void StopGameTimer();
+	UFUNCTION(BlueprintCallable)
 	void AddRound();
 	UFUNCTION(BlueprintCallable)
 	void AddTeamScore(ETeam WinTeam);

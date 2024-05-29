@@ -29,3 +29,8 @@ void UIngameHUD::OnHitEffect()
 {
 	PlayAnimationForward(BloodAnimation);
 }
+
+void UIngameHUD::FadeInOut(bool FadeOut)
+{
+	FadeOut ? PlayAnimationForward(FadeOutAnimation) : PlayAnimationReverse(FadeOutAnimation);
+}

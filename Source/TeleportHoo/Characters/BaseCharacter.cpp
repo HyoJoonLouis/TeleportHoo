@@ -69,11 +69,6 @@ ABaseCharacter::ABaseCharacter()
 	HealthBarComponent->SetRelativeLocation(FVector(0, 0, 200));
 	HealthBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
 
-	MomentumBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("MomentumBarComponent"));
-	MomentumBarComponent->SetupAttachment(GetMesh());
-	MomentumBarComponent->SetRelativeLocation(FVector(0, 0, 190));
-	MomentumBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
-
 	DirectionComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("DirectionComponent"));
 	DirectionComponent->SetupAttachment(GetMesh(), FName("DirectionWidget"));
 	DirectionComponent->SetRelativeLocation(FVector(0, 0, 0));
@@ -90,7 +85,6 @@ void ABaseCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
-	MomentumBarWidget = Cast<UHealthBarWidget>(MomentumBarComponent->GetWidget());
 	DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
 
 	Server_SetHealth(MaxHealth);
@@ -212,13 +206,13 @@ void ABaseCharacter::OnRep_SetHealth()
 
 void ABaseCharacter::OnRep_SetMomentum()
 {
-	if(IsValid(MomentumBarWidget))
+	if(IsValid(HealthBarWidget))
 	{
-		MomentumBarWidget->SetHealth(CurrentMomentum / MaxMomentum);
+		HealthBarWidget->SetMomentum(CurrentMomentum / MaxMomentum);
 	} 
 	else
 	{
-		MomentumBarWidget = Cast<UHealthBarWidget>(MomentumBarComponent->GetWidget());
+		HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
 	}
 }
 
