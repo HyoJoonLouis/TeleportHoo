@@ -17,6 +17,7 @@
 #include <Kismet/KismetMathLibrary.h>
 #include "NiagaraFunctionLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "NiagaraFunctionLibrary.h"
 
 ABaseCharacter::ABaseCharacter()
 {
@@ -407,6 +408,8 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 
 		Server_SetState(ECharacterStates::HIT);
 		Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
+		Server_SpawnNiagara(OnHitEffects[DamageInfo.WeaponType].Niagara[CurrentDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")));
+		Server_PlaySoundAtLocation(OnHitEffects[DamageInfo.WeaponType].SoundBase[CurrentDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")));
 
 		if (CurrentHealth <= 0)
 		{
@@ -429,6 +432,28 @@ void ABaseCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* Anim
 {
 	PlayAnimMontage(AnimMontage);
 }
+
+
+void ABaseCharacter::Server_SpawnNiagara_Implementation(UNiagaraSystem* NiagaraSystem, FVector Location)
+{
+	Multicast_SpawnNiagara(NiagaraSystem, Location);
+}
+
+void ABaseCharacter::Multicast_SpawnNiagara_Implementation(UNiagaraSystem* NiagaraSystem, FVector Location)
+{
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NiagaraSystem, Location);
+}
+
+void ABaseCharacter::Server_PlaySoundAtLocation_Implementation(USoundBase* SoundBase, FVector Location)
+{
+	Multicast_PlaySoundAtLocation(SoundBase, Location);
+}
+
+void ABaseCharacter::Multicast_PlaySoundAtLocation_Implementation(USoundBase* SoundBase, FVector Location)
+{
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), SoundBase, Location);
+}
+
 
 void ABaseCharacter::InputBind()
 {

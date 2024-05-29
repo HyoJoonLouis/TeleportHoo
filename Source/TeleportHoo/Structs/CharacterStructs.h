@@ -41,6 +41,14 @@ enum class EDamageType : uint8
 	SKILL	UMETA(DisplayName = "Skill")
 };
 
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+	NONE	UMETA(DisplayName = "None"),
+	MELEE	UMETA(DisplayName = "Melee"),
+	SWORD	UMETA(DisplayName = "Sword")
+};
+
 USTRUCT(Blueprintable)
 struct FDamageInfo
 {
@@ -55,6 +63,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EDamageType DamageType;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EWeaponType WeaponType;
 };
 
 USTRUCT(Blueprintable)

@@ -7,6 +7,18 @@
 #include <Components/TimelineComponent.h>
 #include "BaseCharacter.generated.h"
 
+USTRUCT(Blueprintable)
+struct FEffects
+{
+public:
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<EDamageDirection, class UNiagaraSystem*> Niagara;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<EDamageDirection, class USoundBase*> SoundBase;
+};
 
 USTRUCT(Blueprintable)
 struct FAttackAnimMontages
@@ -64,7 +76,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool CanTargetBlockAttack();
 
-
 	// Inputs
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
@@ -120,6 +131,16 @@ public:
 	void Server_PlayAnimMontage(class UAnimMontage* AnimMontage);
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void Multicast_PlayAnimMontage(class UAnimMontage* AnimMontage);
+
+	UFUNCTION(Server, Unreliable, BlueprintCallable)
+	void Server_SpawnNiagara(class UNiagaraSystem* NiagaraSystem, FVector Location);
+	UFUNCTION(NetMulticast, Unreliable, BlueprintCallable)
+	void Multicast_SpawnNiagara(class UNiagaraSystem* NiagaraSystem, FVector Location);
+
+	UFUNCTION(Server, Unreliable, BlueprintCallable)
+	void Server_PlaySoundAtLocation(class USoundBase* SoundBase, FVector Location);
+	UFUNCTION(NetMulticast, Unreliable, BlueprintCallable)
+	void Multicast_PlaySoundAtLocation(class USoundBase* SoundBase, FVector Location);
 
 
 	void ChangeToControllerDesiredRotation();
@@ -218,6 +239,9 @@ protected:
 	class UAnimMontage* SkillMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dead")
 	class UAnimMontage* DeadMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Effects")
+	TMap<EWeaponType, FEffects> OnHitEffects;
 
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
