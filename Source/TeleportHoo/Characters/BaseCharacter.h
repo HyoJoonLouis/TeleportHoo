@@ -167,9 +167,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
 	FMomentumValues MomentumValues;
 
-	UPROPERTY(ReplicatedUsing = OnRep_SetState)
+	UPROPERTY(ReplicatedUsing = OnRep_SetState, VisibleAnywhere, Category = "Status | State")
 	ECharacterStates CurrentState;
-	UPROPERTY(ReplicatedUsing = OnRep_SetDirection)
+	UPROPERTY(ReplicatedUsing = OnRep_SetDirection, VIsibleAnywhere, Category = "Status | Direction")
 	EDamageDirection CurrentDirection;
 	UPROPERTY()
 	class UDirectionWidget* DirectionWidget;

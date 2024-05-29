@@ -541,12 +541,12 @@ void ABaseCharacter::Dodge()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
-	Server_SetState(ECharacterStates::DODGE);
 	if (bTargeting && IsValid(TargetActor))
 	{
 		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
 			return;
 		Server_SetMomentum(CurrentMomentum - MomentumValues.OnDodgeRemoveAmount);
+		Server_SetState(ECharacterStates::DODGE);
 		if (MovementVector.X >= 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::RIGHT]);
 		else if (MovementVector.X < 0)
