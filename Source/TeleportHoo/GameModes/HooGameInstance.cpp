@@ -21,7 +21,7 @@ UHooGameInstance::UHooGameInstance()
 	SelectedMapName = "SnowCastle";
 	SelectedMapURL = "/Game/Levels/L_SnowCastle";
 
-	CreateServerInfo.ServerName = "DeafaultServer";
+	CreateServerInfo.ServerName = "DefaultServer";
 	CreateServerInfo.ServerMapName = "DefaultMap";
 	CreateServerInfo.MaxPlayers = 2;
 }

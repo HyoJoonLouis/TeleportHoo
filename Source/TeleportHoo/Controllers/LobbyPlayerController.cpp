@@ -2,6 +2,8 @@
 #include "TeleportHoo/GameState/LobbyGameState.h"
 #include "GameFramework/PlayerState.h"
 #include "TeleportHoo/UI/LobbyWidget.h"
+#include "TeleportHoo/GameModes/LobbyGameMode.h"
+#include "TeleportHoo/PlayerState/LobbyPlayerState.h"
 
 #include "Blueprint/UserWidget.h"
 #include "Engine/Texture2D.h"
@@ -9,13 +11,13 @@
 #include "Modules/ModuleManager.h"
 #include "Interfaces/OnlineIdentityInterface.h"
 #include "RenderUtils.h"
-
+#include "EnhancedInputComponent.h" 
+#include "EnhancedInputSubsystems.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
 #include "OnlineSubsystemSteam.h"
 #include "IImageWrapper.h"
 #include "IImageWrapperModule.h"
-
 #include "steam/steam_api.h"		// https://partner.steamgames.com/doc/api/steam_api   <- 참고
 
 ALobbyPlayerController::ALobbyPlayerController()
@@ -31,6 +33,9 @@ void ALobbyPlayerController::BeginPlay()
 	{
 		UE_LOG(LogTemp, Error, TEXT("Steam API 초기화 실패"))
 	}
+
+	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::BeginPlay"))
+	InitializeLobbyWidget();
 }
 
 void ALobbyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -169,29 +174,42 @@ ULobbyWidget* ALobbyPlayerController::GetLobbyWidgetRef()
 	}
 }
 
-// LobbyUI가 없다면 생성, PlayerLobbyInfo 정보 업데이트
-void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
+void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
+	ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>();
+	if(LocalPlayerState)
+	{
+		LocalPlayerState->PlayerInfo.bIsReady = bIsReady;
+		UE_LOG(LogTemp, Error, TEXT("Ready : %s"), bIsReady ? TEXT("true") : TEXT("false"));
 
+		ALobbyGameMode* GameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
+		if(GameMode)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("GameMode->OnPlayerInfoUpdated"));
+			GameMode->OnPlayerInfoUpdated();
+		}
+	}
+}
+
+void ALobbyPlayerController::InitializeLobbyWidget()
+{
 	if (!LobbyWidgetClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("LobbyWidgetClass가 설정되지 않았습니다!"));
 		return;
 	}
 
-	if (!LobbyWidget && LobbyWidgetClass)
+	if (!LobbyWidget)
 	{
+		this->bShowMouseCursor = true;
+
 		UE_LOG(LogTemp, Warning, TEXT("CreateWidget ULobbyWidget"));
-		LobbyWidget = Cast<ULobbyWidget>(CreateWidget(GetGameInstance(), LobbyWidgetClass));
-		//LobbyWidget = Cast<ULobbyWidget>(CreateWidget(this, LobbyWidgetClass));
-		
-		if (LobbyWidget)
+		LobbyWidget = Cast<ULobbyWidget>(CreateWidget(this, LobbyWidgetClass));
+		if (IsValid(LobbyWidget))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("LobbyWidget->AddToViewport"));
 			LobbyWidget->AddToViewport();
 
-			// UI가 뷰포트에 추가되었는지 확인
 			if (LobbyWidget->IsInViewport())
 			{
 				UE_LOG(LogTemp, Warning, TEXT("LobbyWidget is successfully added to viewport"));
@@ -204,14 +222,31 @@ void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayer
 			LobbyWidget->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
+}
 
-	if (LobbyWidget)
+// LobbyUI가 없다면 생성, PlayerLobbyInfo 정보 업데이트
+void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
+
+	if (!LobbyWidget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("LobbyWidget->UpdatePlayerInfo"));
-		LobbyWidget->UpdatePlayerInfo(PlayerIndex, PlayerInfo);
+		UE_LOG(LogTemp, Error, TEXT("LobbyWidget이 설정되지 않았습니다!"));
+		return;
 	}
-	else
+
+	UE_LOG(LogTemp, Warning, TEXT("LobbyWidget->UpdatePlayerInfo"));
+	LobbyWidget->UpdatePlayerInfo(PlayerIndex, PlayerInfo);
+}
+
+void ALobbyPlayerController::ToggleReady()
+{
+	ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>();
+	if(LocalPlayerState)
 	{
-		UE_LOG(LogTemp, Error, TEXT("LobbyWidget가 쓰레기값"));
+		UE_LOG(LogTemp, Error, TEXT("레디 전환"));
+
+		bool bIsReady = !LocalPlayerState->PlayerInfo.bIsReady;
+		Server_ToggleReady(bIsReady);
 	}
 }
