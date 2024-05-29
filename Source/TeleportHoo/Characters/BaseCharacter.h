@@ -219,6 +219,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dead")
 	class UAnimMontage* DeadMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Niagara")
+
+
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	class UWidgetComponent* HealthBarComponent;
