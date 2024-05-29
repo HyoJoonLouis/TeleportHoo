@@ -26,15 +26,15 @@ public:
 
 	UFUNCTION()
 	void RoundStart();
-
+	UFUNCTION()
+	void RoundLoading();
 	UFUNCTION()
 	void RoundEnd();
-
 	UFUNCTION()
 	void OnGameTimeFinished();
-
 	UFUNCTION()
 	void OnPlayerDiedDelegate(class AIngamePlayerController* DeadCharacter);
+
 protected:
 	UPROPERTY(VisibleAnywhere)
 	TArray<class AIngamePlayerController*> ConnectedPlayers;
@@ -46,6 +46,10 @@ protected:
 	UPROPERTY(EditAnywhere)
 	uint8 MaxPlayer;
 
+	UPROPERTY(EditAnywhere)
+	class ULevelSequence* StartLevelSequence;
+
 	FTimerHandle RoundStartTimerHandle;
+	FTimerHandle RoundLoadingTimerHandle;
 	FTimerHandle RoundEndTimerHandle;
 };

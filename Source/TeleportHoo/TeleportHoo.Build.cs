@@ -8,6 +8,6 @@ public class TeleportHoo : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "MotionTrajectory", "Slate", "SlateCore", "OnlineSubsystem", "OnlineSubsystemSteam", "Niagara" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "MotionTrajectory", "Slate", "SlateCore", "OnlineSubsystem", "OnlineSubsystemSteam", "Niagara", "MovieScene", "LevelSequence"});
 	}
 }

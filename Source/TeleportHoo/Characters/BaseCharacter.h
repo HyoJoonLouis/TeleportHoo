@@ -52,6 +52,8 @@ public:
 	FORCEINLINE FMomentumValues GetActorMomentumValues() const { return MomentumValues; }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE EDamageDirection GetActorDirection() const { return CurrentDirection; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE bool GetTargeting() const { return bTargeting; }
 
 	UFUNCTION()
 	void InputBind();
@@ -162,8 +164,6 @@ protected:
 	float MaxMomentum;
 	UPROPERTY(ReplicatedUsing = OnRep_SetMomentum, EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
 	float CurrentMomentum;
-	UPROPERTY()
-	class UHealthBarWidget* MomentumBarWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
 	FMomentumValues MomentumValues;
 
@@ -222,8 +222,6 @@ protected:
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	class UWidgetComponent* HealthBarComponent;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	class UWidgetComponent* MomentumBarComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	class UWidgetComponent* DirectionComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
