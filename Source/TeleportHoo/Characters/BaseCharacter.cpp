@@ -61,7 +61,7 @@ ABaseCharacter::ABaseCharacter()
 	bActivateCollision = false;
 	TargetDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("TargetDecal"));
 	TargetDecal->SetupAttachment(GetMesh());
-	TargetDecal->DecalSize = FVector(100, 100, 100);
+	TargetDecal->DecalSize = FVector(200, 200, 200);
 	TargetDecal->SetRelativeRotation(FVector(0,90,0).Rotation().Quaternion());
 	TargetDecal->SetVisibility(false, true);
 
@@ -408,13 +408,12 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 
 		Server_SetState(ECharacterStates::HIT);
 		Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
-		Server_SpawnNiagara(OnHitEffects[DamageInfo.WeaponType].Niagara[CurrentDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")));
-		Server_PlaySoundAtLocation(OnHitEffects[DamageInfo.WeaponType].SoundBase[CurrentDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")));
+		Server_SpawnNiagara(OnHitEffects[DamageInfo.WeaponType].Niagara[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")), DamageActor->GetActorRotation());
+		Server_PlaySoundAtLocation(OnHitEffects[DamageInfo.WeaponType].SoundBase[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")));
 
 		if (CurrentHealth <= 0)
 		{
 			Server_SetState(ECharacterStates::DEAD);
-			// 박정환 죽는 애니메이션 넣기
 			Server_PlayAnimMontage(DeadMontage);
 			AIngamePlayerController* DeadPlayerController = Cast<AIngamePlayerController>(GetController());
 			if (DeadPlayerController->OnDeadDelegate.IsBound())
@@ -434,14 +433,14 @@ void ABaseCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* Anim
 }
 
 
-void ABaseCharacter::Server_SpawnNiagara_Implementation(UNiagaraSystem* NiagaraSystem, FVector Location)
+void ABaseCharacter::Server_SpawnNiagara_Implementation(UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation)
 {
-	Multicast_SpawnNiagara(NiagaraSystem, Location);
+	Multicast_SpawnNiagara(NiagaraSystem, Location, Rotation);
 }
 
-void ABaseCharacter::Multicast_SpawnNiagara_Implementation(UNiagaraSystem* NiagaraSystem, FVector Location)
+void ABaseCharacter::Multicast_SpawnNiagara_Implementation(UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation)
 {
-	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NiagaraSystem, Location);
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NiagaraSystem, Location, Rotation);
 }
 
 void ABaseCharacter::Server_PlaySoundAtLocation_Implementation(USoundBase* SoundBase, FVector Location)

@@ -133,9 +133,9 @@ public:
 	void Multicast_PlayAnimMontage(class UAnimMontage* AnimMontage);
 
 	UFUNCTION(Server, Unreliable, BlueprintCallable)
-	void Server_SpawnNiagara(class UNiagaraSystem* NiagaraSystem, FVector Location);
+	void Server_SpawnNiagara(class UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation);
 	UFUNCTION(NetMulticast, Unreliable, BlueprintCallable)
-	void Multicast_SpawnNiagara(class UNiagaraSystem* NiagaraSystem, FVector Location);
+	void Multicast_SpawnNiagara(class UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation);
 
 	UFUNCTION(Server, Unreliable, BlueprintCallable)
 	void Server_PlaySoundAtLocation(class USoundBase* SoundBase, FVector Location);
