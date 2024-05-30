@@ -235,6 +235,7 @@ void ABaseCharacter::OnRep_SetDirection()
 		if (IsLocallyControlled())
 		{
 			DirectionWidget->ChangeDirection(CurrentDirection, CurrentState);
+			UGameplayStatics::PlaySound2D(GetWorld(), ChangeDirectionSoundBase);
 		}
 		else
 		{

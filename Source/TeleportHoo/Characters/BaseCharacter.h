@@ -190,6 +190,8 @@ protected:
 	ECharacterStates CurrentState;
 	UPROPERTY(ReplicatedUsing = OnRep_SetDirection, VIsibleAnywhere, Category = "Status | Direction")
 	EDamageDirection CurrentDirection;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USoundBase* ChangeDirectionSoundBase;
 	UPROPERTY()
 	class UDirectionWidget* DirectionWidget;
 
