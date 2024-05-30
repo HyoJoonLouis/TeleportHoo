@@ -45,7 +45,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
-
+	UFUNCTION()
+	void InputBind();
 public:
 	//Interfaces
 	virtual void OnTargeted_Implementation(const AActor* CauseActor) override;
@@ -66,9 +67,6 @@ public:
 	FORCEINLINE EDamageDirection GetActorDirection() const { return CurrentDirection; }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE bool GetTargeting() const { return bTargeting; }
-
-	UFUNCTION()
-	void InputBind();
 
 	UFUNCTION()
 	void TargetingTimelineFunction(float Value);
@@ -179,7 +177,7 @@ protected:
 	float MaxHealth;
 	UPROPERTY(ReplicatedUsing = OnRep_SetHealth, EditAnywhere, BlueprintReadWrite, Category = "Status | Health")
 	float CurrentHealth;
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	class UHealthBarWidget* HealthBarWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
 	float MaxMomentum;

@@ -66,8 +66,8 @@ ABaseCharacter::ABaseCharacter()
 	TargetDecal->SetVisibility(false, true);
 
 	HealthBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarComponent"));
-	HealthBarComponent->SetupAttachment(GetMesh());
-	HealthBarComponent->SetRelativeLocation(FVector(0, 0, 200));
+	HealthBarComponent->SetupAttachment(GetMesh(), FName("HealthBarWidget"));
+	HealthBarComponent->SetRelativeLocation(FVector(0, 0, 0));
 	HealthBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
 
 	DirectionComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("DirectionComponent"));
@@ -176,6 +176,17 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	DOREPLIFETIME(ABaseCharacter, CurrentDirection);
 	DOREPLIFETIME(ABaseCharacter, CurrentState);
 	DOREPLIFETIME(ABaseCharacter, bTargeting);
+}
+
+void ABaseCharacter::InputBind()
+{
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
 }
 
 void ABaseCharacter::OnTargeted_Implementation(const AActor* CauseActor)
@@ -453,18 +464,6 @@ void ABaseCharacter::Multicast_PlaySoundAtLocation_Implementation(USoundBase* So
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), SoundBase, Location);
 }
 
-
-void ABaseCharacter::InputBind()
-{
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
-}
-
 void ABaseCharacter::TargetingTimelineFunction(float Value)
 {
 	CameraBoom->SocketOffset = FVector(0, UKismetMathLibrary::Lerp(50, 170, Value), 0);
@@ -575,7 +574,10 @@ void ABaseCharacter::Dodge()
 		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
 			return;
 		else
+		{
+			Server_SetState(ECharacterStates::DODGE);
 			Server_PlayAnimMontage(ForwardDodgeMontage);
+		}
 	}
 
 }
