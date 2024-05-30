@@ -19,8 +19,8 @@ struct FPlayerInfo
 	// == 방법과, https://forums.unrealengine.com/t/tarray-find-c2678-error-even-with-operator-overload/422829
 	bool operator==(const FPlayerInfo& Other) const
 	{
-		return PlayerName == Other.PlayerName
-			&& AvatarImage == Other.AvatarImage
-			&& bIsReady == Other.bIsReady;
+		return PlayerName == Other.PlayerName;
+			// && AvatarImage == Other.AvatarImage
+			// && bIsReady == Other.bIsReady;
 	}
 };

@@ -37,6 +37,7 @@ void UPlayerLobbyInfoWidget::UpdatePlayerInfo(const FPlayerInfo& PlayerInfo)
 	if(ReadyStatus)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ReadyStatus->SetText"));
+		UE_LOG(LogTemp, Error, TEXT("Readyyyyyyyyyyyyyyyy!!!!!!!!!! : %d"), PlayerInfo.bIsReady);
 		UE_LOG(LogTemp, Error, TEXT("Readyyyyyyyyyyyyyyyy : %s"), PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 		ReadyStatus->SetText(PlayerInfo.bIsReady ? FText::FromString("READY") : FText::FromString("NOT READY"));
 	}

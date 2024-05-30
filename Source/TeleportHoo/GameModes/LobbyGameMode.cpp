@@ -22,6 +22,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	if (IsValid(IncomePlayer))
 	{
 		ALobbyPlayerState* PlayerState = IncomePlayer->GetPlayerState<ALobbyPlayerState>();
+		
 		if (IsValid(PlayerState))
 		{
 			PlayerState->PlayerInfo.PlayerName = IncomePlayer->GetPlayerName(); // 플레이어 이름 할당 로직
@@ -44,7 +45,22 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 				OnPlayerInfoUpdated();
 			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("LobbyGameState is nullptr"));
+				return;
+			}
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("PlayerState is nullptr"));
+			return;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("IncomePlayer is nullptr"));
+		return;
 	}
 }
 

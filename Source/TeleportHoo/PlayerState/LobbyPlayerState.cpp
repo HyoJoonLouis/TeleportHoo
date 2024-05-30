@@ -16,6 +16,8 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 void ALobbyPlayerState::OnRep_PlayerInfo()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerState::OnRep_PlayerInfo 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_PlayerInfo: PlayerName: %s, bIsReady: %s"),
+		*PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
 	if (APlayerController* PC = Cast<APlayerController>(GetOwner()))
 	{
@@ -25,9 +27,9 @@ void ALobbyPlayerState::OnRep_PlayerInfo()
 			ALobbyGameState* LobbyGameState = GetWorld()->GetGameState<ALobbyGameState>();
 			if (LobbyGameState)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("LPC->Client_UpdatePlayerInfo"));
+				UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerState::OnRep_PlayerInfo : LPC->Client_UpdatePlayerInfo"));
 				int32 PlayerIndex = LobbyGameState->ConnectedPlayers.IndexOfByKey(PlayerInfo);
-				UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d"), PlayerIndex);
+				UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerState::OnRep_PlayerInfo : PlayerIndex: %d"), PlayerIndex);
 				LPC->Client_UpdatePlayerInfo(PlayerIndex, PlayerInfo);
 			}
 		}

@@ -49,6 +49,8 @@ void ALobbyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
 	// 클라이언트에서 플레이어 정보 갱신
+	UE_LOG(LogTemp, Warning, TEXT("Client_UpdatePlayerInfo called with PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"), 
+		PlayerIndex, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
 	UpdatePlayerInfoUI(PlayerIndex, PlayerInfo);
 }
 
@@ -190,9 +192,14 @@ void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 		{
 			LocalPlayerState->PlayerInfo.bIsReady = bIsReady;
 			LocalPlayerState->OnRep_PlayerInfo();
+			
+			UE_LOG(LogTemp, Error, TEXT("Server_ToggleReady : Ready set to : %s"),
+				LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
-			UE_LOG(LogTemp, Error, TEXT("Ready : %s"), bIsReady ? TEXT("true") : TEXT("false"));
-
+			// 복제 시스템이 클라이언트로 값을 전달
+			// LocalPlayerState->ForceNetUpdate();
+			// LocalPlayerState->MarkPackageDirty();
+			
 			ALobbyGameMode* GameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
 			if (GameMode)
 			{
@@ -248,10 +255,23 @@ void ALobbyPlayerController::InitializeLobbyWidget()
 void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
-
+	UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerInfoUI: PlayerName: %s, bIsReady: %s"),
+		*PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
+	
 	if (!LobbyWidget)
 	{
-		UE_LOG(LogTemp, Error, TEXT("LobbyWidget이 설정되지 않았습니다!"));
+		UE_LOG(LogTemp, Error, TEXT("LobbyWidget이 설정되지 않았습니다! 초기화 대기 중..."));
+
+		// 위젯이 초기화될 때까지 대기하는 로직 추가
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, PlayerIndex, PlayerInfo]()
+		{
+			if (LobbyWidget)
+			{
+				UpdatePlayerInfoUI(PlayerIndex, PlayerInfo);
+			}
+		}), 0.1f, false);
+
 		return;
 	}
 
