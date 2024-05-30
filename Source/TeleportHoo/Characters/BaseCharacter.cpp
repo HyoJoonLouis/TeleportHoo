@@ -358,7 +358,7 @@ void ABaseCharacter::Server_HeavyAttack_Implementation()
 	}
 	else
 	{
-		Server_PlayAnimMontage(HeavyAttackMontages[EDamageDirection::RIGHT]);
+		Server_PlayAnimMontage(HeavyAttackMontages[EDamageDirection::LEFT]);
 	}
 }
 
