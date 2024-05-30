@@ -65,10 +65,10 @@ ABaseCharacter::ABaseCharacter()
 	TargetDecal->SetRelativeRotation(FVector(0,90,0).Rotation().Quaternion());
 	TargetDecal->SetVisibility(false, true);
 
-	HealthBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarComponent"));
-	HealthBarComponent->SetupAttachment(GetMesh(), FName("HealthBarWidget"));
-	HealthBarComponent->SetRelativeLocation(FVector(0, 0, 0));
-	HealthBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	HealthComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthComponent"));
+	HealthComponent->SetupAttachment(GetMesh(), FName("HealthBarWidget"));
+	HealthComponent->SetRelativeLocation(FVector(0, 0, 0));
+	HealthComponent->SetWidgetSpace(EWidgetSpace::Screen);
 
 	DirectionComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("DirectionComponent"));
 	DirectionComponent->SetupAttachment(GetMesh(), FName("DirectionWidget"));
@@ -85,7 +85,7 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
+	HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
 	DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
 
 	Server_SetHealth(MaxHealth);
@@ -212,7 +212,7 @@ void ABaseCharacter::OnRep_SetHealth()
 	}
 	else
 	{
-		HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
+		HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
 	}
 }
 
@@ -224,7 +224,7 @@ void ABaseCharacter::OnRep_SetMomentum()
 	} 
 	else
 	{
-		HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
+		HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
 	}
 }
 

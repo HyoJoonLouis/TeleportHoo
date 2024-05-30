@@ -243,7 +243,7 @@ protected:
 
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	class UWidgetComponent* HealthBarComponent;
+	class UWidgetComponent* HealthComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	class UWidgetComponent* DirectionComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
