@@ -408,7 +408,7 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 
 		Server_SetState(ECharacterStates::HIT);
 		Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
-		Server_SpawnNiagara(OnHitEffects[DamageInfo.WeaponType].Niagara[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")), DamageActor->GetActorRotation());
+		Server_SpawnNiagara(OnHitEffects[DamageInfo.WeaponType].Niagara[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")), DamageActor->GetActorRightVector().Rotation());
 		Server_PlaySoundAtLocation(OnHitEffects[DamageInfo.WeaponType].SoundBase[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")));
 
 		if (CurrentHealth <= 0)
