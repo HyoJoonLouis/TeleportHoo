@@ -98,35 +98,38 @@ void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 		UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode : OnPlayerInfoUpdated_Implementation 진입"));
 
 		ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
-		if (IsValid(LobbyGameState))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("LobbyGameState->ConnectedPlayers.Num : %d"),
-				LobbyGameState->ConnectedPlayers.Num());
-
-			for (int32 i = 0; i < LobbyGameState->ConnectedPlayers.Num(); i++)
-			{
-				const FPlayerInfo& PlayerInfo = LobbyGameState->ConnectedPlayers[i];
-
-				for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
-				{
-					ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
-					if (LobbyPlayerController)
-					{
-						UE_LOG(LogTemp, Warning, TEXT("LobbyPlayerController->Client_UpdatePlayerInfo"));
-						UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"),
-						       i, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
-						LobbyPlayerController->Client_UpdatePlayerInfo(i, PlayerInfo);
-					}
-					else
-					{
-						UE_LOG(LogTemp, Error, TEXT("PlayerController가 유효하지 않음"));
-					}
-				}
-			}
-		}
-		else
+		if (!IsValid(LobbyGameState))
 		{
 			UE_LOG(LogTemp, Error, TEXT("LobbyGameState가 유효하지 않음"));
+			return;
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("LobbyGameState->ConnectedPlayers.Num : %d"), LobbyGameState->ConnectedPlayers.Num());
+
+		for (int32 i = 0; i < LobbyGameState->ConnectedPlayers.Num(); i++)
+		{
+			if (!LobbyGameState->ConnectedPlayers.IsValidIndex(i))
+			{
+				UE_LOG(LogTemp, Error, TEXT("ConnectedPlayers 인덱스가 유효하지 않음: %d"), i);
+				continue;
+			}
+
+			const FPlayerInfo& PlayerInfo = LobbyGameState->ConnectedPlayers[i];
+
+			for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+			{
+				ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
+				if (IsValid(LobbyPlayerController))
+				{
+					UE_LOG(LogTemp, Warning, TEXT("LobbyPlayerController->Client_UpdatePlayerInfo"));
+					UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"), i, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
+					LobbyPlayerController->Client_UpdatePlayerInfo(i, PlayerInfo);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("PlayerController가 유효하지 않음"));
+				}
+			}
 		}
 	}
 }
