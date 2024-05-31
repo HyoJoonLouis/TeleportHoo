@@ -15,7 +15,9 @@ protected:
 
 public:
 	void UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
-
+	void SetStartButtonEnabled(bool bEnabled);
+	void SetStartButtonVisibility(bool bIsVisible);
+	
 	UFUNCTION()
 	void OnReadyButtonClicked();
 
@@ -28,6 +30,9 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UPlayerLobbyInfoWidget* WBP_PlayerLobbyInfoWidget_2;
 
+	
+	UPROPERTY(meta = (BindWidget))
+	class UButton* B_StartButton;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_ReadyButton;
 };

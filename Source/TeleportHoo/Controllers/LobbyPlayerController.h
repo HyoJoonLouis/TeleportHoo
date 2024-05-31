@@ -23,7 +23,11 @@ public:
 	// Client
 	UFUNCTION(Client, Reliable)
 	void Client_UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
-
+	UFUNCTION(Client, Reliable)
+	void Client_SetStartButtonEnabled(bool bEnabled);
+	UFUNCTION(Client, Reliable)
+	void Client_SetStartButtonVisibility(bool bIsVisible);
+	
 	// Server
 	UFUNCTION(Server, Reliable)
 	void Server_ToggleReady(bool bIsReady);

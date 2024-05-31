@@ -15,3 +15,15 @@ void ALobbyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(ALobbyGameState, ConnectedPlayers);
 }
+
+bool ALobbyGameState::AreAllPlayersReady() const
+{
+	for(const FPlayerInfo& PlayerInfo : ConnectedPlayers)
+	{
+		if(!PlayerInfo.bIsReady)
+		{
+			return false;
+		}
+	}
+	return true;
+}

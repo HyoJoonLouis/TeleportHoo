@@ -18,4 +18,7 @@ public:
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void OnPlayerInfoUpdated();
+
+	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	void CheckAllPlayersReady();
 };

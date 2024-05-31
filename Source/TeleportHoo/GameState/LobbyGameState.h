@@ -16,6 +16,9 @@ public:
 // FUNCTION
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	bool AreAllPlayersReady() const;
 	
 // VARIABLES
 public:

@@ -36,16 +36,23 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 				UE_LOG(LogTemp, Error, TEXT("Player1 Name : %s"), *LobbyGameState->ConnectedPlayers[0].PlayerName);
 				UE_LOG(LogTemp, Error, TEXT("Player1 Ready : %s"),
-				       LobbyGameState->ConnectedPlayers[0].bIsReady ? TEXT("true") : TEXT("false"));
+					   LobbyGameState->ConnectedPlayers[0].bIsReady ? TEXT("true") : TEXT("false"));
 
 				if (LobbyGameState->ConnectedPlayers.Num() == 2)
 				{
 					UE_LOG(LogTemp, Error, TEXT("Player2 Name: %s"), *LobbyGameState->ConnectedPlayers[1].PlayerName);
 					UE_LOG(LogTemp, Error, TEXT("Player2 Ready : %s"),
-					       LobbyGameState->ConnectedPlayers[1].bIsReady ? TEXT("true") : TEXT("false"));
+						   LobbyGameState->ConnectedPlayers[1].bIsReady ? TEXT("true") : TEXT("false"));
 				}
 
 				OnPlayerInfoUpdated();
+
+				// 호스트에게만 시작 버튼을 활성화
+				if (IncomePlayer->HasAuthority())
+				{
+					UE_LOG(LogTemp, Error, TEXT("시작버튼 활성화"));
+					IncomePlayer->Client_SetStartButtonVisibility(true);
+				}
 			}
 			else
 			{
@@ -65,6 +72,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 }
+
 
 // 로그아웃 처리
 void ALobbyGameMode::Logout(AController* Exiting)
@@ -90,46 +98,97 @@ void ALobbyGameMode::Logout(AController* Exiting)
 	}
 }
 
-// 모든 클라이언트에게 최신 플레이어 정보를 동기화
-void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
+void ALobbyGameMode::CheckAllPlayersReady()
 {
-	if (HasAuthority())
+	UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode::CheckAllPlayersReady 진입"));
+
+	ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
+	if (IsValid(LobbyGameState) && LobbyGameState->AreAllPlayersReady())
 	{
-		UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode : OnPlayerInfoUpdated_Implementation 진입"));
-
-		ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
-		if (!IsValid(LobbyGameState))
+		for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 		{
-			UE_LOG(LogTemp, Error, TEXT("LobbyGameState가 유효하지 않음"));
-			return;
-		}
-
-		UE_LOG(LogTemp, Warning, TEXT("LobbyGameState->ConnectedPlayers.Num : %d"), LobbyGameState->ConnectedPlayers.Num());
-
-		for (int32 i = 0; i < LobbyGameState->ConnectedPlayers.Num(); i++)
-		{
-			if (!LobbyGameState->ConnectedPlayers.IsValidIndex(i))
+			ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
+			if (IsValid(LobbyPlayerController))
 			{
-				UE_LOG(LogTemp, Error, TEXT("ConnectedPlayers 인덱스가 유효하지 않음: %d"), i);
-				continue;
-			}
-
-			const FPlayerInfo& PlayerInfo = LobbyGameState->ConnectedPlayers[i];
-
-			for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
-			{
-				ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
-				if (IsValid(LobbyPlayerController))
+				if (LobbyPlayerController->HasAuthority())
 				{
-					UE_LOG(LogTemp, Warning, TEXT("LobbyPlayerController->Client_UpdatePlayerInfo"));
-					UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"), i, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
-					LobbyPlayerController->Client_UpdatePlayerInfo(i, PlayerInfo);
-				}
-				else
-				{
-					UE_LOG(LogTemp, Error, TEXT("PlayerController가 유효하지 않음"));
+					LobbyPlayerController->Client_SetStartButtonVisibility(true);
 				}
 			}
 		}
 	}
+	else
+	{
+		for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+		{
+			ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
+			if (IsValid(LobbyPlayerController))
+			{
+				if (LobbyPlayerController->HasAuthority())
+				{
+					LobbyPlayerController->Client_SetStartButtonVisibility(false);
+				}
+			}
+		}
+	}
+}
+
+// 모든 클라이언트에게 최신 플레이어 정보를 동기화
+void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
+{
+    if (HasAuthority())
+    {
+        UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode : OnPlayerInfoUpdated_Implementation 진입"));
+
+        ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
+        if (!IsValid(LobbyGameState))
+        {
+            UE_LOG(LogTemp, Error, TEXT("LobbyGameState가 유효하지 않음"));
+            return;
+        }
+
+        UE_LOG(LogTemp, Warning, TEXT("LobbyGameState->ConnectedPlayers.Num : %d"), LobbyGameState->ConnectedPlayers.Num());
+
+        bool bAllPlayersReady = true;
+
+        for (int32 i = 0; i < LobbyGameState->ConnectedPlayers.Num(); i++)
+        {
+            if (!LobbyGameState->ConnectedPlayers.IsValidIndex(i))
+            {
+                UE_LOG(LogTemp, Error, TEXT("ConnectedPlayers 인덱스가 유효하지 않음: %d"), i);
+                continue;
+            }
+
+            const FPlayerInfo& PlayerInfo = LobbyGameState->ConnectedPlayers[i];
+            if (!PlayerInfo.bIsReady)
+            {
+                bAllPlayersReady = false;
+            }
+
+            for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+            {
+                ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
+                if (IsValid(LobbyPlayerController))
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("LobbyPlayerController->Client_UpdatePlayerInfo"));
+                    UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"), i, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
+                    LobbyPlayerController->Client_UpdatePlayerInfo(i, PlayerInfo);
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Error, TEXT("PlayerController가 유효하지 않음"));
+                }
+            }
+        }
+
+    	// 모든 클라이언트에게 Start 버튼의 활성화 상태를 업데이트
+    	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+    	{
+    		ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
+    		if (IsValid(LobbyPlayerController))
+    		{
+    			LobbyPlayerController->Client_SetStartButtonEnabled(bAllPlayersReady);
+    		}
+    	}
+    }
 }

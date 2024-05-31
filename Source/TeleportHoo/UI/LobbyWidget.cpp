@@ -11,43 +11,30 @@ void ULobbyWidget::NativeConstruct()
 
 	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::NativeConstruct"));
 
+	if(B_StartButton)
+	{
+		B_StartButton->SetIsEnabled(false);	
+	}
+	
 	if(B_ReadyButton)
 	{
 		B_ReadyButton->OnClicked.AddDynamic(this, &ULobbyWidget::OnReadyButtonClicked);
 	}
-	
-	// 수동으로 위젯을 초기화
-	WBP_PlayerLobbyInfoWidget_1 = Cast<UPlayerLobbyInfoWidget>(GetWidgetFromName(TEXT("WBP_PlayerLobbyInfoWidget_1")));
-	WBP_PlayerLobbyInfoWidget_2 = Cast<UPlayerLobbyInfoWidget>(GetWidgetFromName(TEXT("WBP_PlayerLobbyInfoWidget_2")));
-	
-	if (WS_WidgetSwitcher)
-	{
-		// 기본으로 첫 번째 위젯 활성화
-		WS_WidgetSwitcher->SetActiveWidget(this);
-		WS_WidgetSwitcher->SetActiveWidgetIndex(0);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("WS_WidgetSwitcher is null"));
-	}
-	
-	if (WBP_PlayerLobbyInfoWidget_1)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("WBP_PlayerLobbyInfoWidget_1 initialized"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("WBP_PlayerLobbyInfoWidget_1 is null"));
-	}
 
-	if (WBP_PlayerLobbyInfoWidget_2)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("WBP_PlayerLobbyInfoWidget_2 initialized"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("WBP_PlayerLobbyInfoWidget_2 is null"));
-	}
+	// 수동으로 위젯을 초기화
+	// WBP_PlayerLobbyInfoWidget_1 = Cast<UPlayerLobbyInfoWidget>(GetWidgetFromName(TEXT("WBP_PlayerLobbyInfoWidget_1")));
+	// WBP_PlayerLobbyInfoWidget_2 = Cast<UPlayerLobbyInfoWidget>(GetWidgetFromName(TEXT("WBP_PlayerLobbyInfoWidget_2")));
+	
+	// if (WS_WidgetSwitcher)
+	// {
+	// 	// 기본으로 첫 번째 위젯 활성화
+	// 	WS_WidgetSwitcher->SetActiveWidget(this);
+	// 	WS_WidgetSwitcher->SetActiveWidgetIndex(0);
+	// }
+	// else
+	// {
+	// 	UE_LOG(LogTemp, Error, TEXT("WS_WidgetSwitcher is null"));
+	// }
 }
 
 void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
@@ -82,6 +69,26 @@ void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& Player
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TargetWidget is nullptr"));
+	}
+}
+
+void ULobbyWidget::SetStartButtonEnabled(bool bEnabled)
+{
+	UE_LOG(LogTemp, Error, TEXT("ULobbyWidget::SetStartButtonEnabled 진입"));
+	if (B_StartButton)
+	{
+		B_StartButton->SetIsEnabled(bEnabled);
+		UE_LOG(LogTemp, Warning, TEXT("SetStartButtonEnabled: %s"), bEnabled ? TEXT("Enabled") : TEXT("Disabled"));
+	}
+}
+
+void ULobbyWidget::SetStartButtonVisibility(bool bIsVisible)
+{
+	UE_LOG(LogTemp, Error, TEXT("ULobbyWidget::SetStartButtonVisibility 진입"));
+	if (B_StartButton)
+	{
+		B_StartButton->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		UE_LOG(LogTemp, Warning, TEXT("SetStartButtonVisibility: %s"), bIsVisible ? TEXT("Visible") : TEXT("Hidden"));
 	}
 }
 

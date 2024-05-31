@@ -51,9 +51,38 @@ void ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation(int32 Player
 	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation 진입"));
 
 	// 클라이언트에서 플레이어 정보 갱신
-	UE_LOG(LogTemp, Warning, TEXT("Client_UpdatePlayerInfo called with PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"), 
-		PlayerIndex, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
+	UE_LOG(LogTemp, Warning,
+	       TEXT("Client_UpdatePlayerInfo called with PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"),
+	       PlayerIndex, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
 	UpdatePlayerInfoUI(PlayerIndex, PlayerInfo);
+}
+
+void ALobbyPlayerController::Client_SetStartButtonEnabled_Implementation(bool bEnabled)
+{
+	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_SetStartButtonEnabled_Implementation 진입"));
+
+	if (LobbyWidget)
+	{
+		LobbyWidget->SetStartButtonEnabled(bEnabled);
+	}
+}
+
+void ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation(bool bIsVisible)
+{
+	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation 진입"));
+
+	if (IsLocalController())
+	{
+		if (LobbyWidget)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Client_SetStartButtonVisibility: %s"), bIsVisible ? TEXT("Visible") : TEXT("Hidden"));
+			LobbyWidget->SetStartButtonVisibility(bIsVisible);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("진입 했는데 IsLocalController 가 아님"));
+	}
 }
 
 // 플레이어의 이름 반환
@@ -199,14 +228,14 @@ void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 
 			LocalPlayerState->OnRep_PlayerInfo();
 			LocalPlayerState->ForceNetUpdate();
-			
+
 			UE_LOG(LogTemp, Error, TEXT("Server_ToggleReady : Ready set to : %s"),
-				LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
+			       LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
 			// 복제 시스템이 클라이언트로 값을 전달
 			// LocalPlayerState->ForceNetUpdate();
 			// LocalPlayerState->MarkPackageDirty();
-			
+
 			ALobbyGameMode* GameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
 			if (GameMode)
 			{
@@ -224,7 +253,7 @@ void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 						UE_LOG(LogTemp, Error, TEXT("PlayerInfo가 ConnectedPlayers 배열에서 찾을 수 없음"));
 					}
 				}
-				
+
 				UE_LOG(LogTemp, Warning, TEXT("GameMode->OnPlayerInfoUpdated"));
 				GameMode->OnPlayerInfoUpdated();
 			}
@@ -240,6 +269,7 @@ void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 	}
 }
 
+// 위젯 관련 초기화 함수
 void ALobbyPlayerController::InitializeLobbyWidget()
 {
 	if (!LobbyWidgetClass)
@@ -269,6 +299,7 @@ void ALobbyPlayerController::InitializeLobbyWidget()
 			}
 
 			LobbyWidget->SetVisibility(ESlateVisibility::Visible);
+			LobbyWidget->SetStartButtonVisibility(false);
 		}
 	}
 }
@@ -278,8 +309,8 @@ void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayer
 {
 	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
 	UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerInfoUI: PlayerName: %s, bIsReady: %s"),
-		*PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
-	
+	       *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
+
 	if (!LobbyWidget)
 	{
 		UE_LOG(LogTemp, Error, TEXT("LobbyWidget이 설정되지 않았습니다! 초기화 대기 중..."));
