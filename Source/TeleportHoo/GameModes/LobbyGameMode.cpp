@@ -22,7 +22,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	if (IsValid(IncomePlayer))
 	{
 		ALobbyPlayerState* PlayerState = IncomePlayer->GetPlayerState<ALobbyPlayerState>();
-		
+
 		if (IsValid(PlayerState))
 		{
 			PlayerState->PlayerInfo.PlayerName = IncomePlayer->GetPlayerName(); // 플레이어 이름 할당 로직
@@ -35,12 +35,14 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 				LobbyGameState->ConnectedPlayers.AddUnique(PlayerState->PlayerInfo);
 
 				UE_LOG(LogTemp, Error, TEXT("Player1 Name : %s"), *LobbyGameState->ConnectedPlayers[0].PlayerName);
-				UE_LOG(LogTemp, Error, TEXT("Player1 Ready : %s"), LobbyGameState->ConnectedPlayers[0].bIsReady ? TEXT("true") : TEXT("false"));
+				UE_LOG(LogTemp, Error, TEXT("Player1 Ready : %s"),
+				       LobbyGameState->ConnectedPlayers[0].bIsReady ? TEXT("true") : TEXT("false"));
 
-				if(LobbyGameState->ConnectedPlayers.Num() == 2)
+				if (LobbyGameState->ConnectedPlayers.Num() == 2)
 				{
 					UE_LOG(LogTemp, Error, TEXT("Player2 Name: %s"), *LobbyGameState->ConnectedPlayers[1].PlayerName);
-					UE_LOG(LogTemp, Error, TEXT("Player2 Ready : %s"), LobbyGameState->ConnectedPlayers[1].bIsReady ? TEXT("true") : TEXT("false"));
+					UE_LOG(LogTemp, Error, TEXT("Player2 Ready : %s"),
+					       LobbyGameState->ConnectedPlayers[1].bIsReady ? TEXT("true") : TEXT("false"));
 				}
 
 				OnPlayerInfoUpdated();
@@ -93,11 +95,14 @@ void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 {
 	if (HasAuthority())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("OnPlayerInfoUpdated_Implementation 진입"));
+		UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode : OnPlayerInfoUpdated_Implementation 진입"));
 
 		ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
 		if (IsValid(LobbyGameState))
 		{
+			UE_LOG(LogTemp, Warning, TEXT("LobbyGameState->ConnectedPlayers.Num : %d"),
+				LobbyGameState->ConnectedPlayers.Num());
+
 			for (int32 i = 0; i < LobbyGameState->ConnectedPlayers.Num(); i++)
 			{
 				const FPlayerInfo& PlayerInfo = LobbyGameState->ConnectedPlayers[i];
@@ -108,20 +113,20 @@ void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 					if (LobbyPlayerController)
 					{
 						UE_LOG(LogTemp, Warning, TEXT("LobbyPlayerController->Client_UpdatePlayerInfo"));
-						UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"), 
-							i, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
+						UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"),
+						       i, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
 						LobbyPlayerController->Client_UpdatePlayerInfo(i, PlayerInfo);
 					}
 					else
 					{
-						UE_LOG(LogTemp, Warning, TEXT("PlayerController가 유효하지 않음"));
+						UE_LOG(LogTemp, Error, TEXT("PlayerController가 유효하지 않음"));
 					}
 				}
 			}
 		}
-	}
-	else
-	{
-		UE_LOG(LogTemp,Error, TEXT("LobbyGameState가 유효하지 않음"));
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("LobbyGameState가 유효하지 않음"));
+		}
 	}
 }

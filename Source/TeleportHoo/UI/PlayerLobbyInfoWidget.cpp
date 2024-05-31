@@ -13,6 +13,8 @@ void UPlayerLobbyInfoWidget::NativeConstruct()
 void UPlayerLobbyInfoWidget::UpdatePlayerInfo(const FPlayerInfo& PlayerInfo)
 {
 	UE_LOG(LogTemp, Error, TEXT("UPlayerLobbyInfoWidget::UpdatePlayerInfo 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerInfo: PlayerName: %s, bIsReady: %s"),
+		*PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
 	if(PlayerName)
 	{
@@ -31,14 +33,13 @@ void UPlayerLobbyInfoWidget::UpdatePlayerInfo(const FPlayerInfo& PlayerInfo)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AvatarImage<-쓰레기"));
+		UE_LOG(LogTemp, Warning, TEXT("AvatarImage 세팅 실패 쓰레기값임"));
 	}
 
 	if(ReadyStatus)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ReadyStatus->SetText"));
-		UE_LOG(LogTemp, Error, TEXT("Readyyyyyyyyyyyyyyyy!!!!!!!!!! : %d"), PlayerInfo.bIsReady);
-		UE_LOG(LogTemp, Error, TEXT("Readyyyyyyyyyyyyyyyy : %s"), PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
+		UE_LOG(LogTemp, Error, TEXT("Set Ready!!! : %s"), PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 		ReadyStatus->SetText(PlayerInfo.bIsReady ? FText::FromString("READY") : FText::FromString("NOT READY"));
 	}
 	else

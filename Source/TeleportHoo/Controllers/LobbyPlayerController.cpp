@@ -48,6 +48,8 @@ void ALobbyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
+	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation 진입"));
+
 	// 클라이언트에서 플레이어 정보 갱신
 	UE_LOG(LogTemp, Warning, TEXT("Client_UpdatePlayerInfo called with PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"), 
 		PlayerIndex, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
@@ -185,13 +187,18 @@ ULobbyWidget* ALobbyPlayerController::GetLobbyWidgetRef()
 
 void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 {
+	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Server_ToggleReady_Implementation 진입"));
+
 	if (HasAuthority())
 	{
 		ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>();
 		if (LocalPlayerState)
 		{
 			LocalPlayerState->PlayerInfo.bIsReady = bIsReady;
+			UE_LOG(LogTemp, Warning, TEXT("LocalPlayerState->PlayerInfo.bIsReady 에다가 새로운 Ready 대입했음"));
+
 			LocalPlayerState->OnRep_PlayerInfo();
+			LocalPlayerState->ForceNetUpdate();
 			
 			UE_LOG(LogTemp, Error, TEXT("Server_ToggleReady : Ready set to : %s"),
 				LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
@@ -203,6 +210,21 @@ void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 			ALobbyGameMode* GameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
 			if (GameMode)
 			{
+				// LobbyGameState의 ConnectedPlayers 배열 업데이트
+				ALobbyGameState* LobbyGameState = GetWorld()->GetGameState<ALobbyGameState>();
+				if (LobbyGameState)
+				{
+					int32 PlayerIndex = LobbyGameState->ConnectedPlayers.IndexOfByKey(LocalPlayerState->PlayerInfo);
+					if (PlayerIndex != INDEX_NONE)
+					{
+						LobbyGameState->ConnectedPlayers[PlayerIndex] = LocalPlayerState->PlayerInfo;
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("PlayerInfo가 ConnectedPlayers 배열에서 찾을 수 없음"));
+					}
+				}
+				
 				UE_LOG(LogTemp, Warning, TEXT("GameMode->OnPlayerInfoUpdated"));
 				GameMode->OnPlayerInfoUpdated();
 			}
@@ -251,10 +273,10 @@ void ALobbyPlayerController::InitializeLobbyWidget()
 	}
 }
 
-// LobbyUI가 없다면 생성, PlayerLobbyInfo 정보 업데이트
+// PlayerLobbyInfo 정보 업데이트
 void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
+	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
 	UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerInfoUI: PlayerName: %s, bIsReady: %s"),
 		*PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 	
@@ -284,7 +306,7 @@ void ALobbyPlayerController::ToggleReady()
 	ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>();
 	if (LocalPlayerState)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("레디 전환"));
+		UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::ToggleReady"));
 		UE_LOG(LogTemp, Warning, TEXT("원래 레디 : %s"),
 		       LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 

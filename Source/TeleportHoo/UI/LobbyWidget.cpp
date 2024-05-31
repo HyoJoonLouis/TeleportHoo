@@ -52,7 +52,9 @@ void ULobbyWidget::NativeConstruct()
 
 void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::UpdatePlayerInfo 진입"));
+	UE_LOG(LogTemp, Error, TEXT("ULobbyWidget::UpdatePlayerInfo 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::UpdatePlayerInfo : PlayerName: %s, bIsReady: %s"),
+		*PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
 	 UPlayerLobbyInfoWidget* TargetWidget = nullptr;
 
