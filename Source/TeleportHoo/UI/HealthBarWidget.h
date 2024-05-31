@@ -12,6 +12,10 @@ class TELEPORTHOO_API UHealthBarWidget : public UUserWidget
 	UPROPERTY(meta = (BindWidget))
 	class UProgressBar* HealthBar;
 
+	UPROPERTY(meta = (BindWidget))
+	class UProgressBar* MomentumBar;
+
 public:
 	void SetHealth(float Value);
+	void SetMomentum(float Value);
 };

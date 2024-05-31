@@ -5,3 +5,8 @@ void UHealthBarWidget::SetHealth(float Value)
 {
 	HealthBar->SetPercent(Value);
 }
+
+void UHealthBarWidget::SetMomentum(float Value)
+{
+	MomentumBar->SetPercent(Value);
+}

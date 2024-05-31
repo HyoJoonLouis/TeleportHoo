@@ -4,7 +4,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/GameState.h"
 #include "GameFramework/PlayerState.h"
-#include "Net/UnrealNetwork.h"
+#include "LevelSequence.h"
+#include "LevelSequenceActor.h"
+#include "LevelSequencePlayer.h"
+#include "MovieSceneSequencePlayer.h"
 
 
 void AIngamePlayerController::BeginPlay()
@@ -36,6 +39,13 @@ void AIngamePlayerController::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(AIngamePlayerController, PlayerTeam);
 }
 
+
+void AIngamePlayerController::OnLevelSequenceEnd()
+{
+	SetViewTargetWithBlend(GetPawn());
+}
+
+
 void AIngamePlayerController::Server_SendChat_Implementation(const FText& TextToSend)
 {
 	TArray<TObjectPtr<APlayerState>> PlayerStates = UGameplayStatics::GetGameState(GetWorld())->PlayerArray;
@@ -59,4 +69,25 @@ void AIngamePlayerController::Client_UpdateScore_Implementation()
 	{
 		GetIngameHUD()->UpdateScore();
 	}
+}
+
+void AIngamePlayerController::Client_FadeInOut_Implementation(bool FadeOut)
+{
+	if (IsValid(GetIngameHUD()))
+	{
+		GetIngameHUD()->FadeInOut(FadeOut);
+	}
+}
+
+void AIngamePlayerController::Client_StartLevelSequence_Implementation(ULevelSequence* LevelSequence)
+{
+	FMovieSceneSequencePlaybackSettings Settings;
+	Settings.bDisableLookAtInput = true;
+	Settings.bDisableMovementInput = true;
+	Settings.bHideHud = true;
+
+	ALevelSequenceActor* SequenceActor;
+	LevelSequencePlayer = ULevelSequencePlayer::CreateLevelSequencePlayer(GetWorld(), LevelSequence, Settings, SequenceActor);
+	LevelSequencePlayer->OnFinished.AddUniqueDynamic(this, &AIngamePlayerController::OnLevelSequenceEnd);
+	LevelSequencePlayer->Play();
 }

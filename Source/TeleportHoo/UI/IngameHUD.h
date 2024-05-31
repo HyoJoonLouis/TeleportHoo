@@ -20,6 +20,10 @@ protected:
 	class UCinemaWidget* WBP_Cinema;
 	UPROPERTY(meta = (BindWidget))
 	class UScoreBoard* WBP_ScoreBoard;
+	UPROPERTY(meta = (BindWidget))
+	class UImage* FadeInOutImage;
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	class UWidgetAnimation* FadeOutAnimation;
 
 public:
 	virtual void NativeConstruct() override;
@@ -29,6 +33,7 @@ public:
 	void UpdateScore();
 	UFUNCTION(BlueprintCallable)
 	void OnHitEffect();
+	void FadeInOut(bool FadeOut);
 
 	FORCEINLINE UChatBox* GetChatBox() { return WBP_ChatBox; }
 };

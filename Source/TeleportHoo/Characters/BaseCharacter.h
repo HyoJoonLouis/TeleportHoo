@@ -7,6 +7,18 @@
 #include <Components/TimelineComponent.h>
 #include "BaseCharacter.generated.h"
 
+USTRUCT(Blueprintable)
+struct FEffects
+{
+public:
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<EDamageDirection, class UNiagaraSystem*> Niagara;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<EDamageDirection, class USoundBase*> SoundBase;
+};
 
 USTRUCT(Blueprintable)
 struct FAttackAnimMontages
@@ -33,7 +45,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
-
+	UFUNCTION()
+	void InputBind();
 public:
 	//Interfaces
 	virtual void OnTargeted_Implementation(const AActor* CauseActor) override;
@@ -52,17 +65,14 @@ public:
 	FORCEINLINE FMomentumValues GetActorMomentumValues() const { return MomentumValues; }
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE EDamageDirection GetActorDirection() const { return CurrentDirection; }
-
-
-	UFUNCTION()
-	void InputBind();
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE bool GetTargeting() const { return bTargeting; }
 
 	UFUNCTION()
 	void TargetingTimelineFunction(float Value);
 
 	UFUNCTION(BlueprintCallable)
 	bool CanTargetBlockAttack();
-
 
 	// Inputs
 	UFUNCTION()
@@ -120,6 +130,16 @@ public:
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void Multicast_PlayAnimMontage(class UAnimMontage* AnimMontage);
 
+	UFUNCTION(Server, Unreliable, BlueprintCallable)
+	void Server_SpawnNiagara(class UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation);
+	UFUNCTION(NetMulticast, Unreliable, BlueprintCallable)
+	void Multicast_SpawnNiagara(class UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation);
+
+	UFUNCTION(Server, Unreliable, BlueprintCallable)
+	void Server_PlaySoundAtLocation(class USoundBase* SoundBase, FVector Location);
+	UFUNCTION(NetMulticast, Unreliable, BlueprintCallable)
+	void Multicast_PlaySoundAtLocation(class USoundBase* SoundBase, FVector Location);
+
 
 	void ChangeToControllerDesiredRotation();
 	void ChangeToRotationToMovement();
@@ -157,21 +177,21 @@ protected:
 	float MaxHealth;
 	UPROPERTY(ReplicatedUsing = OnRep_SetHealth, EditAnywhere, BlueprintReadWrite, Category = "Status | Health")
 	float CurrentHealth;
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	class UHealthBarWidget* HealthBarWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
 	float MaxMomentum;
 	UPROPERTY(ReplicatedUsing = OnRep_SetMomentum, EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
 	float CurrentMomentum;
-	UPROPERTY()
-	class UHealthBarWidget* MomentumBarWidget;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status | Momentum")
 	FMomentumValues MomentumValues;
 
-	UPROPERTY(ReplicatedUsing = OnRep_SetState)
+	UPROPERTY(ReplicatedUsing = OnRep_SetState, VisibleAnywhere, Category = "Status | State")
 	ECharacterStates CurrentState;
-	UPROPERTY(ReplicatedUsing = OnRep_SetDirection)
+	UPROPERTY(ReplicatedUsing = OnRep_SetDirection, VIsibleAnywhere, Category = "Status | Direction")
 	EDamageDirection CurrentDirection;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USoundBase* ChangeDirectionSoundBase;
 	UPROPERTY()
 	class UDirectionWidget* DirectionWidget;
 
@@ -206,7 +226,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Heavy")
 	TMap<EDamageDirection, class UAnimMontage*>	HeavyAttackMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Block")
-	TMap<EDamageDirection, class UAnimMontage*> BlockMontages;
+	TMap<EDamageType, class UAnimMontage*> BlockMontages;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Parry")
+	class UAnimMontage* ParryMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dodge")
 	class UAnimMontage* ForwardDodgeMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dodge")
@@ -215,13 +237,15 @@ protected:
 	TMap<EDamageDirection, class UAnimMontage*> HitMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Skill")
 	class UAnimMontage* SkillMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dead")
+	class UAnimMontage* DeadMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Effects")
+	TMap<EWeaponType, FEffects> OnHitEffects;
 
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	class UWidgetComponent* HealthBarComponent;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-	class UWidgetComponent* MomentumBarComponent;
+	class UWidgetComponent* HealthComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	class UWidgetComponent* DirectionComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")

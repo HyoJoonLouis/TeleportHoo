@@ -22,7 +22,9 @@ public class TeleportHoo : ModuleRules
 			"SlateCore", 
 			"OnlineSubsystem", 
 			"OnlineSubsystemSteam", 
-			"Niagara"
+			"Niagara",
+			"MovieScene", 
+			"LevelSequence"
 		});
 
         // Steam SDK 경로 설정
