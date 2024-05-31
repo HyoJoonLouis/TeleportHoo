@@ -63,7 +63,7 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 
 	UE_LOG(LogTemp, Warning, TEXT("OnFindSessionsComplete, Succeeded : %d"), bSucceeded);
 
-	if (bSucceeded)
+	if (bSucceeded && SessionSearch->SearchResults.Num() > 0)
 	{
 		int32 ArrayIndex = -1;
 
@@ -175,9 +175,13 @@ void UHooGameInstance::FindServer()
 		UE_LOG(LogTemp, Warning, TEXT("FindServer -> IsLan"));
 	}
 	SessionSearch->MaxSearchResults = 1000;
-	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+	// SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
+	UE_LOG(LogTemp, Warning, TEXT("Initiating FindSessions call"));
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
+
+	// Bind delegate to handle the completion of the FindSessions call
+	SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UHooGameInstance::OnFindSessionsComplete);
 }
 
 void UHooGameInstance::JoinServer(int32 ArrayIndex)
