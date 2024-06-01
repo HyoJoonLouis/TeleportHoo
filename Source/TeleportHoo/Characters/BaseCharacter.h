@@ -103,7 +103,8 @@ public:
 	void OnRep_SetDirection();
 	UFUNCTION()
 	void OnRep_SetTargeting();
-
+	UFUNCTION(Client, Reliable, BlueprintCallable)
+	void Client_OnPossessed();
 	UFUNCTION(Server, UnReliable, BlueprintCallable)
 	void Server_SetState(ECharacterStates NewState);
 	UFUNCTION(Server, Reliable, BlueprintCallable)
@@ -120,7 +121,6 @@ public:
 	void Server_HeavyAttack();
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_TargetBlockAttack(AActor* Attacker, AActor* Blocker, EDamageDirection Direction);
-
 	UFUNCTION(Client, UnReliable, BlueprintCallable)
 	void Client_TakeDamage(AActor* CauseActor, FDamageInfo DamageInfo);
 	UFUNCTION(Server, Reliable, BlueprintCallable)
@@ -237,6 +237,8 @@ protected:
 	TMap<EDamageDirection, class UAnimMontage*> HitMontages;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Skill")
 	class UAnimMontage* SkillMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Skill | Block")
+	class UAnimMontage* SkillBlockMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dead")
 	class UAnimMontage* DeadMontage;
 

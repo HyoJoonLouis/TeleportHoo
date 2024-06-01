@@ -103,7 +103,7 @@ void AInGameGameMode::RoundStart()
 		SpawnedActor = GetWorld()->SpawnActor<ABaseCharacter>(SpawnActor, PlayerStart->GetActorLocation(), PlayerStart->GetActorRotation());
 		Player->ClientSetRotation(PlayerStart->GetActorRotation());
 		Player->Possess(SpawnedActor);
-		SpawnedActor->InputBind();
+		SpawnedActor->Client_OnPossessed();
 		Player->Client_FadeInOut(true);
 	}
 	GetGameState<AIngameGameState>()->AddRound();

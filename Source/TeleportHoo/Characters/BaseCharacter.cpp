@@ -55,7 +55,6 @@ ABaseCharacter::ABaseCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = true;
 	FollowCamera->FieldOfView = 78;
-	FollowCamera->SetIsReplicated(true);
 
 	bTargeting = false;
 	bActivateCollision = false;
@@ -85,13 +84,11 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
-	DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
-
-	Server_SetHealth(MaxHealth);
-	Server_SetMomentum(MaxMomentum / 2);
-
-	InputBind();
+	//HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
+	//DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
+	//Server_SetHealth(MaxHealth);
+	//Server_SetMomentum(MaxMomentum / 2);
+	//InputBind();
 
 	// Timeline
 	if (TargetingCurve)
@@ -102,7 +99,6 @@ void ABaseCharacter::BeginPlay()
 		TargetingTimeline.AddInterpFloat(TargetingCurve, TargetingCurveCallback);
 		TargetingTimeline.SetTimelineLength(0.4f);
 	}
-
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
@@ -285,6 +281,26 @@ void ABaseCharacter::OnRep_SetTargeting()
 	}
 }
 
+void ABaseCharacter::Client_OnPossessed_Implementation()
+{
+	AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(Controller);
+
+	HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
+	DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
+	Server_SetHealth(MaxHealth);
+	Server_SetMomentum(MaxMomentum / 2);
+
+	if (PlayerController)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+
+		HealthBarWidget->IsLocal(true);
+	}
+}
+
 
 void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
 {
@@ -375,16 +391,6 @@ void ABaseCharacter::Server_TargetBlockAttack_Implementation(AActor* Attacker, A
 
 	AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[Direction]);
 	BlockActor->Server_PlayAnimMontage(ParryMontages);
-	//if (Direction == EDamageDirection::LEFT)
-	//{
-	//	AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::LEFT]);
-	//	BlockActor->Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
-	//}
-	//else if (Direction == EDamageDirection::RIGHT)
-	//{
-	//	AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::RIGHT]);
-	//	BlockActor->Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
-	//}
 }
 
 void ABaseCharacter::Client_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
@@ -419,7 +425,10 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		DamageActor->Server_SetMomentum(DamageActor->GetCurrentMomentum() + DamageActor->GetActorMomentumValues().OnHitSucceedAddAmount);
 
 		Server_SetState(ECharacterStates::HIT);
-		Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
+		if (DamageInfo.DamageType == EDamageType::SKILL)
+			Server_PlayAnimMontage(SkillBlockMontage);
+		else
+			Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
 		Server_SpawnNiagara(OnHitEffects[DamageInfo.WeaponType].Niagara[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")), DamageActor->GetActorRightVector().Rotation());
 		Server_PlaySoundAtLocation(OnHitEffects[DamageInfo.WeaponType].SoundBase[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")));
 
