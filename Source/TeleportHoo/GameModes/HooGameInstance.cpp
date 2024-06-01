@@ -274,8 +274,10 @@ void UHooGameInstance::SetCreateServerInfo(FString ServerName, FString ServerMap
 }
 
 
-FString UHooGameInstance::GetCreateServerName()
+FString UHooGameInstance::GetCreateServerName() const
 {
+	UE_LOG(LogTemp, Warning, TEXT("UHooGameInstance::GetCreateServerName 진입"));
+
 	return CreateServerInfo.ServerName;
 }
 
@@ -307,25 +309,4 @@ void UHooGameInstance::InitializeMaps()
 		Map.MapOverviewImage = Map2OverviewImage.Object;
 		MapList.Add(Map);
 	}
-}
-
-void UHooGameInstance::CCC()
-{
-	FString DisplayName;
-
-	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
-	if (OnlineSub)
-	{
-		IOnlineIdentityPtr Identity = OnlineSub->GetIdentityInterface();
-		if (Identity.IsValid())
-		{
-			TSharedPtr<const FUniqueNetId> UserId = Identity->GetUniquePlayerId(0);
-			if (UserId.IsValid())
-			{
-				DisplayName = Identity->GetPlayerNickname(*UserId);
-			}
-		}
-	}
-
-	// UE_LOG(LogTemp, Warning, TEXT("Player Display Name: %s"), *DisplayName);
 }

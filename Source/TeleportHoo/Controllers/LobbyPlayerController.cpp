@@ -37,6 +37,11 @@ void ALobbyPlayerController::BeginPlay()
 
 	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::BeginPlay"))
 	InitializeLobbyWidget();
+
+	if(LobbyWidget)
+	{
+		LobbyWidget->SetServerName(ServerName);
+	}
 }
 
 void ALobbyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -71,17 +76,33 @@ void ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation(bool
 {
 	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation 진입"));
 
-	if (IsLocalController())
+	if (LobbyWidget)
 	{
-		if (LobbyWidget)
+		if (HasAuthority())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Client_SetStartButtonVisibility: %s"), bIsVisible ? TEXT("Visible") : TEXT("Hidden"));
 			LobbyWidget->SetStartButtonVisibility(bIsVisible);
+			UE_LOG(LogTemp, Warning, TEXT("Host: Start button visibility set to %s"), bIsVisible ? TEXT("Visible") : TEXT("Hidden"));
 		}
+		else
+		{
+			LobbyWidget->SetStartButtonVisibility(false);
+			UE_LOG(LogTemp, Warning, TEXT("Client: Start button visibility set to Hidden"));
+		}
+	}
+}
+
+void ALobbyPlayerController::Client_SetServerName_Implementation(const FString& InServerName)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Client_SetServerName_Implementation 진입"));
+
+	ServerName = InServerName;
+	if(LobbyWidget)
+	{
+		LobbyWidget->SetServerName(ServerName);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("진입 했는데 IsLocalController 가 아님"));
+		UE_LOG(LogTemp, Warning, TEXT("LobbyWidget is nullptr"))
 	}
 }
 
@@ -224,17 +245,10 @@ void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 		if (LocalPlayerState)
 		{
 			LocalPlayerState->PlayerInfo.bIsReady = bIsReady;
-			UE_LOG(LogTemp, Warning, TEXT("LocalPlayerState->PlayerInfo.bIsReady 에다가 새로운 Ready 대입했음"));
-
 			LocalPlayerState->OnRep_PlayerInfo();
 			LocalPlayerState->ForceNetUpdate();
 
-			UE_LOG(LogTemp, Error, TEXT("Server_ToggleReady : Ready set to : %s"),
-			       LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
-
-			// 복제 시스템이 클라이언트로 값을 전달
-			// LocalPlayerState->ForceNetUpdate();
-			// LocalPlayerState->MarkPackageDirty();
+			UE_LOG(LogTemp, Error, TEXT("Server_ToggleReady : Ready set to : %s"), LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
 			ALobbyGameMode* GameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
 			if (GameMode)
@@ -299,7 +313,15 @@ void ALobbyPlayerController::InitializeLobbyWidget()
 			}
 
 			LobbyWidget->SetVisibility(ESlateVisibility::Visible);
+			
 			LobbyWidget->SetStartButtonVisibility(false);
+			LobbyWidget->SetStartButtonEnabled(false);
+
+			if(HasAuthority())
+			{
+				LobbyWidget->SetStartButtonVisibility(true);
+				LobbyWidget->SetStartButtonEnabled(false);
+			}
 		}
 	}
 }
@@ -338,8 +360,7 @@ void ALobbyPlayerController::ToggleReady()
 	if (LocalPlayerState)
 	{
 		UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::ToggleReady"));
-		UE_LOG(LogTemp, Warning, TEXT("원래 레디 : %s"),
-		       LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
+		UE_LOG(LogTemp, Warning, TEXT("원래 레디 : %s"), LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
 		bool bIsReady = !LocalPlayerState->PlayerInfo.bIsReady;
 		Server_ToggleReady(bIsReady);

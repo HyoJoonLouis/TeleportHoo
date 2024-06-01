@@ -1,10 +1,10 @@
 #include "LobbyGameMode.h"
-
 #include "ShaderPrintParameters.h"
 #include "Kismet/GameplayStatics.h"
 #include "TeleportHoo/Controllers/LobbyPlayerController.h"
 #include "TeleportHoo/GameState/LobbyGameState.h"
 #include "TeleportHoo/PlayerState/LobbyPlayerState.h"
+#include "HooGameInstance.h"
 
 ALobbyGameMode::ALobbyGameMode()
 {
@@ -52,6 +52,16 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 				{
 					UE_LOG(LogTemp, Error, TEXT("시작버튼 활성화"));
 					IncomePlayer->Client_SetStartButtonVisibility(true);
+				}
+
+				// 새로운 플레이어에게 방 이름 설정
+				UHooGameInstance* GameInstance = Cast<UHooGameInstance>(GetGameInstance());
+				if (GameInstance)
+				{
+					UE_LOG(LogTemp, Error, TEXT("방제목 설정"));
+					FString ServerName = GameInstance->GetCreateServerName();
+					UE_LOG(LogTemp, Warning, TEXT("방제목 : %s"), *ServerName);
+					IncomePlayer->Client_SetServerName(ServerName);
 				}
 			}
 			else
@@ -173,6 +183,7 @@ void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
                     UE_LOG(LogTemp, Warning, TEXT("LobbyPlayerController->Client_UpdatePlayerInfo"));
                     UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"), i, *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
                     LobbyPlayerController->Client_UpdatePlayerInfo(i, PlayerInfo);
+					LobbyPlayerController->Client_SetStartButtonVisibility(false);
                 }
                 else
                 {
@@ -181,14 +192,22 @@ void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
             }
         }
 
-    	// 모든 클라이언트에게 Start 버튼의 활성화 상태를 업데이트
-    	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
-    	{
-    		ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
-    		if (IsValid(LobbyPlayerController))
-    		{
-    			LobbyPlayerController->Client_SetStartButtonEnabled(bAllPlayersReady);
-    		}
-    	}
-    }
+        // 모든 클라이언트에게 Start 버튼의 활성화 상태를 업데이트
+        for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+        {
+            ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
+            if (IsValid(LobbyPlayerController))
+            {
+				if(LobbyPlayerController->HasAuthority())
+				{
+					LobbyPlayerController->Client_SetStartButtonEnabled(bAllPlayersReady);
+					LobbyPlayerController->Client_SetStartButtonVisibility(true);
+				}
+				else
+				{
+					LobbyPlayerController->Client_SetStartButtonVisibility(false);
+				}
+			}
+		}
+	}
 }

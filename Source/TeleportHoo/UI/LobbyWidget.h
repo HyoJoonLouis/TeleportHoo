@@ -21,6 +21,9 @@ public:
 	UFUNCTION()
 	void OnReadyButtonClicked();
 
+	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	void SetServerName(const FString& ServerName);
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	class UWidgetSwitcher* WS_WidgetSwitcher;
@@ -29,10 +32,12 @@ protected:
 	class UPlayerLobbyInfoWidget* WBP_PlayerLobbyInfoWidget_1;
 	UPROPERTY(meta = (BindWidget))
 	class UPlayerLobbyInfoWidget* WBP_PlayerLobbyInfoWidget_2;
-
 	
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_StartButton;
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_ReadyButton;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* T_ServerName;
 };

@@ -99,12 +99,12 @@ public:
 	void JoinServer(int32 ArrayIndex);
 	UFUNCTION(BlueprintCallable)
 	void GameStart();
-
+	
 	// CreateServerInfo
 	UFUNCTION(BlueprintCallable)
 	void SetCreateServerInfo(FString ServerName, FString ServerMapName, int32 MaxPlayer);
 	UFUNCTION(BlueprintCallable)
-	FString GetCreateServerName();
+	FString GetCreateServerName() const;
 	
 	// Map 
 	UFUNCTION(BlueprintCallable)
@@ -149,9 +149,4 @@ protected:
 	FServerSearchingDel SearchingForServerDel;
 	UPROPERTY(BlueprintAssignable)
 	FMapInfoDel FMapNameDel;
-
-public:
-	// Test
-	UFUNCTION(BlueprintCallable)
-	void CCC();
 };

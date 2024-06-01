@@ -20,21 +20,6 @@ void ULobbyWidget::NativeConstruct()
 	{
 		B_ReadyButton->OnClicked.AddDynamic(this, &ULobbyWidget::OnReadyButtonClicked);
 	}
-
-	// 수동으로 위젯을 초기화
-	// WBP_PlayerLobbyInfoWidget_1 = Cast<UPlayerLobbyInfoWidget>(GetWidgetFromName(TEXT("WBP_PlayerLobbyInfoWidget_1")));
-	// WBP_PlayerLobbyInfoWidget_2 = Cast<UPlayerLobbyInfoWidget>(GetWidgetFromName(TEXT("WBP_PlayerLobbyInfoWidget_2")));
-	
-	// if (WS_WidgetSwitcher)
-	// {
-	// 	// 기본으로 첫 번째 위젯 활성화
-	// 	WS_WidgetSwitcher->SetActiveWidget(this);
-	// 	WS_WidgetSwitcher->SetActiveWidgetIndex(0);
-	// }
-	// else
-	// {
-	// 	UE_LOG(LogTemp, Error, TEXT("WS_WidgetSwitcher is null"));
-	// }
 }
 
 void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
@@ -106,5 +91,21 @@ void ULobbyWidget::OnReadyButtonClicked()
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Owningplayer가 유효하지 않음"));
+	}
+}
+
+void ULobbyWidget::SetServerName(const FString& ServerName)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::SetServerName 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ServerName: %s"), *ServerName);
+	
+	if(T_ServerName)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("T_ServerName->SetText 진입"));
+		T_ServerName->SetText(FText::FromString(ServerName));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ServerNameTextBlock is nullptr"));
 	}
 }

@@ -27,6 +27,8 @@ public:
 	void Client_SetStartButtonEnabled(bool bEnabled);
 	UFUNCTION(Client, Reliable)
 	void Client_SetStartButtonVisibility(bool bIsVisible);
+	UFUNCTION(Client, Reliable)
+	void Client_SetServerName(const FString& InServerName);
 	
 	// Server
 	UFUNCTION(Server, Reliable)
@@ -47,6 +49,10 @@ private:
 	void UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
 
 	// VARIABLES
+public:
+	UPROPERTY(BlueprintReadOnly, Category = "Lobby")
+	FString ServerName;
+	
 protected:
 	UPROPERTY()
 	class ULobbyWidget* LobbyWidget;
@@ -56,4 +62,5 @@ protected:
 	
 private:
 
+	
 };
