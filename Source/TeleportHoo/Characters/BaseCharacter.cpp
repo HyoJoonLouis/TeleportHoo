@@ -90,6 +90,9 @@ void ABaseCharacter::BeginPlay()
 	//Server_SetMomentum(MaxMomentum / 2);
 	//InputBind();
 
+	HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
+	DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
+
 	// Timeline
 	if (TargetingCurve)
 	{
@@ -297,7 +300,7 @@ void ABaseCharacter::Client_OnPossessed_Implementation()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 
-		HealthBarWidget->IsLocal(true);
+		HealthBarWidget->IsLocal(IsLocallyControlled());
 	}
 }
 
