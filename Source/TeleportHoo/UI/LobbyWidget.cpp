@@ -83,15 +83,15 @@ void ULobbyWidget::OnStartButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("스타트 버튼 클릭됨"));
 	
-	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
-	if (PlayerController && PlayerController->HasAuthority())
-	{
-		ALobbyGameMode* LobbyGameMode = Cast<ALobbyGameMode>(UGameplayStatics::GetGameMode(this));
-		if (LobbyGameMode)
-		{
-			LobbyGameMode->StartCharacterSelection();
-		}
-	}
+	//APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+	//if (PlayerController && PlayerController->HasAuthority())
+	//{
+	//	ALobbyGameMode* LobbyGameMode = Cast<ALobbyGameMode>(UGameplayStatics::GetGameMode(this));
+	//	if (LobbyGameMode)
+	//	{
+	//		LobbyGameMode->StartCharacterSelection();
+	//	}
+	//}
 }
 
 void ULobbyWidget::OnReadyButtonClicked()

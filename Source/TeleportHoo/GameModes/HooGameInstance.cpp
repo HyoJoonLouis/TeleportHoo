@@ -19,7 +19,7 @@ UHooGameInstance::UHooGameInstance()
 	InitializeMaps();
 
 	SelectedMapName = "SnowCastle";
-	SelectedMapURL = "/Game/Levels/L_SnowCastle";
+	SelectedMapURL = "/Game/Levels/L_SnowCastle1";
 
 	CreateServerInfo.ServerName = "DefaultServer";
 	CreateServerInfo.ServerMapName = "DefaultMap";
@@ -291,7 +291,7 @@ void UHooGameInstance::InitializeMaps()
 	{
 		FMapInfo Map;
 		Map.MapName = "SnowCastle";
-		Map.MapURL = "/Game/Levels/L_SnowCastle";
+		Map.MapURL = "/Game/Levels/L_SnowCastle1";
 		Map.MapImage = Map1Image.Object;
 		Map.MapOverviewImage = Map1OverviewImage.Object;
 		MapList.Add(Map);
