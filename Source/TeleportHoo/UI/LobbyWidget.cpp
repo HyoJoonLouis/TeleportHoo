@@ -1,5 +1,6 @@
 #include "LobbyWidget.h"
-
+#include "../GameModes/LobbyGameMode.h"
+#include "Kismet/GameplayStatics.h"
 #include "Components/Button.h"
 #include  "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
@@ -11,12 +12,13 @@ void ULobbyWidget::NativeConstruct()
 
 	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::NativeConstruct"));
 
-	if(B_StartButton)
+	if (B_StartButton)
 	{
-		B_StartButton->SetIsEnabled(false);	
+		B_StartButton->SetIsEnabled(false);
+		B_StartButton->OnClicked.AddDynamic(this, &ULobbyWidget::OnStartButtonClicked);
 	}
-	
-	if(B_ReadyButton)
+
+	if (B_ReadyButton)
 	{
 		B_ReadyButton->OnClicked.AddDynamic(this, &ULobbyWidget::OnReadyButtonClicked);
 	}
@@ -26,17 +28,17 @@ void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& Player
 {
 	UE_LOG(LogTemp, Error, TEXT("ULobbyWidget::UpdatePlayerInfo 진입"));
 	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::UpdatePlayerInfo : PlayerName: %s, bIsReady: %s"),
-		*PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
+	       *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
-	 UPlayerLobbyInfoWidget* TargetWidget = nullptr;
+	UPlayerLobbyInfoWidget* TargetWidget = nullptr;
 
 	// PlayerIndex 따라서 업데이트할 위젯 선택
-	if(PlayerIndex == 0)
+	if (PlayerIndex == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TargetWidget = WBP_PlayerLobbyInfoWidget_1"));
 		TargetWidget = WBP_PlayerLobbyInfoWidget_1;
 	}
-	else if(PlayerIndex == 1)
+	else if (PlayerIndex == 1)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TargetWidget = WBP_PlayerLobbyInfoWidget_2"));
 		TargetWidget = WBP_PlayerLobbyInfoWidget_2;
@@ -46,7 +48,7 @@ void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& Player
 		UE_LOG(LogTemp, Warning, TEXT("PlayerIndex 이상함"));
 	}
 
-	if(TargetWidget)
+	if (TargetWidget)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TargetWidget->UpdatePlayerInfo"));
 		TargetWidget->UpdatePlayerInfo(PlayerInfo);
@@ -77,13 +79,28 @@ void ULobbyWidget::SetStartButtonVisibility(bool bIsVisible)
 	}
 }
 
+void ULobbyWidget::OnStartButtonClicked()
+{
+	UE_LOG(LogTemp, Warning, TEXT("스타트 버튼 클릭됨"));
+	
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+	if (PlayerController && PlayerController->HasAuthority())
+	{
+		ALobbyGameMode* LobbyGameMode = Cast<ALobbyGameMode>(UGameplayStatics::GetGameMode(this));
+		if (LobbyGameMode)
+		{
+			LobbyGameMode->StartCharacterSelection();
+		}
+	}
+}
+
 void ULobbyWidget::OnReadyButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("레디 버튼 클릭됨"));
 
-	if(APlayerController* PC = GetOwningPlayer())
+	if (APlayerController* PC = GetOwningPlayer())
 	{
-		if(ALobbyPlayerController* LPC = Cast<ALobbyPlayerController>(PC))
+		if (ALobbyPlayerController* LPC = Cast<ALobbyPlayerController>(PC))
 		{
 			LPC->ToggleReady();
 		}
@@ -98,8 +115,8 @@ void ULobbyWidget::SetServerName(const FString& ServerName)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::SetServerName 진입"));
 	UE_LOG(LogTemp, Warning, TEXT("ServerName: %s"), *ServerName);
-	
-	if(T_ServerName)
+
+	if (T_ServerName)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("T_ServerName->SetText 진입"));
 		T_ServerName->SetText(FText::FromString(ServerName));
@@ -109,3 +126,16 @@ void ULobbyWidget::SetServerName(const FString& ServerName)
 		UE_LOG(LogTemp, Warning, TEXT("ServerNameTextBlock is nullptr"));
 	}
 }
+
+void ULobbyWidget::SetWidgetSwitcherIndex(int32 Index)
+{
+	if (IsValid(WS_WidgetSwitcher))
+	{
+		WS_WidgetSwitcher->SetActiveWidgetIndex(Index);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WidgetSwitcher is nullptr"));
+	}
+}
+

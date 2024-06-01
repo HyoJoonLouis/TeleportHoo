@@ -29,6 +29,9 @@ public:
 	void Client_SetStartButtonVisibility(bool bIsVisible);
 	UFUNCTION(Client, Reliable)
 	void Client_SetServerName(const FString& InServerName);
+	UFUNCTION(Client, Reliable)
+	void Client_StartCharacterSelection();
+	
 	
 	// Server
 	UFUNCTION(Server, Reliable)

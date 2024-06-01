@@ -17,22 +17,28 @@ public:
 	void UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
 	void SetStartButtonEnabled(bool bEnabled);
 	void SetStartButtonVisibility(bool bIsVisible);
-	
-	UFUNCTION()
+
+	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	void OnStartButtonClicked();
+	UFUNCTION(BlueprintCallable, Category = "Lobby")
 	void OnReadyButtonClicked();
 
 	UFUNCTION(BlueprintCallable, Category = "Lobby")
 	void SetServerName(const FString& ServerName);
 
+	void SetWidgetSwitcherIndex(int32 Index);
+
+public:
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	class UWidgetSwitcher* WS_WidgetSwitcher;
-	
+
 	UPROPERTY(meta = (BindWidget))
 	class UPlayerLobbyInfoWidget* WBP_PlayerLobbyInfoWidget_1;
 	UPROPERTY(meta = (BindWidget))
 	class UPlayerLobbyInfoWidget* WBP_PlayerLobbyInfoWidget_2;
-	
+
 	UPROPERTY(meta = (BindWidget))
 	class UButton* B_StartButton;
 	UPROPERTY(meta = (BindWidget))

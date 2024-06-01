@@ -106,6 +106,16 @@ void ALobbyPlayerController::Client_SetServerName_Implementation(const FString& 
 	}
 }
 
+void ALobbyPlayerController::Client_StartCharacterSelection_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Client_StartCharacterSelection_Implementation 진입"));
+
+	if (IsValid(LobbyWidget))
+	{
+		LobbyWidget->SetWidgetSwitcherIndex(1);
+	}
+}
+
 // 플레이어의 이름 반환
 FString ALobbyPlayerController::GetPlayerName()
 {

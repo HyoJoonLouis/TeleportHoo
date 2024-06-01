@@ -21,4 +21,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Lobby")
 	void CheckAllPlayersReady();
+
+	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	void StartCharacterSelection();
 };
