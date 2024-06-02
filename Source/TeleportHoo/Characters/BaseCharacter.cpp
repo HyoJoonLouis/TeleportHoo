@@ -4,6 +4,7 @@
 #include "../UI/IngameHUD.h"
 #include "../GameModes/IngamePlayerController.h"
 #include "CharacterTrajectoryComponent.h"
+#include "Components/AudioComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/DecalComponent.h"
 #include "Camera/CameraComponent.h"
@@ -74,6 +75,9 @@ ABaseCharacter::ABaseCharacter()
 	DirectionComponent->SetRelativeLocation(FVector(0, 0, 0));
 	DirectionComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	DirectionComponent->SetVisibility(false, true);
+
+	SoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("SoundComponent"));
+	SoundComponent->SetupAttachment(GetMesh());
 
 	TrajectoryComponent = CreateDefaultSubobject<UCharacterTrajectoryComponent>(TEXT("TrajectoryComponent"));
 	TrajectoryComponent->SetIsReplicated(true);
@@ -534,6 +538,7 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 	{
 		Server_SetState(ECharacterStates::IDLE);
 		Server_StopAnimMontage(EmotMontage);
+		SoundComponent->Stop();
 	}
 
 	if (Controller != nullptr)

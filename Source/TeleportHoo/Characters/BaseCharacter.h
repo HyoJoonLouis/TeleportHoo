@@ -261,5 +261,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 	class UWidgetComponent* DirectionComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+	class UAudioComponent* SoundComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 	class UCharacterTrajectoryComponent* TrajectoryComponent;
 };
