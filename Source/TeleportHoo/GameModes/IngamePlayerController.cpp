@@ -39,6 +39,10 @@ void AIngamePlayerController::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(AIngamePlayerController, PlayerTeam);
 }
 
+void AIngamePlayerController::Client_ShowRoundResult_Implementation(int Round, bool isWin)
+{
+	GetIngameHUD()->ShowResult(Round, isWin);
+}
 
 void AIngamePlayerController::OnLevelSequenceEnd()
 {

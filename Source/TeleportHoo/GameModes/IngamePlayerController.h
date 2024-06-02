@@ -40,6 +40,8 @@ public:
 	void Client_FadeInOut(bool FadeOut);
 	UFUNCTION(Client, Reliable)
 	void Client_StartLevelSequence(class ULevelSequence* LevelSequence);
+	UFUNCTION(Client, Reliable)
+	void Client_ShowRoundResult(int Round, bool isWin);
 	UFUNCTION()
 	void OnLevelSequenceEnd();
 

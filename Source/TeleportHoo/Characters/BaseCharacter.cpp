@@ -502,7 +502,7 @@ bool ABaseCharacter::CanTargetBlockAttack()
 {
 	if(bTargeting && IsValid(TargetActor))
 	{
-		if (FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) >= 300)
+		if (FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) >= 200)
 			return false;
 		ABaseCharacter* Target = Cast<ABaseCharacter>(TargetActor);
 		if ((CurrentDirection == EDamageDirection::RIGHT && Target->GetActorDirection() == EDamageDirection::LEFT) 
