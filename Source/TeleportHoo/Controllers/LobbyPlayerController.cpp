@@ -19,7 +19,7 @@
 #include "OnlineSubsystemSteam.h"
 #include "IImageWrapper.h"
 #include "IImageWrapperModule.h"
-#include "steam/steam_api.h"		// https://partner.steamgames.com/doc/api/steam_api   <- 참고
+//#include "steam/steam_api.h"		// https://partner.steamgames.com/doc/api/steam_api   <- 참고
 
 ALobbyPlayerController::ALobbyPlayerController()
 {
@@ -30,10 +30,14 @@ void ALobbyPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!SteamAPI_Init())
-	{
-		UE_LOG(LogTemp, Error, TEXT("Steam API 초기화 실패"))
-	}
+	//if (!SteamAPI_Init())
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("Steam API 초기화 실패"))
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Steam API 초기화 성공"))
+	//}
 
 	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::BeginPlay"))
 	InitializeLobbyWidget();
@@ -47,7 +51,7 @@ void ALobbyPlayerController::BeginPlay()
 void ALobbyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	// Steam API 종료
-	SteamAPI_Shutdown();
+	//SteamAPI_Shutdown();
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -164,72 +168,163 @@ FString ALobbyPlayerController::GetPlayerName()
 
 UTexture2D* ALobbyPlayerController::GetPlayerAvatar()
 {
-	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
-	if (OnlineSub && OnlineSub->GetSubsystemName() == STEAM_SUBSYSTEM)
-	{
-		IOnlineIdentityPtr Identity = OnlineSub->GetIdentityInterface();
-		if (Identity.IsValid())
-		{
-			APlayerState* LocalPlayerState = GetPlayerState<APlayerState>();
-			if (LocalPlayerState)
-			{
-				// 유니크 플레이어 ID 가져오기
-				TSharedPtr<const FUniqueNetId> UserId = Identity->
-					GetUniquePlayerId(GetLocalPlayer()->GetControllerId());
-				if (UserId.IsValid())
-				{
-					uint32 AvatarWidth = 0;
-					uint32 AvatarHeight = 0;
-					if (SteamFriends())
-					{
-						CSteamID SteamID(*(uint64*)UserId->GetBytes());
-						int FriendAvatar = SteamFriends()->GetMediumFriendAvatar(SteamID);
-						if (FriendAvatar > 0)
-						{
-							SteamUtils()->GetImageSize(FriendAvatar, &AvatarWidth, &AvatarHeight);
-							uint32 AvatarSize = AvatarWidth * AvatarHeight * 4;
-							uint8* AvatarRGBA = new uint8[AvatarSize];
-							SteamUtils()->GetImageRGBA(FriendAvatar, AvatarRGBA, AvatarSize);
+	//IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+	//if (OnlineSub && OnlineSub->GetSubsystemName() == STEAM_SUBSYSTEM)
+	//{
+	//	IOnlineIdentityPtr Identity = OnlineSub->GetIdentityInterface();
+	//	if (Identity.IsValid())
+	//	{
+	//		APlayerState* LocalPlayerState = GetPlayerState<APlayerState>();
+	//		if (LocalPlayerState)
+	//		{
+	//			// 유니크 플레이어 ID 가져오기
+	//			TSharedPtr<const FUniqueNetId> UserId = Identity->
+	//				GetUniquePlayerId(GetLocalPlayer()->GetControllerId());
+	//			if (UserId.IsValid())
+	//			{
+	//				uint32 AvatarWidth = 0;
+	//				uint32 AvatarHeight = 0;
+	//				if (SteamFriends())
+	//				{
+	//					CSteamID SteamID(*(uint64*)UserId->GetBytes());
+	//					int FriendAvatar = SteamFriends()->GetMediumFriendAvatar(SteamID);
+	//					if (FriendAvatar > 0)
+	//					{
+	//						SteamUtils()->GetImageSize(FriendAvatar, &AvatarWidth, &AvatarHeight);
+	//						uint32 AvatarSize = AvatarWidth * AvatarHeight * 4;
+	//						uint8* AvatarRGBA = new uint8[AvatarSize];
+	//						SteamUtils()->GetImageRGBA(FriendAvatar, AvatarRGBA, AvatarSize);
 
-							IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<
-								IImageWrapperModule>(FName("ImageWrapper"));
-							TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(
-								EImageFormat::PNG);
+	//						IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<
+	//							IImageWrapperModule>(FName("ImageWrapper"));
+	//						TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(
+	//							EImageFormat::PNG);
 
-							if (ImageWrapper.IsValid() && ImageWrapper->SetRaw(
-								AvatarRGBA, AvatarSize, AvatarWidth, AvatarHeight, ERGBFormat::BGRA, 8))
-							{
-								TArray64<uint8> UncompressedRGBA;
-								if (ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, UncompressedRGBA))
-								{
-									UTexture2D* AvatarTexture = UTexture2D::CreateTransient(
-										AvatarWidth, AvatarHeight, PF_B8G8R8A8);
+	//						if (ImageWrapper.IsValid() && ImageWrapper->SetRaw(
+	//							AvatarRGBA, AvatarSize, AvatarWidth, AvatarHeight, ERGBFormat::BGRA, 8))
+	//						{
+	//							TArray64<uint8> UncompressedRGBA;
+	//							if (ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, UncompressedRGBA))
+	//							{
+	//								UTexture2D* AvatarTexture = UTexture2D::CreateTransient(
+	//									AvatarWidth, AvatarHeight, PF_B8G8R8A8);
 
-									// 텍스처 데이터 설정
-									void* TextureData = AvatarTexture->GetPlatformData()->Mips[0].BulkData.Lock(
-										LOCK_READ_WRITE);
-									FMemory::Memcpy(TextureData, UncompressedRGBA.GetData(), UncompressedRGBA.Num());
-									AvatarTexture->GetPlatformData()->Mips[0].BulkData.Unlock();
-									AvatarTexture->UpdateResource();
+	//								// 텍스처 데이터 설정
+	//								void* TextureData = AvatarTexture->GetPlatformData()->Mips[0].BulkData.Lock(
+	//									LOCK_READ_WRITE);
+	//								FMemory::Memcpy(TextureData, UncompressedRGBA.GetData(), UncompressedRGBA.Num());
+	//								AvatarTexture->GetPlatformData()->Mips[0].BulkData.Unlock();
+	//								AvatarTexture->UpdateResource();
 
-									delete[] AvatarRGBA;
+	//								delete[] AvatarRGBA;
 
-									UE_LOG(LogTemp, Warning, TEXT("아바타 반환 성공!!!!!!!!!!!!!!!!!!!!!"));
+	//								UE_LOG(LogTemp, Warning, TEXT("아바타 반환 성공!!!!!!!!!!!!!!!!!!!!!"));
 
-									return AvatarTexture;
-								}
-							}
+	//								return AvatarTexture;
+	//							}
+	//						}
 
-							delete[] AvatarRGBA;
-						}
-					}
-				}
-			}
-		}
-	}
+	//						delete[] AvatarRGBA;
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 
 	UE_LOG(LogTemp, Warning, TEXT("아바타 반환 실패........"));
 	return nullptr;
+
+ //   UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: 시작"));
+
+ //   IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+ //   if (OnlineSub && OnlineSub->GetSubsystemName() == STEAM_SUBSYSTEM)
+ //   {
+ //       UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: Steam 서브시스템 확인됨"));
+
+ //       IOnlineIdentityPtr Identity = OnlineSub->GetIdentityInterface();
+ //       if (Identity.IsValid())
+ //       {
+ //           UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: Identity 유효"));
+
+ //           APlayerState* LocalPlayerState = GetPlayerState<APlayerState>();
+ //           if (!LocalPlayerState)
+ //           {
+ //               UE_LOG(LogTemp, Error, TEXT("LocalPlayerState is null"));
+ //               return nullptr;
+ //           }
+
+ //           TSharedPtr<const FUniqueNetId> UserId = Identity->GetUniquePlayerId(GetLocalPlayer()->GetControllerId());
+ //           if (!UserId.IsValid())
+ //           {
+ //               UE_LOG(LogTemp, Error, TEXT("UserId is not valid"));
+ //               return nullptr;
+ //           }
+
+ //           if (UserId.IsValid())
+ //           {
+ //               uint32 AvatarWidth = 0;
+ //               uint32 AvatarHeight = 0;
+ //               if (SteamFriends())
+ //               {
+ //                   UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: Steam 친구 정보 확인됨"));
+
+ //                   CSteamID SteamID(*(uint64*)UserId->GetBytes());
+ //                   int FriendAvatar = SteamFriends()->GetMediumFriendAvatar(SteamID);
+ //                   if (FriendAvatar > 0)
+ //                   {
+ //                       UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: 아바타 ID 확인됨"));
+
+ //                       SteamUtils()->GetImageSize(FriendAvatar, &AvatarWidth, &AvatarHeight);
+ //                       uint32 AvatarSize = AvatarWidth * AvatarHeight * 4;
+ //                       uint8* AvatarRGBA = new uint8[AvatarSize];
+ //                       SteamUtils()->GetImageRGBA(FriendAvatar, AvatarRGBA, AvatarSize);
+
+ //                       IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+ //                       TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
+
+ //                       if (ImageWrapper.IsValid() && ImageWrapper->SetRaw(AvatarRGBA, AvatarSize, AvatarWidth, AvatarHeight, ERGBFormat::BGRA, 8))
+ //                       {
+ //                           TArray64<uint8> UncompressedRGBA;
+ //                           if (ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, UncompressedRGBA))
+ //                           {
+ //                               UTexture2D* AvatarTexture = UTexture2D::CreateTransient(AvatarWidth, AvatarHeight, PF_B8G8R8A8);
+
+ //                               // 텍스처 데이터 설정
+ //                               void* TextureData = AvatarTexture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
+ //                               FMemory::Memcpy(TextureData, UncompressedRGBA.GetData(), UncompressedRGBA.Num());
+ //                               AvatarTexture->GetPlatformData()->Mips[0].BulkData.Unlock();
+ //                               AvatarTexture->UpdateResource();
+
+ //                               delete[] AvatarRGBA;
+
+ //                               UE_LOG(LogTemp, Warning, TEXT("아바타 반환 성공!!!!!!!!!!!!!!!!!!!!!"));
+
+ //                               return AvatarTexture;
+ //                           }
+ //                       }
+
+ //                       delete[] AvatarRGBA;
+ //                   }
+ //               }
+	//			else
+	//			{
+	//				UE_LOG(LogTemp, Error, TEXT("SteamFriend nullptr"));
+	//			}
+ //           }
+ //       }
+	//	else
+	//	{
+	//		UE_LOG(LogTemp, Error, TEXT("IOnlineIdentityPtr Identity IsNotValid"));
+	//	}
+ //   }
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("GetPlayerAvatar: Steam 서브시스템 확인 실패"));
+	//}
+
+    //UE_LOG(LogTemp, Error, TEXT("아바타 반환 실패........"));
+    //return nullptr;
 }
 
 ULobbyWidget* ALobbyPlayerController::GetLobbyWidgetRef()

@@ -31,9 +31,9 @@ public class TeleportHoo : ModuleRules
         string SteamVersion = "Steamv157";
         string EnginePath = Path.GetFullPath(Target.RelativeEnginePath);
         string SteamPath = Path.Combine(EnginePath, "Source", "ThirdParty", "Steamworks", SteamVersion, "sdk");
-
+        
         PublicAdditionalLibraries.Add(Path.Combine(SteamPath, "redistributable_bin", "win64", "steam_api64.lib"));
-
+        
         PublicIncludePaths.Add(Path.Combine(SteamPath, "public"));
     }
 }

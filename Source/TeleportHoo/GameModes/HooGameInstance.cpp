@@ -40,7 +40,8 @@ void UHooGameInstance::Init()
 				this, &UHooGameInstance::OnCreateSessionComplete);
 			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(
 				this, &UHooGameInstance::OnFindSessionsComplete);
-			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UHooGameInstance::OnJoinSessionComplete);
+			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(
+				this, &UHooGameInstance::OnJoinSessionComplete);
 		}
 	}
 }
@@ -63,6 +64,8 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 
 	UE_LOG(LogTemp, Warning, TEXT("OnFindSessionsComplete, Succeeded : %d"), bSucceeded);
 
+	// ServerListDel.Clear();
+	
 	if (bSucceeded && SessionSearch->SearchResults.Num() > 0)
 	{
 		int32 ArrayIndex = -1;
@@ -175,13 +178,10 @@ void UHooGameInstance::FindServer()
 		UE_LOG(LogTemp, Warning, TEXT("FindServer -> IsLan"));
 	}
 	SessionSearch->MaxSearchResults = 1000;
-	// SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
 	UE_LOG(LogTemp, Warning, TEXT("Initiating FindSessions call"));
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
-
-	// Bind delegate to handle the completion of the FindSessions call
-	SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UHooGameInstance::OnFindSessionsComplete);
 }
 
 void UHooGameInstance::JoinServer(int32 ArrayIndex)
@@ -249,7 +249,6 @@ void UHooGameInstance::SetSelectedServerSlotIndex(int32 index)
 {
 	SelectedServerSlotIndex = index;
 	UE_LOG(LogTemp, Warning, TEXT("Set : SelectedServerSlotIndex : %d"), SelectedServerSlotIndex);
-	
 }
 
 int32 UHooGameInstance::GetSelectedServerSlotIndex()
