@@ -159,6 +159,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(WeakAttackAction, ETriggerEvent::Started, this, &ABaseCharacter::WeakAttack);
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ABaseCharacter::HeavyAttack);
 		EnhancedInputComponent->BindAction(SkillAction, ETriggerEvent::Started, this, &ABaseCharacter::Skill);
+		EnhancedInputComponent->BindAction(EmotAction, ETriggerEvent::Started, this, &ABaseCharacter::Emot);
 	}
 	else
 	{
@@ -456,6 +457,15 @@ void ABaseCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* Anim
 	PlayAnimMontage(AnimMontage);
 }
 
+void ABaseCharacter::Server_StopAnimMontage_Implementation(UAnimMontage* AnimMontage)
+{
+	Multicast_StopAnimMontage(AnimMontage);
+}
+
+void ABaseCharacter::Multicast_StopAnimMontage_Implementation(UAnimMontage* AnimMontage)
+{
+	StopAnimMontage(AnimMontage);
+}
 
 void ABaseCharacter::Server_SpawnNiagara_Implementation(UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation)
 {
@@ -517,8 +527,14 @@ void ABaseCharacter::ChangeToRotationToMovement()
 void ABaseCharacter::Move(const FInputActionValue& Value)
 {
 	MovementVector = Value.Get<FVector2D>();
-	if (!CheckCurrentState({ECharacterStates::IDLE}))
+	if (!CheckCurrentState({ECharacterStates::IDLE, ECharacterStates::EMOT}))
 		return;
+
+	if (GetState() == ECharacterStates::EMOT)
+	{
+		Server_SetState(ECharacterStates::IDLE);
+		Server_StopAnimMontage(EmotMontage);
+	}
 
 	if (Controller != nullptr)
 	{
@@ -535,7 +551,7 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 
 void ABaseCharacter::Look(const FInputActionValue& Value)
 {
-	if (!CheckCurrentState({ ECharacterStates::IDLE }))
+	if (!CheckCurrentState({ ECharacterStates::IDLE, ECharacterStates::EMOT }))
 		return;
 
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -640,4 +656,12 @@ void ABaseCharacter::Skill()
 	Server_SetState(ECharacterStates::SKILL);
 	Server_SetMomentum(CurrentMomentum - MomentumValues.OnSkillRemoveAmount);
 	Server_PlayAnimMontage(SkillMontage);
+}
+
+void ABaseCharacter::Emot()
+{
+	if (GetState() != ECharacterStates::IDLE)
+		return;
+	Server_SetState(ECharacterStates::EMOT);
+	Server_PlayAnimMontage(EmotMontage);
 }

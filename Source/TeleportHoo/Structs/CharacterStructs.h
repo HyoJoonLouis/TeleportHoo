@@ -22,7 +22,8 @@ enum class ECharacterStates : uint8
 	PARRIABLE	UMETA(DisplayName = "Parriable"),
 	DODGE		UMETA(DisplayName = "Dodge"),
 	HIT			UMETA(DisplayName = "Hit"),
-	DEAD		UMETA(DisplayName = "Dead")
+	DEAD		UMETA(DisplayName = "Dead"),
+	EMOT		UMETA(DisplayName = "Emot")
 };
 
 UENUM(BlueprintType)

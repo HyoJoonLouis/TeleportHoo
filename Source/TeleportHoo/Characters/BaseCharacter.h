@@ -91,6 +91,8 @@ public:
 	void Parry(AActor* Attacker, AActor* Blocker);
 	UFUNCTION()
 	void Skill();
+	UFUNCTION()
+	void Emot();
 	
 	// Servers
 	UFUNCTION()
@@ -129,6 +131,10 @@ public:
 	void Server_PlayAnimMontage(class UAnimMontage* AnimMontage);
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
 	void Multicast_PlayAnimMontage(class UAnimMontage* AnimMontage);
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void Server_StopAnimMontage(class UAnimMontage* AnimMontage);
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
+	void Multicast_StopAnimMontage(class UAnimMontage* AnimMontage);
 
 	UFUNCTION(Server, Unreliable, BlueprintCallable)
 	void Server_SpawnNiagara(class UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation);
@@ -168,6 +174,8 @@ protected:
 	class UInputAction* DodgeAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	class UInputAction* SkillAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	class UInputAction* EmotAction;
 
 	UPROPERTY()
 	FVector2D MovementVector;
@@ -241,6 +249,8 @@ protected:
 	class UAnimMontage* SkillBlockMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Dead")
 	class UAnimMontage* DeadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Emot")
+	class UAnimMontage* EmotMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack | Effects")
 	TMap<EWeaponType, FEffects> OnHitEffects;
