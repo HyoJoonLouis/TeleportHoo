@@ -24,4 +24,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Lobby")
 	void StartCharacterSelection();
+
+	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	void ShowLoadingScreenToAllPlayers();	
 };

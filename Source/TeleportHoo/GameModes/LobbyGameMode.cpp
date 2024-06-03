@@ -158,6 +158,21 @@ void ALobbyGameMode::StartCharacterSelection()
 	}
 }
 
+// 모든 클라이언트에게 로딩 화면을 보여주도록 명령
+void ALobbyGameMode::ShowLoadingScreenToAllPlayers()
+{
+	UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode::ShowLoadingScreenToALlPlayers 진입"));
+
+	for(FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
+		if(IsValid(LobbyPlayerController))
+		{
+			LobbyPlayerController->Client_ShowLoadingScreen();
+		}
+	}
+}
+
 // 모든 클라이언트에게 최신 플레이어 정보를 동기화
 void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 {

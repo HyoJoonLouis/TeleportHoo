@@ -31,6 +31,8 @@ public:
 	void Client_SetServerName(const FString& InServerName);
 	UFUNCTION(Client, Reliable)
 	void Client_StartCharacterSelection();
+	UFUNCTION(Client, Reliable)
+	void Client_ShowLoadingScreen();
 	
 	
 	// Server
