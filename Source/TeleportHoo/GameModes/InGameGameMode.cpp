@@ -62,7 +62,22 @@ bool AInGameGameMode::ReadyToStartMatch_Implementation()
 				ConnectedPlayers[i]->SetControllerTeam(ETeam::BLUE);
 		}
 		GetGameState<AIngameGameState>()->OnGameTimeFinished.AddUniqueDynamic(this, &AInGameGameMode::OnGameTimeFinished);
-		RoundStart();
+		
+		// Controller BeginPlay Start After this, So I Play A Delay
+		FTimerHandle TempTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(TempTimerHandle, [&]() {
+			for (const auto& Player : ConnectedPlayers)
+			{
+				Player->Client_StartLevelSequence(StartLevelSequence);
+				Player->Client_FadeInOut(true);
+			}
+
+			// After LevelSequence End
+			FTimerHandle TempTimerHandle_2;
+			GetWorld()->GetTimerManager().SetTimer(TempTimerHandle_2, [&]() {
+				RoundStart();
+				}, 5.0f, false);
+			}, 0.5f, false);
 		return true;
 	}
 	else
@@ -88,13 +103,14 @@ void AInGameGameMode::RoundStart()
 		SpawnedActor = GetWorld()->SpawnActor<ABaseCharacter>(SpawnActor, PlayerStart->GetActorLocation(), PlayerStart->GetActorRotation());
 		Player->ClientSetRotation(PlayerStart->GetActorRotation());
 		Player->Possess(SpawnedActor);
-		SpawnedActor->InputBind();
+		SpawnedActor->Client_OnPossessed();
+		Player->Client_FadeInOut(true);
 	}
 	GetGameState<AIngameGameState>()->AddRound();
 	GetGameState<AIngameGameState>()->StartGameTimer();
 }
 
-void AInGameGameMode::RoundEnd()
+void AInGameGameMode::RoundLoading()
 {
 	for (const auto& Player : ConnectedPlayers)
 	{
@@ -102,12 +118,25 @@ void AInGameGameMode::RoundEnd()
 			Player->GetPawn()->Destroy();
 		Player->UnPossess();
 	}
-	RoundStart();
+	
+	GetGameState<AIngameGameState>()->ResetGameTimer();
+	GetWorldTimerManager().SetTimer(RoundStartTimerHandle, this, &AInGameGameMode::RoundStart, 2.0f, false);
+}
+
+void AInGameGameMode::RoundEnd()
+{
+	for (const auto& Player : ConnectedPlayers)
+	{
+		Player->Client_FadeInOut(false);
+	}
+	
+	GetWorldTimerManager().SetTimer(RoundLoadingTimerHandle, this, &AInGameGameMode::RoundLoading, 1.0f, false);
+
 }
 
 void AInGameGameMode::OnGameTimeFinished()
 {
-	ETeam WinTeam;
+	ETeam WinTeam = ETeam::NONE;
 	float MaxHealth = 0;
 	for (const auto& Player : ConnectedPlayers)
 	{
@@ -118,13 +147,24 @@ void AInGameGameMode::OnGameTimeFinished()
 			MaxHealth = PlayerPawn->GetCurrentHealth();
 		}
 		PlayerPawn->Server_SetState(ECharacterStates::DEAD);
+		if (PlayerPawn->GetTargeting())
+			PlayerPawn->Server_Targeting();
 	}
 
 	AIngameGameState* CurrentGameState = GetGameState<AIngameGameState>();
 	CurrentGameState->AddTeamScore(WinTeam);
+
+	for (const auto& Player : ConnectedPlayers)
+	{
+		Player->Client_ShowRoundResult(CurrentGameState->GetRound(), Player->GetControllerTeam() == WinTeam);
+	}
+
 	if (CurrentGameState->GetTeamScore(ETeam::RED) >= 3 || CurrentGameState->GetTeamScore(ETeam::BLUE) >= 3)
 	{
-		isMatchEnd = true;
+		GetWorldTimerManager().SetTimer(RoundEndTimerHandle, [&]()
+			{
+				isMatchEnd = true;
+			}, 3.0f, false);
 	}
 	else
 	{
@@ -136,18 +176,35 @@ void AInGameGameMode::OnGameTimeFinished()
 void AInGameGameMode::OnPlayerDiedDelegate(AIngamePlayerController* DeadCharacter)
 {
 	AIngameGameState* CurrentGameState = GetGameState<AIngameGameState>();
-	if (DeadCharacter->GetControllerTeam() == ETeam::RED)
+	CurrentGameState->StopGameTimer();
+	ETeam WinTeam = DeadCharacter->GetControllerTeam() == ETeam::RED ? ETeam::BLUE : ETeam::RED;
+
+	//if (DeadCharacter->GetControllerTeam() == ETeam::RED)
+	//{
+	//	CurrentGameState->AddTeamScore(ETeam::BLUE);
+	//}
+	//else if (DeadCharacter->GetControllerTeam() == ETeam::BLUE)
+	//{
+	//	CurrentGameState->AddTeamScore(ETeam::RED);
+	//}
+	
+	CurrentGameState->AddTeamScore(WinTeam);
+
+	for (const auto& Player : ConnectedPlayers)
 	{
-		CurrentGameState->AddTeamScore(ETeam::BLUE);
+		Player->Client_ShowRoundResult(CurrentGameState->GetRound(), Player->GetControllerTeam() == WinTeam);
+		ABaseCharacter* PlayerPawn = Cast<ABaseCharacter>(Player->GetPawn());
+		if (PlayerPawn->GetTargeting())
+			PlayerPawn->Server_Targeting();
 	}
-	else if (DeadCharacter->GetControllerTeam() == ETeam::BLUE)
-	{
-		CurrentGameState->AddTeamScore(ETeam::RED);
-	}
+
 
 	if (CurrentGameState->GetTeamScore(ETeam::RED) >= 3 || CurrentGameState->GetTeamScore(ETeam::BLUE) >= 3)
 	{
-		isMatchEnd = true;
+		GetWorldTimerManager().SetTimer(RoundEndTimerHandle, [&]()
+			{
+				isMatchEnd = true;
+			}, 3.0f, false);
 	}
 	else
 	{

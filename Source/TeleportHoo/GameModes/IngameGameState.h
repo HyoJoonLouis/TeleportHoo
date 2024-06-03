@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
+#include "TeleportHoo/Structs/CharacterStructs.h"
 #include "IngameGameState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameTimeFinished);
@@ -17,6 +18,10 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void StartGameTimer();
+	UFUNCTION(BlueprintCallable)
+	void ResetGameTimer();
+	UFUNCTION(BlueprintCallable)
+	void StopGameTimer();
 	UFUNCTION(BlueprintCallable)
 	void AddRound();
 	UFUNCTION(BlueprintCallable)

@@ -22,7 +22,8 @@ enum class ECharacterStates : uint8
 	PARRIABLE	UMETA(DisplayName = "Parriable"),
 	DODGE		UMETA(DisplayName = "Dodge"),
 	HIT			UMETA(DisplayName = "Hit"),
-	DEAD		UMETA(DisplayName = "Dead")
+	DEAD		UMETA(DisplayName = "Dead"),
+	EMOT		UMETA(DisplayName = "Emot")
 };
 
 UENUM(BlueprintType)
@@ -41,6 +42,14 @@ enum class EDamageType : uint8
 	SKILL	UMETA(DisplayName = "Skill")
 };
 
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+	NONE	UMETA(DisplayName = "None"),
+	MELEE	UMETA(DisplayName = "Melee"),
+	SWORD	UMETA(DisplayName = "Sword")
+};
+
 USTRUCT(Blueprintable)
 struct FDamageInfo
 {
@@ -55,6 +64,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EDamageType DamageType;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EWeaponType WeaponType;
 };
 
 USTRUCT(Blueprintable)

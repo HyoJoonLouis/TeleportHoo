@@ -19,7 +19,15 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UCinemaWidget* WBP_Cinema;
 	UPROPERTY(meta = (BindWidget))
+	class URoundResultWidget* WBP_RoundResult;
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	class UWidgetAnimation* RoundEndAnimation;
+	UPROPERTY(meta = (BindWidget))
 	class UScoreBoard* WBP_ScoreBoard;
+	UPROPERTY(meta = (BindWidget))
+	class UImage* FadeInOutImage;
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	class UWidgetAnimation* FadeOutAnimation;
 
 public:
 	virtual void NativeConstruct() override;
@@ -27,8 +35,10 @@ public:
 	void SendChat(const FText& Name, const FText& TextToSend);
 	void PlayCinema(bool bStart);
 	void UpdateScore();
+	void ShowResult(int Round, bool isWin);
 	UFUNCTION(BlueprintCallable)
 	void OnHitEffect();
+	void FadeInOut(bool FadeOut);
 
 	FORCEINLINE UChatBox* GetChatBox() { return WBP_ChatBox; }
 };

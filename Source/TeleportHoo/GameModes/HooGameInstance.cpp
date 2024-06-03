@@ -7,6 +7,7 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include <Online/OnlineSessionNames.h>
+#include "interfaces/OnlineIdentityInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
 UHooGameInstance::UHooGameInstance()
@@ -18,11 +19,17 @@ UHooGameInstance::UHooGameInstance()
 	InitializeMaps();
 
 	SelectedMapName = "SnowCastle";
-	SelectedMapURL = "/Game/Levels/L_SnowCastle";
+	SelectedMapURL = "/Game/Levels/L_SnowCastle1";
+
+	CreateServerInfo.ServerName = "DefaultServer";
+	CreateServerInfo.ServerMapName = "DefaultMap";
+	CreateServerInfo.MaxPlayers = 2;
 }
 
 void UHooGameInstance::Init()
 {
+	Super::Init();
+
 	if (IOnlineSubsystem* SubSystem = IOnlineSubsystem::Get())
 	{
 		SessionInterface = SubSystem->GetSessionInterface();
@@ -33,7 +40,8 @@ void UHooGameInstance::Init()
 				this, &UHooGameInstance::OnCreateSessionComplete);
 			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(
 				this, &UHooGameInstance::OnFindSessionsComplete);
-			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UHooGameInstance::OnJoinSessionComplete);
+			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(
+				this, &UHooGameInstance::OnJoinSessionComplete);
 		}
 	}
 }
@@ -56,7 +64,9 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 
 	UE_LOG(LogTemp, Warning, TEXT("OnFindSessionsComplete, Succeeded : %d"), bSucceeded);
 
-	if (bSucceeded)
+	// ServerListDel.Clear();
+	
+	if (bSucceeded && SessionSearch->SearchResults.Num() > 0)
 	{
 		int32 ArrayIndex = -1;
 
@@ -115,7 +125,7 @@ void UHooGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 	}
 }
 
-void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
+void UHooGameInstance::CreateServer()
 {
 	UE_LOG(LogTemp, Warning, TEXT("CreateServer"));
 
@@ -141,10 +151,10 @@ void UHooGameInstance::CreateServer(FCreateServerInfo ServerInfo)
 
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bUsesPresence = true;
-	SessionSettings.NumPublicConnections = ServerInfo.MaxPlayers;
-	SessionSettings.Set(L"SERVER_NAME_KEY", ServerInfo.ServerName,
+	SessionSettings.NumPublicConnections = CreateServerInfo.MaxPlayers;
+	SessionSettings.Set(L"SERVER_NAME_KEY", CreateServerInfo.ServerName,
 	                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	SessionSettings.Set(L"SERVER_MAPNAME_KEY", ServerInfo.ServerMapName,
+	SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName,
 	                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
@@ -170,6 +180,7 @@ void UHooGameInstance::FindServer()
 	SessionSearch->MaxSearchResults = 1000;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
+	UE_LOG(LogTemp, Warning, TEXT("Initiating FindSessions call"));
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 }
 
@@ -238,7 +249,6 @@ void UHooGameInstance::SetSelectedServerSlotIndex(int32 index)
 {
 	SelectedServerSlotIndex = index;
 	UE_LOG(LogTemp, Warning, TEXT("Set : SelectedServerSlotIndex : %d"), SelectedServerSlotIndex);
-	
 }
 
 int32 UHooGameInstance::GetSelectedServerSlotIndex()
@@ -255,6 +265,21 @@ void UHooGameInstance::GameStart()
 	GetWorld()->ServerTravel(SelectedMapURL + "?Listen");
 }
 
+void UHooGameInstance::SetCreateServerInfo(FString ServerName, FString ServerMapName, int32 MaxPlayer)
+{
+	CreateServerInfo.ServerName = ServerName;
+	CreateServerInfo.ServerMapName = ServerMapName;
+	CreateServerInfo.MaxPlayers = MaxPlayer;
+}
+
+
+FString UHooGameInstance::GetCreateServerName() const
+{
+	UE_LOG(LogTemp, Warning, TEXT("UHooGameInstance::GetCreateServerName 진입"));
+
+	return CreateServerInfo.ServerName;
+}
+
 void UHooGameInstance::InitializeMaps()
 {
 	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1Image(
@@ -265,7 +290,7 @@ void UHooGameInstance::InitializeMaps()
 	{
 		FMapInfo Map;
 		Map.MapName = "SnowCastle";
-		Map.MapURL = "/Game/Levels/L_SnowCastle";
+		Map.MapURL = "/Game/Levels/L_SnowCastle1";
 		Map.MapImage = Map1Image.Object;
 		Map.MapOverviewImage = Map1OverviewImage.Object;
 		MapList.Add(Map);

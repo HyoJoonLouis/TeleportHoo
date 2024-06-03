@@ -21,6 +21,9 @@ protected:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 	ETeam PlayerTeam;
 
+	UPROPERTY(EditAnywhere, Category = "Sequence")
+	class ULevelSequencePlayer* LevelSequencePlayer;
+
 public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -33,7 +36,16 @@ public:
 	void Client_SendChat(const FText& Name, const FText& TextToSend);
 	UFUNCTION(Client, Reliable)
 	void Client_UpdateScore();
+	UFUNCTION(Client, Reliable)
+	void Client_FadeInOut(bool FadeOut);
+	UFUNCTION(Client, Reliable)
+	void Client_StartLevelSequence(class ULevelSequence* LevelSequence);
+	UFUNCTION(Client, Reliable)
+	void Client_ShowRoundResult(int Round, bool isWin);
+	UFUNCTION()
+	void OnLevelSequenceEnd();
 
+	
 	// Delegates
 	FOnDeadDelegate OnDeadDelegate;
 

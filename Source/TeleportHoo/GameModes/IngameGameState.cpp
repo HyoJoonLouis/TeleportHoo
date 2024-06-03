@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "IngamePlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 AIngameGameState::AIngameGameState()
 {
@@ -24,11 +25,11 @@ void AIngameGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AIngameGameState, BlueTeamScore);
 }
 
+
 void AIngameGameState::StartGameTimer()
 {
 	if (HasAuthority())
 	{
-		SecondsAfterGameStart = 0;
 		GetWorld()->GetTimerManager().SetTimer(GameTimerHandle, [&]() {
 					SecondsAfterGameStart++;
 					OnRep_ScoreChanged();
@@ -39,6 +40,23 @@ void AIngameGameState::StartGameTimer()
 						GetWorld()->GetTimerManager().ClearTimer(GameTimerHandle);
 					}
 			}, 1.0f, true);
+	}
+}
+
+void AIngameGameState::ResetGameTimer()
+{
+	if (HasAuthority())
+		SecondsAfterGameStart = 0;
+}
+
+void AIngameGameState::StopGameTimer()
+{
+	if (HasAuthority())
+	{
+		if (GetWorld()->GetTimerManager().IsTimerActive(GameTimerHandle))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(GameTimerHandle);
+		}
 	}
 }
 

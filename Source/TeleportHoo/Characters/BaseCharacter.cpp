@@ -4,6 +4,7 @@
 #include "../UI/IngameHUD.h"
 #include "../GameModes/IngamePlayerController.h"
 #include "CharacterTrajectoryComponent.h"
+#include "Components/AudioComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/DecalComponent.h"
 #include "Camera/CameraComponent.h"
@@ -17,6 +18,7 @@
 #include <Kismet/KismetMathLibrary.h>
 #include "NiagaraFunctionLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "NiagaraFunctionLibrary.h"
 
 ABaseCharacter::ABaseCharacter()
 {
@@ -54,31 +56,28 @@ ABaseCharacter::ABaseCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = true;
 	FollowCamera->FieldOfView = 78;
-	FollowCamera->SetIsReplicated(true);
 
 	bTargeting = false;
 	bActivateCollision = false;
 	TargetDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("TargetDecal"));
 	TargetDecal->SetupAttachment(GetMesh());
-	TargetDecal->DecalSize = FVector(100, 100, 100);
+	TargetDecal->DecalSize = FVector(200, 200, 200);
 	TargetDecal->SetRelativeRotation(FVector(0,90,0).Rotation().Quaternion());
 	TargetDecal->SetVisibility(false, true);
 
-	HealthBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarComponent"));
-	HealthBarComponent->SetupAttachment(GetMesh());
-	HealthBarComponent->SetRelativeLocation(FVector(0, 0, 200));
-	HealthBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
-
-	MomentumBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("MomentumBarComponent"));
-	MomentumBarComponent->SetupAttachment(GetMesh());
-	MomentumBarComponent->SetRelativeLocation(FVector(0, 0, 190));
-	MomentumBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	HealthComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthComponent"));
+	HealthComponent->SetupAttachment(GetMesh(), FName("HealthBarWidget"));
+	HealthComponent->SetRelativeLocation(FVector(0, 0, 0));
+	HealthComponent->SetWidgetSpace(EWidgetSpace::Screen);
 
 	DirectionComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("DirectionComponent"));
 	DirectionComponent->SetupAttachment(GetMesh(), FName("DirectionWidget"));
 	DirectionComponent->SetRelativeLocation(FVector(0, 0, 0));
 	DirectionComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	DirectionComponent->SetVisibility(false, true);
+
+	SoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("SoundComponent"));
+	SoundComponent->SetupAttachment(GetMesh());
 
 	TrajectoryComponent = CreateDefaultSubobject<UCharacterTrajectoryComponent>(TEXT("TrajectoryComponent"));
 	TrajectoryComponent->SetIsReplicated(true);
@@ -89,14 +88,14 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
-	MomentumBarWidget = Cast<UHealthBarWidget>(MomentumBarComponent->GetWidget());
+	//HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
+	//DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
+	//Server_SetHealth(MaxHealth);
+	//Server_SetMomentum(MaxMomentum / 2);
+	//InputBind();
+
+	HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
 	DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
-
-	Server_SetHealth(MaxHealth);
-	Server_SetMomentum(MaxMomentum / 2);
-
-	InputBind();
 
 	// Timeline
 	if (TargetingCurve)
@@ -107,7 +106,6 @@ void ABaseCharacter::BeginPlay()
 		TargetingTimeline.AddInterpFloat(TargetingCurve, TargetingCurveCallback);
 		TargetingTimeline.SetTimelineLength(0.4f);
 	}
-
 }
 
 void ABaseCharacter::Tick(float DeltaTime)
@@ -165,6 +163,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		EnhancedInputComponent->BindAction(WeakAttackAction, ETriggerEvent::Started, this, &ABaseCharacter::WeakAttack);
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ABaseCharacter::HeavyAttack);
 		EnhancedInputComponent->BindAction(SkillAction, ETriggerEvent::Started, this, &ABaseCharacter::Skill);
+		EnhancedInputComponent->BindAction(EmotAction, ETriggerEvent::Started, this, &ABaseCharacter::Emot);
 	}
 	else
 	{
@@ -181,6 +180,17 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& Out
 	DOREPLIFETIME(ABaseCharacter, CurrentDirection);
 	DOREPLIFETIME(ABaseCharacter, CurrentState);
 	DOREPLIFETIME(ABaseCharacter, bTargeting);
+}
+
+void ABaseCharacter::InputBind()
+{
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
 }
 
 void ABaseCharacter::OnTargeted_Implementation(const AActor* CauseActor)
@@ -206,19 +216,19 @@ void ABaseCharacter::OnRep_SetHealth()
 	}
 	else
 	{
-		HealthBarWidget = Cast<UHealthBarWidget>(HealthBarComponent->GetWidget());
+		HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
 	}
 }
 
 void ABaseCharacter::OnRep_SetMomentum()
 {
-	if(IsValid(MomentumBarWidget))
+	if(IsValid(HealthBarWidget))
 	{
-		MomentumBarWidget->SetHealth(CurrentMomentum / MaxMomentum);
+		HealthBarWidget->SetMomentum(CurrentMomentum / MaxMomentum);
 	} 
 	else
 	{
-		MomentumBarWidget = Cast<UHealthBarWidget>(MomentumBarComponent->GetWidget());
+		HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
 	}
 }
 
@@ -229,6 +239,7 @@ void ABaseCharacter::OnRep_SetDirection()
 		if (IsLocallyControlled())
 		{
 			DirectionWidget->ChangeDirection(CurrentDirection, CurrentState);
+			UGameplayStatics::PlaySound2D(GetWorld(), ChangeDirectionSoundBase);
 		}
 		else
 		{
@@ -275,6 +286,26 @@ void ABaseCharacter::OnRep_SetTargeting()
 					TargetActorInterface->Execute_OnUntargeted(TargetActor);
 			}
 		}
+	}
+}
+
+void ABaseCharacter::Client_OnPossessed_Implementation()
+{
+	AIngamePlayerController* PlayerController = Cast<AIngamePlayerController>(Controller);
+
+	HealthBarWidget = Cast<UHealthBarWidget>(HealthComponent->GetWidget());
+	DirectionWidget = Cast<UDirectionWidget>(DirectionComponent->GetWidget());
+	Server_SetHealth(MaxHealth);
+	Server_SetMomentum(MaxMomentum / 2);
+
+	if (PlayerController)
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+
+		HealthBarWidget->IsLocal(IsLocallyControlled());
 	}
 }
 
@@ -351,7 +382,7 @@ void ABaseCharacter::Server_HeavyAttack_Implementation()
 	}
 	else
 	{
-		Server_PlayAnimMontage(HeavyAttackMontages[EDamageDirection::RIGHT]);
+		Server_PlayAnimMontage(HeavyAttackMontages[EDamageDirection::LEFT]);
 	}
 }
 
@@ -368,16 +399,6 @@ void ABaseCharacter::Server_TargetBlockAttack_Implementation(AActor* Attacker, A
 
 	AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[Direction]);
 	BlockActor->Server_PlayAnimMontage(ParryMontages);
-	//if (Direction == EDamageDirection::LEFT)
-	//{
-	//	AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::LEFT]);
-	//	BlockActor->Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
-	//}
-	//else if (Direction == EDamageDirection::RIGHT)
-	//{
-	//	AttackActor->Server_PlayAnimMontage(WeakAttackBlockedMontages[EDamageDirection::RIGHT]);
-	//	BlockActor->Server_PlayAnimMontage(BlockMontages[EDamageDirection::LEFT]);
-	//}
 }
 
 void ABaseCharacter::Client_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
@@ -412,12 +433,16 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		DamageActor->Server_SetMomentum(DamageActor->GetCurrentMomentum() + DamageActor->GetActorMomentumValues().OnHitSucceedAddAmount);
 
 		Server_SetState(ECharacterStates::HIT);
-		Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
+		if (DamageInfo.DamageType == EDamageType::SKILL)
+			Server_PlayAnimMontage(SkillBlockMontage);
+		else
+			Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
+		Server_SpawnNiagara(OnHitEffects[DamageInfo.WeaponType].Niagara[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")), DamageActor->GetActorRightVector().Rotation());
+		Server_PlaySoundAtLocation(OnHitEffects[DamageInfo.WeaponType].SoundBase[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")));
 
 		if (CurrentHealth <= 0)
 		{
 			Server_SetState(ECharacterStates::DEAD);
-			// 박정환 죽는 애니메이션 넣기
 			Server_PlayAnimMontage(DeadMontage);
 			AIngamePlayerController* DeadPlayerController = Cast<AIngamePlayerController>(GetController());
 			if (DeadPlayerController->OnDeadDelegate.IsBound())
@@ -436,15 +461,34 @@ void ABaseCharacter::Multicast_PlayAnimMontage_Implementation(UAnimMontage* Anim
 	PlayAnimMontage(AnimMontage);
 }
 
-void ABaseCharacter::InputBind()
+void ABaseCharacter::Server_StopAnimMontage_Implementation(UAnimMontage* AnimMontage)
 {
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
+	Multicast_StopAnimMontage(AnimMontage);
+}
+
+void ABaseCharacter::Multicast_StopAnimMontage_Implementation(UAnimMontage* AnimMontage)
+{
+	StopAnimMontage(AnimMontage);
+}
+
+void ABaseCharacter::Server_SpawnNiagara_Implementation(UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation)
+{
+	Multicast_SpawnNiagara(NiagaraSystem, Location, Rotation);
+}
+
+void ABaseCharacter::Multicast_SpawnNiagara_Implementation(UNiagaraSystem* NiagaraSystem, FVector Location, FRotator Rotation)
+{
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), NiagaraSystem, Location, Rotation);
+}
+
+void ABaseCharacter::Server_PlaySoundAtLocation_Implementation(USoundBase* SoundBase, FVector Location)
+{
+	Multicast_PlaySoundAtLocation(SoundBase, Location);
+}
+
+void ABaseCharacter::Multicast_PlaySoundAtLocation_Implementation(USoundBase* SoundBase, FVector Location)
+{
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), SoundBase, Location);
 }
 
 void ABaseCharacter::TargetingTimelineFunction(float Value)
@@ -458,7 +502,7 @@ bool ABaseCharacter::CanTargetBlockAttack()
 {
 	if(bTargeting && IsValid(TargetActor))
 	{
-		if (FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) >= 300)
+		if (FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) >= 200)
 			return false;
 		ABaseCharacter* Target = Cast<ABaseCharacter>(TargetActor);
 		if ((CurrentDirection == EDamageDirection::RIGHT && Target->GetActorDirection() == EDamageDirection::LEFT) 
@@ -487,8 +531,15 @@ void ABaseCharacter::ChangeToRotationToMovement()
 void ABaseCharacter::Move(const FInputActionValue& Value)
 {
 	MovementVector = Value.Get<FVector2D>();
-	if (!CheckCurrentState({ECharacterStates::IDLE}))
+	if (!CheckCurrentState({ECharacterStates::IDLE, ECharacterStates::EMOT}))
 		return;
+
+	if (GetState() == ECharacterStates::EMOT)
+	{
+		Server_SetState(ECharacterStates::IDLE);
+		Server_StopAnimMontage(EmotMontage);
+		SoundComponent->Stop();
+	}
 
 	if (Controller != nullptr)
 	{
@@ -505,7 +556,7 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 
 void ABaseCharacter::Look(const FInputActionValue& Value)
 {
-	if (!CheckCurrentState({ ECharacterStates::IDLE }))
+	if (!CheckCurrentState({ ECharacterStates::IDLE, ECharacterStates::EMOT }))
 		return;
 
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -541,12 +592,12 @@ void ABaseCharacter::Dodge()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
-	Server_SetState(ECharacterStates::DODGE);
 	if (bTargeting && IsValid(TargetActor))
 	{
 		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
 			return;
 		Server_SetMomentum(CurrentMomentum - MomentumValues.OnDodgeRemoveAmount);
+		Server_SetState(ECharacterStates::DODGE);
 		if (MovementVector.X >= 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::RIGHT]);
 		else if (MovementVector.X < 0)
@@ -557,7 +608,10 @@ void ABaseCharacter::Dodge()
 		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
 			return;
 		else
+		{
+			Server_SetState(ECharacterStates::DODGE);
 			Server_PlayAnimMontage(ForwardDodgeMontage);
+		}
 	}
 
 }
@@ -607,4 +661,12 @@ void ABaseCharacter::Skill()
 	Server_SetState(ECharacterStates::SKILL);
 	Server_SetMomentum(CurrentMomentum - MomentumValues.OnSkillRemoveAmount);
 	Server_PlayAnimMontage(SkillMontage);
+}
+
+void ABaseCharacter::Emot()
+{
+	if (GetState() != ECharacterStates::IDLE)
+		return;
+	Server_SetState(ECharacterStates::EMOT);
+	Server_PlayAnimMontage(EmotMontage);
 }

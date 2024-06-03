@@ -1,28 +1,29 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "LobbyGameState.h"
+
+#include "Net/UnrealNetwork.h"
 
 ALobbyGameState::ALobbyGameState()
 {
-}
-
-void ALobbyGameState::BeginPlay()
-{
-	Super::BeginPlay();
-
 	
 }
 
-void ALobbyGameState::AddPlayerInfo(const FPlayerLobbyInfo& NewPlayerInfo)
+void ALobbyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	PlayersInfo.Add(NewPlayerInfo);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyGameState::GetLifetimeReplicatedProps"));
+
+	DOREPLIFETIME(ALobbyGameState, ConnectedPlayers);
 }
 
-void ALobbyGameState::SetPlayerReady(int32 PlayerIndex, bool bReady)
+bool ALobbyGameState::AreAllPlayersReady() const
 {
-	if(PlayersInfo.IsValidIndex(PlayerIndex))
+	for(const FPlayerInfo& PlayerInfo : ConnectedPlayers)
 	{
-		PlayersInfo[PlayerIndex].bIsReady = bReady;
+		if(!PlayerInfo.bIsReady)
+		{
+			return false;
+		}
 	}
+	return true;
 }
