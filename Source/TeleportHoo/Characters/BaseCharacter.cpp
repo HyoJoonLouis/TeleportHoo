@@ -254,6 +254,8 @@ void ABaseCharacter::OnRep_SetDirection()
 void ABaseCharacter::OnRep_SetState()
 {
 	OnRep_SetDirection();
+	// 이거 바꿔야함.
+	SoundComponent->Stop();
 }
 
 void ABaseCharacter::OnRep_SetTargeting()
@@ -541,7 +543,6 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 
 	if (GetState() == ECharacterStates::EMOT)
 	{
-		SoundComponent->Stop();
 		Server_SetState(ECharacterStates::IDLE);
 		Server_StopAnimMontage(EmotMontage);
 	}
