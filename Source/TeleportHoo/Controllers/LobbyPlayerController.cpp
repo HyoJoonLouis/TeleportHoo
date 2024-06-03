@@ -120,6 +120,20 @@ void ALobbyPlayerController::Client_StartCharacterSelection_Implementation()
 	}
 }
 
+void ALobbyPlayerController::Client_ShowLoadingScreen_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Client_ShowLoadingScreen_Implementation 진입"));
+
+	if (IsValid(LobbyWidget))
+	{
+		LobbyWidget->SetLoadingScreen(ESlateVisibility::Visible);
+	}
+
+	// 입력 비활성화
+	SetInputMode(FInputModeUIOnly());
+	bShowMouseCursor = false;
+}
+
 // 플레이어의 이름 반환
 FString ALobbyPlayerController::GetPlayerName()
 {

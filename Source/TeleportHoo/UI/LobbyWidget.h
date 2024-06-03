@@ -17,7 +17,8 @@ public:
 	void UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
 	void SetStartButtonEnabled(bool bEnabled);
 	void SetStartButtonVisibility(bool bIsVisible);
-
+	void SetLoadingScreen(ESlateVisibility NewVisibility);
+	
 	UFUNCTION(BlueprintCallable, Category = "Lobby")
 	void OnStartButtonClicked();
 	UFUNCTION(BlueprintCallable, Category = "Lobby")
@@ -46,4 +47,7 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* T_ServerName;
+
+	UPROPERTY(meta = (BindWidget))
+	class UBorder* Border_LoadingScreen;
 };

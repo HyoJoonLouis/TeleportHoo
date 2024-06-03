@@ -1,5 +1,6 @@
 #include "LobbyWidget.h"
 #include "../GameModes/LobbyGameMode.h"
+#include "Components/Border.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/Button.h"
 #include  "Components/TextBlock.h"
@@ -79,10 +80,32 @@ void ULobbyWidget::SetStartButtonVisibility(bool bIsVisible)
 	}
 }
 
+void ULobbyWidget::SetLoadingScreen(ESlateVisibility NewVisibility)
+{
+	if(Border_LoadingScreen)
+	{
+		Border_LoadingScreen->SetVisibility(NewVisibility);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Border_LoadingScreen is nullptr"));
+	}
+}
+
 void ULobbyWidget::OnStartButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("스타트 버튼 클릭됨"));
-	
+
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+	if (PlayerController && PlayerController->HasAuthority())
+	{
+		ALobbyGameMode* LobbyGameMode = Cast<ALobbyGameMode>(UGameplayStatics::GetGameMode(this));
+		if (LobbyGameMode)
+		{
+			LobbyGameMode->ShowLoadingScreenToAllPlayers();
+		}
+	}
+
 	//APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
 	//if (PlayerController && PlayerController->HasAuthority())
 	//{
