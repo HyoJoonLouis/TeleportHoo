@@ -11,7 +11,7 @@ public:
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<EDamageDirection, class UTexture2D*> Image;
+	TMap<EDamageDirection, class UMaterialInterface*> Image;
 };
 
 UCLASS()
@@ -26,6 +26,12 @@ class TELEPORTHOO_API UDirectionWidget : public UUserWidget
 	class UImage* LeftImage;
 	UPROPERTY(meta = (BindWidget))
 	class UImage* RightImage;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	class UWidgetAnimation* LeftScaleUpAnimation;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	class UWidgetAnimation* RightScaleUpAnimation;
 
 public:
 	UFUNCTION()
