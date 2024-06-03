@@ -167,7 +167,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	class UInputAction* TargetingAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	class UInputAction* WeakAttackAction;
+	class UInputAction* WeakAttackAction; 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	class UInputAction* HeavyAttackAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)

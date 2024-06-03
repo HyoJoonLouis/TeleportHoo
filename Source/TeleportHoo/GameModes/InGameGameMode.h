@@ -12,7 +12,7 @@ class TELEPORTHOO_API AInGameGameMode : public AGameMode
 {
 	GENERATED_BODY()
 	
-public:
+public: 
 	AInGameGameMode();
 
 	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
+#include "TeleportHoo/Structs/CharacterStructs.h"
 #include "IngameGameState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameTimeFinished);

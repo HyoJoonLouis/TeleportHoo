@@ -1,27 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
+#include "../Structs/LobbyStructs.h"
 #include "LobbyGameState.generated.h"
-
-// USTRUCT(BlueprintType)
-
-USTRUCT(BlueprintType)
-struct FPlayerLobbyInfo
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
-	FString PlayerName;
-	
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
-	UTexture2D* AvatarImage;
-
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
-	bool bIsReady;
-};
 
 UCLASS()
 class TELEPORTHOO_API ALobbyGameState : public AGameState
@@ -31,22 +13,15 @@ class TELEPORTHOO_API ALobbyGameState : public AGameState
 public:
 	ALobbyGameState();
 
-	virtual void BeginPlay() override;
-
+// FUNCTION
 public:
-	// FUNCTION
-	UFUNCTION(BlueprintCallable)
-	void AddPlayerInfo(const FPlayerLobbyInfo& NewPlayerInfo);
-	UFUNCTION(BlueprintCallable)
-	void SetPlayerReady(int32 PlayerIndex, bool bReady);
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	bool AreAllPlayersReady() const;
 	
+// VARIABLES
 public:
-	// VARIABLES
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere)
-	TArray<FPlayerLobbyInfo> PlayersInfo;
-
-
-
-
-	
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	TArray<FPlayerInfo> ConnectedPlayers;
 };
