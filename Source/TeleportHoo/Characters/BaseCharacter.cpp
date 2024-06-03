@@ -418,11 +418,16 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 
 		ABaseCharacter* DamageActor = Cast<ABaseCharacter>(CauseActor);
 
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("DamageActor %i"), DamageActor->GetState()));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("HitActor %i"), CurrentState));
+
+
 		if (((CurrentDirection == EDamageDirection::RIGHT && DamageActor->GetActorDirection() == EDamageDirection::LEFT)
 			|| (CurrentDirection == EDamageDirection::LEFT && DamageActor->GetActorDirection() == EDamageDirection::RIGHT))
 			&& CurrentState == ECharacterStates::IDLE
-			&& DamageInfo.DamageType != EDamageType::SKILL)
+			&& DamageActor->GetState() == ECharacterStates::ATTACK)
 		{
+			Server_SetState(ECharacterStates::BLOCK);
 			Server_PlayAnimMontage(BlockMontages[DamageInfo.DamageType] );
 			return;
 		}
@@ -536,9 +541,9 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 
 	if (GetState() == ECharacterStates::EMOT)
 	{
+		SoundComponent->Stop();
 		Server_SetState(ECharacterStates::IDLE);
 		Server_StopAnimMontage(EmotMontage);
-		SoundComponent->Stop();
 	}
 
 	if (Controller != nullptr)

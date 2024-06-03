@@ -22,4 +22,6 @@ protected:
 	class UTextBlock* RoundText;
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* ResultText;
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	class UWidgetAnimation* ResultAnimation;
 };

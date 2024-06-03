@@ -107,7 +107,7 @@ public:
 	void OnRep_SetTargeting();
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void Client_OnPossessed();
-	UFUNCTION(Server, UnReliable, BlueprintCallable)
+	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_SetState(ECharacterStates NewState);
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_SetHealth(float Value);
