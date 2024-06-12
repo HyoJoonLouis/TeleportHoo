@@ -8,6 +8,7 @@
 #include "LevelSequenceActor.h"
 #include "LevelSequencePlayer.h"
 #include "MovieSceneSequencePlayer.h"
+#include "Net/UnrealNetwork.h"
 
 
 void AIngamePlayerController::BeginPlay()
@@ -19,6 +20,8 @@ void AIngamePlayerController::BeginPlay()
 		HUD = Cast<UIngameHUD>(CreateWidget(this, HUDClass));
 		HUD->AddToViewport();
 	}
+
+	PlayerSequence();
 }
 
 void AIngamePlayerController::Tick(float DeltaTime)
@@ -49,6 +52,33 @@ void AIngamePlayerController::OnLevelSequenceEnd()
 	SetViewTargetWithBlend(GetPawn());
 }
 
+void AIngamePlayerController::PlayerSequence()
+{
+	FStringAssetReference SequenceAssetRef(TEXT("/Game/Seq/All_Seq.All_Seq"));
+	ULevelSequence* Sequence = Cast<ULevelSequence>(SequenceAssetRef.TryLoad());
+
+	if (Sequence)
+	{
+		FActorSpawnParameters SpawnParams;
+		ALevelSequenceActor* SequenceActor = GetWorld()->SpawnActor<ALevelSequenceActor>(ALevelSequenceActor::StaticClass(), SpawnParams);
+
+		if (SequenceActor)
+		{
+			ULevelSequencePlayer* SequencePlayer = ULevelSequencePlayer::CreateLevelSequencePlayer(GetWorld(), Sequence, FMovieSceneSequencePlaybackSettings(), SequenceActor);
+
+			if (SequencePlayer)
+			{
+				SequencePlayer->Play();
+				SequencePlayer->OnFinished.AddDynamic(this, &AIngamePlayerController::OnSequenceFinished);
+			}
+		}
+	}
+}
+
+void AIngamePlayerController::OnSequenceFinished()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Sequence finished"));
+}
 
 void AIngamePlayerController::Server_SendChat_Implementation(const FText& TextToSend)
 {

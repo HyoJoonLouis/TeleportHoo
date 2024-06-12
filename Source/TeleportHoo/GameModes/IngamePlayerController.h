@@ -45,6 +45,9 @@ public:
 	UFUNCTION()
 	void OnLevelSequenceEnd();
 
+	// Sequence
+	void PlayerSequence();
+	void OnSequenceFinished();
 	
 	// Delegates
 	FOnDeadDelegate OnDeadDelegate;
