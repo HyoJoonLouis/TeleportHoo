@@ -8,6 +8,7 @@
 #include "LevelSequenceActor.h"
 #include "LevelSequencePlayer.h"
 #include "MovieSceneSequencePlayer.h"
+#include "Net/UnrealNetwork.h"
 
 
 void AIngamePlayerController::BeginPlay()
@@ -19,6 +20,8 @@ void AIngamePlayerController::BeginPlay()
 		HUD = Cast<UIngameHUD>(CreateWidget(this, HUDClass));
 		HUD->AddToViewport();
 	}
+
+	// PlayerSequence();
 }
 
 void AIngamePlayerController::Tick(float DeltaTime)
@@ -48,7 +51,6 @@ void AIngamePlayerController::OnLevelSequenceEnd()
 {
 	SetViewTargetWithBlend(GetPawn());
 }
-
 
 void AIngamePlayerController::Server_SendChat_Implementation(const FText& TextToSend)
 {

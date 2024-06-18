@@ -45,7 +45,6 @@ public:
 	UFUNCTION()
 	void OnLevelSequenceEnd();
 
-	
 	// Delegates
 	FOnDeadDelegate OnDeadDelegate;
 
