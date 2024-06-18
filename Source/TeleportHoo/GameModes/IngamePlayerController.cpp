@@ -21,7 +21,7 @@ void AIngamePlayerController::BeginPlay()
 		HUD->AddToViewport();
 	}
 
-	PlayerSequence();
+	// PlayerSequence();
 }
 
 void AIngamePlayerController::Tick(float DeltaTime)
@@ -50,34 +50,6 @@ void AIngamePlayerController::Client_ShowRoundResult_Implementation(int Round, b
 void AIngamePlayerController::OnLevelSequenceEnd()
 {
 	SetViewTargetWithBlend(GetPawn());
-}
-
-void AIngamePlayerController::PlayerSequence()
-{
-	FStringAssetReference SequenceAssetRef(TEXT("/Game/Seq/All_Seq.All_Seq"));
-	ULevelSequence* Sequence = Cast<ULevelSequence>(SequenceAssetRef.TryLoad());
-
-	if (Sequence)
-	{
-		FActorSpawnParameters SpawnParams;
-		ALevelSequenceActor* SequenceActor = GetWorld()->SpawnActor<ALevelSequenceActor>(ALevelSequenceActor::StaticClass(), SpawnParams);
-
-		if (SequenceActor)
-		{
-			ULevelSequencePlayer* SequencePlayer = ULevelSequencePlayer::CreateLevelSequencePlayer(GetWorld(), Sequence, FMovieSceneSequencePlaybackSettings(), SequenceActor);
-
-			if (SequencePlayer)
-			{
-				SequencePlayer->Play();
-				SequencePlayer->OnFinished.AddDynamic(this, &AIngamePlayerController::OnSequenceFinished);
-			}
-		}
-	}
-}
-
-void AIngamePlayerController::OnSequenceFinished()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Sequence finished"));
 }
 
 void AIngamePlayerController::Server_SendChat_Implementation(const FText& TextToSend)
