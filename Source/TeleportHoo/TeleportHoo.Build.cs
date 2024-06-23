@@ -16,7 +16,7 @@ public class TeleportHoo : ModuleRules
 			"Engine", 
 			"InputCore", 
 			"EnhancedInput", 
-			"UMG", 
+			"UMG",
 			"MotionTrajectory", 
 			"Slate", 
 			"SlateCore", 
@@ -24,7 +24,10 @@ public class TeleportHoo : ModuleRules
 			"OnlineSubsystemSteam", 
 			"Niagara",
 			"MovieScene", 
-			"LevelSequence"
+			"LevelSequence",
+			"Http",
+			"Json",
+			"JsonUtilities"
 		});
 
         // Steam SDK 경로 설정

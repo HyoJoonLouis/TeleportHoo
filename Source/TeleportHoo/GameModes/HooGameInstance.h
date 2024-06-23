@@ -1,10 +1,10 @@
 #pragma once
-
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "HooGameInstance.generated.h"
 
+// Structs
 USTRUCT(BlueprintType)
 struct FCreateServerInfo
 {
@@ -13,8 +13,10 @@ struct FCreateServerInfo
 public:
 	UPROPERTY(BlueprintReadWrite)
 	FString ServerName;
+
 	UPROPERTY(BlueprintReadWrite)
 	FString ServerMapName;
+
 	UPROPERTY(BlueprintReadWrite)
 	int32 MaxPlayers;
 };
@@ -27,14 +29,19 @@ struct FServerInfo
 public:
 	UPROPERTY(BlueprintReadOnly)
 	FString ServerName;
+
 	UPROPERTY(BlueprintReadOnly)
 	FString ServerMapName;
+
 	UPROPERTY(BlueprintReadOnly)
 	FString PlayerCountsString;
+
 	UPROPERTY(BlueprintReadOnly)
 	FString SelectedMapName;
+
 	UPROPERTY(BlueprintReadOnly)
 	int32 Ping;
+
 	UPROPERTY(BlueprintReadOnly)
 	int32 ServerArrayIndex;
 
@@ -43,7 +50,7 @@ public:
 
 	void SetPlayerCount()
 	{
-		PlayerCountsString = (FString::FromInt(CurrentPlayers) + "/" + FString::FromInt(MaxPlayers));
+		PlayerCountsString = FString::FromInt(CurrentPlayers) + "/" + FString::FromInt(MaxPlayers);
 	}
 };
 
@@ -72,10 +79,12 @@ public:
 	UTexture2D* AvatarImage;
 };
 
+// Delegates
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerDel, FServerInfo, ServerListDel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerSearchingDel, bool, SearchingForServerDel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMapInfoDel, FString, FMapNameDel);
 
+// Game Instance Class
 UCLASS()
 class TELEPORTHOO_API UHooGameInstance : public UGameInstance
 {
@@ -83,70 +92,96 @@ class TELEPORTHOO_API UHooGameInstance : public UGameInstance
 
 public:
 	UHooGameInstance();
+
 	virtual void Init() override;
 	virtual void OnCreateSessionComplete(FName SessionName, bool bSucceeded);
 	virtual void OnFindSessionsComplete(bool bSucceeded);
 	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 
-	// FUNCTION
-public:
-	// Server
+	// Server Functions
 	UFUNCTION(BlueprintCallable)
 	void CreateServer();
+
 	UFUNCTION(BlueprintCallable)
 	void FindServer();
+
 	UFUNCTION(BlueprintCallable)
 	void JoinServer(int32 ArrayIndex);
+
 	UFUNCTION(BlueprintCallable)
 	void GameStart();
 	
-	// CreateServerInfo
+	// CreateServerInfo Functions
 	UFUNCTION(BlueprintCallable)
 	void SetCreateServerInfo(FString ServerName, FString ServerMapName, int32 MaxPlayer);
+
 	UFUNCTION(BlueprintCallable)
 	FString GetCreateServerName() const;
 	
-	// Map 
+	// Map Functions
 	UFUNCTION(BlueprintCallable)
 	void FillMapList();
+
 	UFUNCTION(BlueprintCallable)
 	void SetSelectedMap(FString MapName);
+
 	UFUNCTION(BlueprintCallable)
 	class UTexture2D* GetMapImage(FString MapName);
+
 	UFUNCTION(BlueprintCallable)
 	class UTexture2D* GetMapOverviewImage(FString MapName);
+
 	UFUNCTION(BlueprintCallable)
 	FString GetSelectedMapName();
 
-	// ServerSlot
+	// ServerSlot Functions
 	UFUNCTION(BlueprintCallable)
 	void SetSelectedServerSlotIndex(int32 index);
+
 	UFUNCTION(BlueprintCallable)
 	int32 GetSelectedServerSlotIndex();
 
+	// Matchmaking Functions
+	UFUNCTION(BlueprintCallable)
+	void StartMatchmaking();
+
+	UFUNCTION(BlueprintCallable)
+	void CancelMatchmaking();
+
 protected:
+	// Map Initialization
 	void InitializeMaps();
 
-	// VARIABLES
+	// Matchmaking
+	void CheckMatchmakingQueue();
+	void OnMatchmakingSuccess();
+
+	// Variables
 protected:
 	IOnlineSessionPtr SessionInterface;
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 	FName MySessionName;
 
-	// Map
+	// Map Data
 	TArray<FMapInfo> MapList;
 	FString SelectedMapName;
 	FString SelectedMapURL;
 	int32 SelectedServerSlotIndex;
 
-	// Create Server Info
+	// Server Creation Data
 	FCreateServerInfo CreateServerInfo;
-	
+
 	// Delegates
 	UPROPERTY(BlueprintAssignable)
 	FServerDel ServerListDel;
+
 	UPROPERTY(BlueprintAssignable)
 	FServerSearchingDel SearchingForServerDel;
+
 	UPROPERTY(BlueprintAssignable)
 	FMapInfoDel FMapNameDel;
+
+	// Matchmaking
+	FTimerHandle MatchmakingTimerHandle;
+	TArray<FString> MatchmakingQueue;
 };

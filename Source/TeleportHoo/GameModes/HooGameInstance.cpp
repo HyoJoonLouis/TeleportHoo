@@ -1,15 +1,14 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "HooGameInstance.h"
 #include "Engine/World.h"
-#include "engine/Texture2D.h"
+#include "Engine/Texture2D.h"
 #include "Kismet/GameplayStatics.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
-#include <Online/OnlineSessionNames.h>
-#include "interfaces/OnlineIdentityInterface.h"
+#include "Online/OnlineSessionNames.h"
+#include "Interfaces/OnlineIdentityInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
+// Constructor
 UHooGameInstance::UHooGameInstance()
 {
 	UE_LOG(LogTemp, Warning, TEXT("UHooGameInstance Constructor"));
@@ -26,6 +25,7 @@ UHooGameInstance::UHooGameInstance()
 	CreateServerInfo.MaxPlayers = 2;
 }
 
+// Initialize
 void UHooGameInstance::Init()
 {
 	Super::Init();
@@ -36,16 +36,14 @@ void UHooGameInstance::Init()
 		if (SessionInterface.IsValid())
 		{
 			// Bind Delegates
-			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(
-				this, &UHooGameInstance::OnCreateSessionComplete);
-			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(
-				this, &UHooGameInstance::OnFindSessionsComplete);
-			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(
-				this, &UHooGameInstance::OnJoinSessionComplete);
+			SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UHooGameInstance::OnCreateSessionComplete);
+			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UHooGameInstance::OnFindSessionsComplete);
+			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UHooGameInstance::OnJoinSessionComplete);
 		}
 	}
 }
 
+// Session Creation Complete Callback
 void UHooGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded)
 {
 	if (bSucceeded)
@@ -54,18 +52,16 @@ void UHooGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceede
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed : OnCreateSessionComplete"));
+		UE_LOG(LogTemp, Warning, TEXT("Failed: OnCreateSessionComplete"));
 	}
 }
 
+// Session Find Complete Callback
 void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 {
 	SearchingForServerDel.Broadcast(false);
+	UE_LOG(LogTemp, Warning, TEXT("OnFindSessionsComplete, Succeeded: %d"), bSucceeded);
 
-	UE_LOG(LogTemp, Warning, TEXT("OnFindSessionsComplete, Succeeded : %d"), bSucceeded);
-
-	// ServerListDel.Clear();
-	
 	if (bSucceeded && SessionSearch->SearchResults.Num() > 0)
 	{
 		int32 ArrayIndex = -1;
@@ -73,9 +69,7 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 		for (FOnlineSessionSearchResult Result : SessionSearch->SearchResults)
 		{
 			++ArrayIndex;
-
-			if (!Result.IsValid())
-				continue;
+			if (!Result.IsValid()) continue;
 
 			FServerInfo Info;
 			FString ServerName = "Empty Server Name";
@@ -86,45 +80,46 @@ void UHooGameInstance::OnFindSessionsComplete(bool bSucceeded)
 
 			Info.ServerName = ServerName;
 			Info.ServerMapName = ServerMapName;
-			UE_LOG(LogTemp, Warning, TEXT("ServerMapName : %s"), *Info.ServerMapName);
+			UE_LOG(LogTemp, Warning, TEXT("ServerMapName: %s"), *Info.ServerMapName);
 
 			Info.MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
 			Info.CurrentPlayers = Info.MaxPlayers - Result.Session.NumOpenPublicConnections;
 			Info.SetPlayerCount();
 			Info.SelectedMapName = SelectedMapName;
-
 			Info.Ping = Result.PingInMs;
 			Info.ServerArrayIndex = ArrayIndex;
 
 			ServerListDel.Broadcast(Info);
-			UE_LOG(LogTemp, Warning, TEXT("Ping : %d"), Info.Ping);
+			UE_LOG(LogTemp, Warning, TEXT("Ping: %d"), Info.Ping);
 		}
 
-		UE_LOG(LogTemp, Warning, TEXT("SearchResults, Server Count : %d"), SessionSearch->SearchResults.Num());
+		UE_LOG(LogTemp, Warning, TEXT("SearchResults, Server Count: %d"), SessionSearch->SearchResults.Num());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed : OnFindSessionsComplete"));
+		UE_LOG(LogTemp, Warning, TEXT("Failed: OnFindSessionsComplete"));
 	}
 }
 
+// Session Join Complete Callback
 void UHooGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
 	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
 	{
 		FString JoinAddress = "";
 		SessionInterface->GetResolvedConnectString(SessionName, JoinAddress);
-		if (JoinAddress != "")
+		if (!JoinAddress.IsEmpty())
 		{
 			PlayerController->ClientTravel(JoinAddress, ETravelType::TRAVEL_Absolute);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed : JoinAddress is \"\""));
+			UE_LOG(LogTemp, Warning, TEXT("Failed: JoinAddress is empty"));
 		}
 	}
 }
 
+// Create Server
 void UHooGameInstance::CreateServer()
 {
 	UE_LOG(LogTemp, Warning, TEXT("CreateServer"));
@@ -133,18 +128,16 @@ void UHooGameInstance::CreateServer()
 	SessionSettings.bAllowJoinInProgress = true;
 	SessionSettings.bIsDedicated = false;
 
-	// 스팀, 엔진 테스트 전환하려면 DefaultEngine.ini에서 DefaultPlatformService 를 Steam, NULL 을 전환해주면 됨.
 	// Set to use server Info for Lan in future
 	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
 	{
 		SessionSettings.bIsLANMatch = false;
-		// Steam으로 서버 만드려면, 이 옵션이 필수적으로 들어가야함
 		SessionSettings.bUseLobbiesIfAvailable = true;
 		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsSteam"));
 	}
 	else
 	{
-		SessionSettings.bIsLANMatch = true; // Is LAN
+		SessionSettings.bIsLANMatch = true;
 		SessionSettings.bUseLobbiesIfAvailable = false;
 		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsLan"));
 	}
@@ -152,18 +145,16 @@ void UHooGameInstance::CreateServer()
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.NumPublicConnections = CreateServerInfo.MaxPlayers;
-	SessionSettings.Set(L"SERVER_NAME_KEY", CreateServerInfo.ServerName,
-	                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName,
-	                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings.Set(L"SERVER_NAME_KEY", CreateServerInfo.ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
 }
 
+// Find Server
 void UHooGameInstance::FindServer()
 {
 	SearchingForServerDel.Broadcast(true);
-
 	UE_LOG(LogTemp, Warning, TEXT("FindServer"));
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
@@ -174,7 +165,7 @@ void UHooGameInstance::FindServer()
 	}
 	else
 	{
-		SessionSearch->bIsLanQuery = true; // Is LAN
+		SessionSearch->bIsLanQuery = true;
 		UE_LOG(LogTemp, Warning, TEXT("FindServer -> IsLan"));
 	}
 	SessionSearch->MaxSearchResults = 1000;
@@ -184,87 +175,124 @@ void UHooGameInstance::FindServer()
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 }
 
+// Join Server
 void UHooGameInstance::JoinServer(int32 ArrayIndex)
 {
 	FOnlineSessionSearchResult Result = SessionSearch->SearchResults[ArrayIndex];
 	if (Result.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("JOINING SERVER AT INDEX : %d"), ArrayIndex);
+		UE_LOG(LogTemp, Warning, TEXT("Joining server at index: %d"), ArrayIndex);
 		SessionInterface->JoinSession(0, MySessionName, Result);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("FAILED TO JOIN SERVER AT INDEX : %d"), ArrayIndex);
+		UE_LOG(LogTemp, Warning, TEXT("Failed to join server at index: %d"), ArrayIndex);
 	}
 }
 
+// Fill Map List
 void UHooGameInstance::FillMapList()
 {
 	MapList.Empty();
 	InitializeMaps();
 
 	for (FMapInfo Map : MapList)
+	{
 		FMapNameDel.Broadcast(Map.MapName);
+	}
 }
 
+// Get Map Image
 UTexture2D* UHooGameInstance::GetMapImage(FString MapName)
 {
 	for (FMapInfo Map : MapList)
 	{
 		if (Map.MapName.Equals(MapName))
+		{
 			return Map.MapImage;
+		}
 	}
 	return nullptr;
 }
 
+// Get Map Overview Image
 UTexture2D* UHooGameInstance::GetMapOverviewImage(FString MapName)
 {
 	for (FMapInfo Map : MapList)
 	{
 		if (Map.MapName.Equals(MapName))
+		{
 			return Map.MapOverviewImage;
+		}
 	}
 	return nullptr;
 }
 
+// Set Selected Map
 void UHooGameInstance::SetSelectedMap(FString MapName)
 {
 	for (FMapInfo Map : MapList)
+	{
 		if (Map.MapName.Equals(MapName))
 		{
 			SelectedMapName = Map.MapName;
-			UE_LOG(LogTemp, Warning, TEXT("SelectedMapName : %s"), *SelectedMapName);
-
 			SelectedMapURL = Map.MapURL;
-			UE_LOG(LogTemp, Warning, TEXT("SelectedMapURL : %s"), *SelectedMapURL);
+			UE_LOG(LogTemp, Warning, TEXT("SelectedMapName: %s"), *SelectedMapName);
+			UE_LOG(LogTemp, Warning, TEXT("SelectedMapURL: %s"), *SelectedMapURL);
 		}
+	}
 }
 
+// Get Selected Map Name
 FString UHooGameInstance::GetSelectedMapName()
 {
 	return SelectedMapName;
 }
 
+// Set Selected Server Slot Index
 void UHooGameInstance::SetSelectedServerSlotIndex(int32 index)
 {
 	SelectedServerSlotIndex = index;
-	UE_LOG(LogTemp, Warning, TEXT("Set : SelectedServerSlotIndex : %d"), SelectedServerSlotIndex);
+	UE_LOG(LogTemp, Warning, TEXT("Set: SelectedServerSlotIndex: %d"), SelectedServerSlotIndex);
 }
 
+// Get Selected Server Slot Index
 int32 UHooGameInstance::GetSelectedServerSlotIndex()
 {
-	UE_LOG(LogTemp, Warning, TEXT("return : SelectedServerSlotIndex : %d"), SelectedServerSlotIndex);
-
+	UE_LOG(LogTemp, Warning, TEXT("Return: SelectedServerSlotIndex: %d"), SelectedServerSlotIndex);
 	return SelectedServerSlotIndex;
 }
 
+// Start Matchmaking
+void UHooGameInstance::StartMatchmaking()
+{
+	FString PlayerId = TEXT("Player_") + FGuid::NewGuid().ToString(); // Generate Player ID
+	MatchmakingQueue.Add(PlayerId);
+
+	// Check matchmaking queue at regular intervals
+	GetWorld()->GetTimerManager().SetTimer(MatchmakingTimerHandle, this, &UHooGameInstance::CheckMatchmakingQueue, 5.0f, true);
+}
+
+// Cancel Matchmaking
+void UHooGameInstance::CancelMatchmaking()
+{
+	FString PlayerId = TEXT("Player_") + FGuid::NewGuid().ToString(); // Generate Player ID
+	MatchmakingQueue.Remove(PlayerId);
+
+	if (MatchmakingQueue.Num() == 0)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(MatchmakingTimerHandle);
+	}
+}
+
+// Game Start
 void UHooGameInstance::GameStart()
 {
-	// 선택한 맵으로 이동
-	UE_LOG(LogTemp, Warning, TEXT("ServerTravel : %s"), *SelectedMapURL);
+	UE_LOG(LogTemp, Warning, TEXT("ServerTravel: %s"), *SelectedMapURL);
 	GetWorld()->ServerTravel(SelectedMapURL + "?Listen");
 }
 
+// Set Create Server Info
 void UHooGameInstance::SetCreateServerInfo(FString ServerName, FString ServerMapName, int32 MaxPlayer)
 {
 	CreateServerInfo.ServerName = ServerName;
@@ -272,20 +300,18 @@ void UHooGameInstance::SetCreateServerInfo(FString ServerName, FString ServerMap
 	CreateServerInfo.MaxPlayers = MaxPlayer;
 }
 
-
+// Get Create Server Name
 FString UHooGameInstance::GetCreateServerName() const
 {
-	UE_LOG(LogTemp, Warning, TEXT("UHooGameInstance::GetCreateServerName 진입"));
-
+	UE_LOG(LogTemp, Warning, TEXT("UHooGameInstance::GetCreateServerName called"));
 	return CreateServerInfo.ServerName;
 }
 
+// Initialize Maps
 void UHooGameInstance::InitializeMaps()
 {
-	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1Image(
-		TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapImage"));
-	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1OverviewImage(
-		TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapOverviewImage"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1Image(TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapImage"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> Map1OverviewImage(TEXT("/Game/UI/MainMenu/MapImages/SnowCastleMapOverviewImage"));
 	if (Map1Image.Object)
 	{
 		FMapInfo Map;
@@ -297,8 +323,7 @@ void UHooGameInstance::InitializeMaps()
 	}
 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2Image(TEXT("/Game/UI/MainMenu/MapImages/AnimMapImage"));
-	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2OverviewImage(
-		TEXT("/Game/UI/MainMenu/MapImages/AnimMapOverviewImage"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> Map2OverviewImage(TEXT("/Game/UI/MainMenu/MapImages/AnimMapOverviewImage"));
 	if (Map2Image.Object)
 	{
 		FMapInfo Map;
@@ -308,4 +333,23 @@ void UHooGameInstance::InitializeMaps()
 		Map.MapOverviewImage = Map2OverviewImage.Object;
 		MapList.Add(Map);
 	}
+}
+
+// Check Matchmaking Queue
+void UHooGameInstance::CheckMatchmakingQueue()
+{
+	if (MatchmakingQueue.Num() >= 2)
+	{
+		FString Player1 = MatchmakingQueue[0];
+		FString Player2 = MatchmakingQueue[1];
+		MatchmakingQueue.RemoveAt(0, 2);
+
+		OnMatchmakingSuccess();
+	}
+}
+
+// Matchmaking Success Callback
+void UHooGameInstance::OnMatchmakingSuccess()
+{
+	CreateServer();
 }
