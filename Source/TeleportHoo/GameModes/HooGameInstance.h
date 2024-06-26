@@ -61,6 +61,7 @@ public:
 	}
 };
 
+// Map Information
 USTRUCT()
 struct FMapInfo
 {
@@ -73,6 +74,7 @@ public:
 	class UTexture2D* MapOverviewImage;
 };
 
+// PlayerSlot Information
 USTRUCT(BlueprintType)
 struct FMyStruct
 {
@@ -103,7 +105,7 @@ public:
 
 // JoinLobby_DB
 USTRUCT(BlueprintType)
-struct FMatchJoinJSON
+struct FMatchJSON
 {
 	GENERATED_BODY()
 
@@ -189,7 +191,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CreateLobby_DB(const FMatchMakingJSON& MatchMakingData);	// lobby, (post)
 	UFUNCTION(BlueprintCallable)
-	void JoinLobby_DB(const FMatchJoinJSON& MatchJoinData);	// matchjoin, (post)
+	void JoinLobby_DB(const FMatchJSON& MatchJoinData);	// joinlobby, (post)
+	UFUNCTION(BlueprintCallable)
+	void LeaveLobby_DB(const FMatchJSON& MatchJoinData);	// leavelobby, (post)
 	UFUNCTION(BlueprintCallable)
 	void MatchEnd_DB(const FFinishMatchJSON& FinishMatchData);	// matchend, (post)
 	UFUNCTION(BlueprintCallable)
@@ -210,8 +214,10 @@ protected:
 	// Matchmaking
 	void OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
 	void OnJoinLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
+	void OnLeaveLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
 	void OnMatchEndResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
-
+	void OnGetLobbyListResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
+	void OnGetPlayerScoreResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
 	
 	// Variables	/////////////////////////////////////////////
 protected:

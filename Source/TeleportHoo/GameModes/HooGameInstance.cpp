@@ -1,5 +1,4 @@
 #include "HooGameInstance.h"
-
 #include "Online.h"
 #include "Engine/World.h"
 #include "Engine/Texture2D.h"
@@ -152,6 +151,28 @@ void UHooGameInstance::CreateServer()
 	SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
+
+	// Steam이라면
+	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
+	{
+		// DB와 상호작용
+		FMatchMakingJSON MatchMakingData;
+		MatchMakingData.UserId = GetSteamID();
+		MatchMakingData.Ip = GetLocalIP();
+
+		UE_LOG(LogTemp, Warning, TEXT("CreateLobby_DB 호추우우우울"));
+		CreateLobby_DB(MatchMakingData);
+	}
+	else
+	{
+		// DB와 상호작용
+		FMatchMakingJSON MatchMakingData;
+		MatchMakingData.UserId = GetSteamID();
+		MatchMakingData.Ip = GetLocalIP();
+
+		UE_LOG(LogTemp, Warning, TEXT("CreateLobby_DB 호추우우우울"));
+		CreateLobby_DB(MatchMakingData);
+	}
 }
 
 // Find Server
@@ -266,12 +287,15 @@ int32 UHooGameInstance::GetSelectedServerSlotIndex()
 	return SelectedServerSlotIndex;
 }
 
+// 로비 생성
 void UHooGameInstance::CreateLobby_DB(const FMatchMakingJSON& MatchMakingData)
 {
+	UE_LOG(LogTemp, Warning, TEXT("CreateLobby_DB 시작"));
+
 	// HTTP 요청을 생성하고, 콜백함수 바인딩, URL과 요청 메서드를 설정
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
 	Request->OnProcessRequestComplete().BindUObject(this, &UHooGameInstance::OnCreateLobbyResponse);
-	Request->SetURL("https://13.125.214.134/lobby");		//	13.125.214.134
+	Request->SetURL("http://13.125.214.134/lobby");		//	13.125.214.134
 	Request->SetVerb("POST");
 	Request->SetHeader("Content-Type", "application/json");
 
@@ -284,36 +308,81 @@ void UHooGameInstance::CreateLobby_DB(const FMatchMakingJSON& MatchMakingData)
 	FString RequestBody;
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
 	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
-
 	Request->SetContentAsString(RequestBody);
-	Request->ProcessRequest();
+
+	UE_LOG(LogTemp, Warning, TEXT("CreateLobby_DB 요청 준비 완료. RequestBody: %s"), *RequestBody);
+
+	bool bRequestProcessed = Request->ProcessRequest();
+	UE_LOG(LogTemp, Warning, TEXT("CreateLobby_DB: Request processed %s"), bRequestProcessed ? TEXT("true") : TEXT("false"));
+
+	if (!bRequestProcessed)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HTTP 요청 처리 실패"));
+	}
 }
 
-void UHooGameInstance::JoinLobby_DB(const FMatchJoinJSON& MatchJoinData)
+// 로비 참가
+void UHooGameInstance::JoinLobby_DB(const FMatchJSON& MatchData)
 {
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
 	Request->OnProcessRequestComplete().BindUObject(this, &UHooGameInstance::OnJoinLobbyResponse);
-	Request->SetURL("https://13.125.214.134/matchjoin");		//	13.125.214.134
+	Request->SetURL("http://13.125.214.134/joinlobby");
 	Request->SetVerb("POST");
 	Request->SetHeader("Content-Type", "application/json");
 
 	TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
-	JsonObject->SetStringField("userId", MatchJoinData.UserId);
-	JsonObject->SetNumberField("idx", MatchJoinData.Idx);
+	JsonObject->SetStringField("userId", MatchData.UserId);
+	JsonObject->SetNumberField("idx", MatchData.Idx);
 
 	FString RequestBody;
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
 	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
 
 	Request->SetContentAsString(RequestBody);
-	Request->ProcessRequest();
+
+	bool bRequestProcessed = Request->ProcessRequest();
+	UE_LOG(LogTemp, Warning, TEXT("JoinLobby_DB: Request processed %s"), bRequestProcessed ? TEXT("true") : TEXT("false"));
+
+	if (!bRequestProcessed)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HTTP 요청 처리 실패"));
+	}
 }
 
+// 로비 나가기
+void UHooGameInstance::LeaveLobby_DB(const FMatchJSON& MatchData)
+{
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+	Request->OnProcessRequestComplete().BindUObject(this, &UHooGameInstance::OnLeaveLobbyResponse);
+	Request->SetURL("http://13.125.214.134/leavelobby");
+	Request->SetVerb("POST");
+	Request->SetHeader("Content-Type", "application/json");
+
+	TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
+	JsonObject->SetStringField("userId", MatchData.UserId);
+	JsonObject->SetNumberField("idx", MatchData.Idx);
+
+	FString RequestBody;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+	Request->SetContentAsString(RequestBody);
+
+	bool bRequestProcessed = Request->ProcessRequest();
+	UE_LOG(LogTemp, Warning, TEXT("LeaveLobby_DB: Request processed %s"), bRequestProcessed ? TEXT("true") : TEXT("false"));
+
+	if (!bRequestProcessed)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HTTP 요청 처리 실패"));
+	}
+}
+
+// 매치 종료
 void UHooGameInstance::MatchEnd_DB(const FFinishMatchJSON& FinishMatchData)
 {
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
 	Request->OnProcessRequestComplete().BindUObject(this, &UHooGameInstance::OnMatchEndResponse);
-	Request->SetURL("https://13.125.214.134/matchend");		//	13.125.214.134
+	Request->SetURL("http://13.125.214.134/matchend");
 	Request->SetVerb("POST");
 	Request->SetHeader("Content-Type", "application/json");
 
@@ -327,19 +396,51 @@ void UHooGameInstance::MatchEnd_DB(const FFinishMatchJSON& FinishMatchData)
 	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
 
 	Request->SetContentAsString(RequestBody);
-	Request->ProcessRequest();
+
+	bool bRequestProcessed = Request->ProcessRequest();
+	UE_LOG(LogTemp, Warning, TEXT("MatchEnd_DB: Request processed %s"), bRequestProcessed ? TEXT("true") : TEXT("false"));
+
+	if (!bRequestProcessed)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HTTP 요청 처리 실패"));
+	}
 }
 
+// 로비 리스트 조회
 void UHooGameInstance::GetLobbyList_DB()
 {
-	
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+	Request->OnProcessRequestComplete().BindUObject(this, &UHooGameInstance::OnGetLobbyListResponse);
+	Request->SetURL("http://13.125.214.134/match");
+	Request->SetVerb("GET");
+
+	bool bRequestProcessed = Request->ProcessRequest();
+	UE_LOG(LogTemp, Warning, TEXT("GetLobbyList_DB: Request processed %s"), bRequestProcessed ? TEXT("true") : TEXT("false"));
+
+	if (!bRequestProcessed)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HTTP 요청 처리 실패"));
+	}
 }
 
+// 특성 사용자 점수 조회
 void UHooGameInstance::GetPlayerScore_DB(FString UserId)
 {
-	
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+	Request->OnProcessRequestComplete().BindUObject(this, &UHooGameInstance::OnGetPlayerScoreResponse);
+	Request->SetURL("http://13.125.214.134/score?username=" + UserId);
+	Request->SetVerb("GET");
+
+	bool bRequestProcessed = Request->ProcessRequest();
+	UE_LOG(LogTemp, Warning, TEXT("GetPlayerScore_DB: Request processed %s"), bRequestProcessed ? TEXT("true") : TEXT("false"));
+
+	if (!bRequestProcessed)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HTTP 요청 처리 실패"));
+	}
 }
 
+// Get Steam Id
 FString UHooGameInstance::GetSteamID()
 {
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
@@ -360,6 +461,7 @@ FString UHooGameInstance::GetSteamID()
 	return FString("InvalidSteamID");
 }
 
+// Get Local IP
 FString UHooGameInstance::GetLocalIP()
 {
     bool bCanBindAll;
@@ -426,13 +528,21 @@ void UHooGameInstance::InitializeMaps()
 
 void UHooGameInstance::OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
 {
-	if (bWasSuccessful && HttpResponse->GetResponseCode() == 200)
+	if (bWasSuccessful && HttpResponse.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded: %s"), *HttpResponse->GetContentAsString());
+		if (HttpResponse->GetResponseCode() == 200)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded: %s"), *HttpResponse->GetContentAsString());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 응답 코드 %d, 응답 내용: %s"), HttpResponse->GetResponseCode(), *HttpResponse->GetContentAsString());
+		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("CreateLobby failed"));
+		FString ErrorMessage = HttpResponse.IsValid() ? HttpResponse->GetContentAsString() : TEXT("Invalid response");
+		UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 요청이 성공적으로 처리되지 않음. 에러 메시지: %s"), *ErrorMessage);
 	}
 }
 
@@ -448,6 +558,18 @@ void UHooGameInstance::OnJoinLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest,
 	}
 }
 
+void UHooGameInstance::OnLeaveLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
+{
+	if (bWasSuccessful && HttpResponse->GetResponseCode() == 200)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LeaveLobby succeeded: %s"), *HttpResponse->GetContentAsString());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("LeaveLobby failed"));
+	}
+}
+
 void UHooGameInstance::OnMatchEndResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
 {
 	if (bWasSuccessful && HttpResponse->GetResponseCode() == 200)
@@ -457,5 +579,45 @@ void UHooGameInstance::OnMatchEndResponse(TSharedPtr<IHttpRequest> HttpRequest, 
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("MatchEnd failed"));
+	}
+}
+
+void UHooGameInstance::OnGetLobbyListResponse(TSharedPtr<IHttpRequest> HttpRequest,
+	TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
+{
+	if (bWasSuccessful && HttpResponse->GetResponseCode() == 200)
+	{
+		TArray<TSharedPtr<FJsonValue>> Lobbies;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(HttpResponse->GetContentAsString());
+		if (FJsonSerializer::Deserialize(Reader, Lobbies))
+		{
+			// Lobbies를 처리하는 로직 추가
+		}
+		UE_LOG(LogTemp, Warning, TEXT("GetLobbyList succeeded: %s"), *HttpResponse->GetContentAsString());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("GetLobbyList failed"));
+	}
+}
+
+void UHooGameInstance::OnGetPlayerScoreResponse(TSharedPtr<IHttpRequest> HttpRequest,
+	TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
+{
+	if (bWasSuccessful && HttpResponse->GetResponseCode() == 200)
+	{
+		TSharedPtr<FJsonObject> JsonObject;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(HttpResponse->GetContentAsString());
+		if (FJsonSerializer::Deserialize(Reader, JsonObject))
+		{
+			int32 Win = JsonObject->GetIntegerField(TEXT("win"));
+			int32 Lose = JsonObject->GetIntegerField(TEXT("lose"));
+			// 블루프린트 이벤트 호출 또는 추가 로직
+		}
+		UE_LOG(LogTemp, Warning, TEXT("GetPlayerScore succeeded: %s"), *HttpResponse->GetContentAsString());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("GetPlayerScore failed"));
 	}
 }
