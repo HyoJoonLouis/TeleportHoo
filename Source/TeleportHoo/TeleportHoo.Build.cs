@@ -27,7 +27,8 @@ public class TeleportHoo : ModuleRules
 			"LevelSequence",
 			"Http",
 			"Json",
-			"JsonUtilities"
+			"JsonUtilities",
+			"Sockets"
 		});
 
         // Steam SDK 경로 설정

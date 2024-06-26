@@ -1,4 +1,6 @@
 #include "HooGameInstance.h"
+
+#include "Online.h"
 #include "Engine/World.h"
 #include "Engine/Texture2D.h"
 #include "Kismet/GameplayStatics.h"
@@ -6,6 +8,7 @@
 #include "OnlineSessionSettings.h"
 #include "Online/OnlineSessionNames.h"
 #include "Interfaces/OnlineIdentityInterface.h"
+#include "JsonUtils/JsonPointer.h"
 #include "UObject/ConstructorHelpers.h"
 
 // Constructor
@@ -128,7 +131,7 @@ void UHooGameInstance::CreateServer()
 	SessionSettings.bAllowJoinInProgress = true;
 	SessionSettings.bIsDedicated = false;
 
-	// Set to use server Info for Lan in future
+	// Steam이 가능하다면 Steam으로 불가능하다면 Lan으로
 	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
 	{
 		SessionSettings.bIsLANMatch = false;
@@ -263,6 +266,114 @@ int32 UHooGameInstance::GetSelectedServerSlotIndex()
 	return SelectedServerSlotIndex;
 }
 
+void UHooGameInstance::CreateLobby_DB(const FMatchMakingJSON& MatchMakingData)
+{
+	// HTTP 요청을 생성하고, 콜백함수 바인딩, URL과 요청 메서드를 설정
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+	Request->OnProcessRequestComplete().BindUObject(this, &UHooGameInstance::OnCreateLobbyResponse);
+	Request->SetURL("https://13.125.214.134/lobby");		//	13.125.214.134
+	Request->SetVerb("POST");
+	Request->SetHeader("Content-Type", "application/json");
+
+	// JSON 객체를 생성하고, 생성한 JSON에 값 설정
+	TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
+	JsonObject->SetStringField("userId", MatchMakingData.UserId);
+	JsonObject->SetStringField("ip", MatchMakingData.Ip);
+
+	// JSON 객체를 문자열로 변환해 서버로 전송
+	FString RequestBody;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+	Request->SetContentAsString(RequestBody);
+	Request->ProcessRequest();
+}
+
+void UHooGameInstance::JoinLobby_DB(const FMatchJoinJSON& MatchJoinData)
+{
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+	Request->OnProcessRequestComplete().BindUObject(this, &UHooGameInstance::OnJoinLobbyResponse);
+	Request->SetURL("https://13.125.214.134/matchjoin");		//	13.125.214.134
+	Request->SetVerb("POST");
+	Request->SetHeader("Content-Type", "application/json");
+
+	TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
+	JsonObject->SetStringField("userId", MatchJoinData.UserId);
+	JsonObject->SetNumberField("idx", MatchJoinData.Idx);
+
+	FString RequestBody;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+	Request->SetContentAsString(RequestBody);
+	Request->ProcessRequest();
+}
+
+void UHooGameInstance::MatchEnd_DB(const FFinishMatchJSON& FinishMatchData)
+{
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+	Request->OnProcessRequestComplete().BindUObject(this, &UHooGameInstance::OnMatchEndResponse);
+	Request->SetURL("https://13.125.214.134/matchend");		//	13.125.214.134
+	Request->SetVerb("POST");
+	Request->SetHeader("Content-Type", "application/json");
+
+	TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
+	JsonObject->SetNumberField("idx", FinishMatchData.Idx);
+	JsonObject->SetStringField("win", FinishMatchData.Win);
+	JsonObject->SetStringField("lose", FinishMatchData.Lose);
+
+	FString RequestBody;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+	Request->SetContentAsString(RequestBody);
+	Request->ProcessRequest();
+}
+
+void UHooGameInstance::GetLobbyList_DB()
+{
+	
+}
+
+void UHooGameInstance::GetPlayerScore_DB(FString UserId)
+{
+	
+}
+
+FString UHooGameInstance::GetSteamID()
+{
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+	if(OnlineSub)
+	{
+		IOnlineIdentityPtr Identity = OnlineSub->GetIdentityInterface();
+		if(Identity.IsValid())
+		{
+			TSharedPtr<const FUniqueNetId> UserId = Identity->GetUniquePlayerId(0);
+			if(UserId.IsValid())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("UserId: %s"), *UserId->ToString());
+				return UserId->ToString();
+			}
+		}
+	}
+
+	return FString("InvalidSteamID");
+}
+
+FString UHooGameInstance::GetLocalIP()
+{
+    bool bCanBindAll;
+    TSharedRef<FInternetAddr> Addr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, bCanBindAll);
+
+    if (Addr->IsValid())
+    {
+		UE_LOG(LogTemp, Warning, TEXT("LocalIP: %s"), *Addr->ToString(false));
+        return Addr->ToString(false);
+    }
+	
+    return FString("InvalidIP");
+}
+
 // Game Start
 void UHooGameInstance::GameStart()
 {
@@ -310,5 +421,41 @@ void UHooGameInstance::InitializeMaps()
 		Map.MapImage = Map2Image.Object;
 		Map.MapOverviewImage = Map2OverviewImage.Object;
 		MapList.Add(Map);
+	}
+}
+
+void UHooGameInstance::OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
+{
+	if (bWasSuccessful && HttpResponse->GetResponseCode() == 200)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded: %s"), *HttpResponse->GetContentAsString());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("CreateLobby failed"));
+	}
+}
+
+void UHooGameInstance::OnJoinLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
+{
+	if (bWasSuccessful && HttpResponse->GetResponseCode() == 200)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("JoinLobby succeeded: %s"), *HttpResponse->GetContentAsString());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("JoinLobby failed"));
+	}
+}
+
+void UHooGameInstance::OnMatchEndResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
+{
+	if (bWasSuccessful && HttpResponse->GetResponseCode() == 200)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MatchEnd succeeded: %s"), *HttpResponse->GetContentAsString());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("MatchEnd failed"));
 	}
 }

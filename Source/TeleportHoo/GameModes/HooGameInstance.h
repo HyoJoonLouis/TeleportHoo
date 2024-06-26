@@ -2,6 +2,13 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "Http.h"
+#include "Json.h"
+#include "JsonUtilities.h"
+#include "interfaces/IHttpRequest.h"
+#include "interfaces/IHttpResponse.h"
+#include "SocketSubsystem.h"
+#include "IPAddress.h"
 #include "HooGameInstance.generated.h"
 
 // Structs
@@ -79,6 +86,52 @@ public:
 	UTexture2D* AvatarImage;
 };
 
+
+// CreateLobby_DB
+USTRUCT(BlueprintType)
+struct FMatchMakingJSON
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadWrite)
+	FString UserId;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Ip;
+};
+
+// JoinLobby_DB
+USTRUCT(BlueprintType)
+struct FMatchJoinJSON
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadWrite)
+	FString UserId;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 Idx;
+};
+
+// ScoreBoard_DB
+USTRUCT(BlueprintType)
+struct FFinishMatchJSON
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadWrite)
+	int32 Idx;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Win;					// 승자 UserId
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Lose;					// 패자 UserId
+};
+
 // Delegates
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerDel, FServerInfo, ServerListDel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerSearchingDel, bool, SearchingForServerDel);
@@ -101,60 +154,66 @@ public:
 	// Server Functions
 	UFUNCTION(BlueprintCallable)
 	void CreateServer();
-
 	UFUNCTION(BlueprintCallable)
 	void FindServer();
-
 	UFUNCTION(BlueprintCallable)
 	void JoinServer(int32 ArrayIndex);
-
 	UFUNCTION(BlueprintCallable)
 	void GameStart();
 	
 	// CreateServerInfo Functions
 	UFUNCTION(BlueprintCallable)
 	void SetCreateServerInfo(FString ServerName, FString ServerMapName, int32 MaxPlayer);
-
 	UFUNCTION(BlueprintCallable)
 	FString GetCreateServerName() const;
 	
 	// Map Functions
 	UFUNCTION(BlueprintCallable)
 	void FillMapList();
-
 	UFUNCTION(BlueprintCallable)
 	void SetSelectedMap(FString MapName);
-
 	UFUNCTION(BlueprintCallable)
 	class UTexture2D* GetMapImage(FString MapName);
-
 	UFUNCTION(BlueprintCallable)
 	class UTexture2D* GetMapOverviewImage(FString MapName);
-
 	UFUNCTION(BlueprintCallable)
 	FString GetSelectedMapName();
 
 	// ServerSlot Functions
 	UFUNCTION(BlueprintCallable)
 	void SetSelectedServerSlotIndex(int32 index);
-
 	UFUNCTION(BlueprintCallable)
 	int32 GetSelectedServerSlotIndex();
 
 	// Matchmaking Functions
 	UFUNCTION(BlueprintCallable)
-	void StartMatchmaking();
-
+	void CreateLobby_DB(const FMatchMakingJSON& MatchMakingData);	// lobby, (post)
 	UFUNCTION(BlueprintCallable)
-	void CancelMatchmaking();
+	void JoinLobby_DB(const FMatchJoinJSON& MatchJoinData);	// matchjoin, (post)
+	UFUNCTION(BlueprintCallable)
+	void MatchEnd_DB(const FFinishMatchJSON& FinishMatchData);	// matchend, (post)
+	UFUNCTION(BlueprintCallable)
+	void GetLobbyList_DB();	// match, (get)
+	UFUNCTION(BlueprintCallable)
+	void GetPlayerScore_DB(FString UserId);	// score, (get)
 
+	// Get Functions
+	UFUNCTION(BlueprintCallable)
+	FString GetSteamID();
+	UFUNCTION(BlueprintCallable)
+	FString GetLocalIP();
+	
 protected:
 	// Map Initialization
 	void InitializeMaps();
 
 	// Matchmaking
+	void OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
+	void OnJoinLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
+	void OnMatchEndResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
 
-	// Variables
+	
+	// Variables	/////////////////////////////////////////////
 protected:
 	IOnlineSessionPtr SessionInterface;
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
@@ -172,12 +231,8 @@ protected:
 	// Delegates
 	UPROPERTY(BlueprintAssignable)
 	FServerDel ServerListDel;
-
 	UPROPERTY(BlueprintAssignable)
 	FServerSearchingDel SearchingForServerDel;
-
 	UPROPERTY(BlueprintAssignable)
 	FMapInfoDel FMapNameDel;
-
-	// Matchmaking
 };
