@@ -263,28 +263,6 @@ int32 UHooGameInstance::GetSelectedServerSlotIndex()
 	return SelectedServerSlotIndex;
 }
 
-// Start Matchmaking
-void UHooGameInstance::StartMatchmaking()
-{
-	FString PlayerId = TEXT("Player_") + FGuid::NewGuid().ToString(); // Generate Player ID
-	MatchmakingQueue.Add(PlayerId);
-
-	// Check matchmaking queue at regular intervals
-	GetWorld()->GetTimerManager().SetTimer(MatchmakingTimerHandle, this, &UHooGameInstance::CheckMatchmakingQueue, 5.0f, true);
-}
-
-// Cancel Matchmaking
-void UHooGameInstance::CancelMatchmaking()
-{
-	FString PlayerId = TEXT("Player_") + FGuid::NewGuid().ToString(); // Generate Player ID
-	MatchmakingQueue.Remove(PlayerId);
-
-	if (MatchmakingQueue.Num() == 0)
-	{
-		GetWorld()->GetTimerManager().ClearTimer(MatchmakingTimerHandle);
-	}
-}
-
 // Game Start
 void UHooGameInstance::GameStart()
 {
@@ -333,23 +311,4 @@ void UHooGameInstance::InitializeMaps()
 		Map.MapOverviewImage = Map2OverviewImage.Object;
 		MapList.Add(Map);
 	}
-}
-
-// Check Matchmaking Queue
-void UHooGameInstance::CheckMatchmakingQueue()
-{
-	if (MatchmakingQueue.Num() >= 2)
-	{
-		FString Player1 = MatchmakingQueue[0];
-		FString Player2 = MatchmakingQueue[1];
-		MatchmakingQueue.RemoveAt(0, 2);
-
-		OnMatchmakingSuccess();
-	}
-}
-
-// Matchmaking Success Callback
-void UHooGameInstance::OnMatchmakingSuccess()
-{
-	CreateServer();
 }

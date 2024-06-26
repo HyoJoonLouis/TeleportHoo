@@ -153,8 +153,6 @@ protected:
 	void InitializeMaps();
 
 	// Matchmaking
-	void CheckMatchmakingQueue();
-	void OnMatchmakingSuccess();
 
 	// Variables
 protected:
@@ -182,6 +180,4 @@ protected:
 	FMapInfoDel FMapNameDel;
 
 	// Matchmaking
-	FTimerHandle MatchmakingTimerHandle;
-	TArray<FString> MatchmakingQueue;
 };
