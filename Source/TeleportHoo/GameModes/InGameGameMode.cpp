@@ -76,7 +76,7 @@ bool AInGameGameMode::ReadyToStartMatch_Implementation()
 			FTimerHandle TempTimerHandle_2;
 			GetWorld()->GetTimerManager().SetTimer(TempTimerHandle_2, [&]() {
 				RoundStart();
-				}, 5.0f, false);
+				}, 5.5f, false);
 			}, 0.5f, false);
 		return true;
 	}
