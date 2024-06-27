@@ -25,9 +25,9 @@ public:
 	virtual void HandleMatchHasEnded() override;
 
 	UFUNCTION()
-	void RoundStart();
-	UFUNCTION()
 	void RoundLoading();
+	UFUNCTION()
+	void RoundStart();
 	UFUNCTION()
 	void RoundEnd();
 	UFUNCTION()

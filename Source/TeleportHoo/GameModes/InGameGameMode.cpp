@@ -94,22 +94,6 @@ void AInGameGameMode::HandleMatchHasEnded()
 	ReturnToMainMenuHost();
 }
 
-void AInGameGameMode::RoundStart()
-{
-	for (const auto& Player : ConnectedPlayers)
-	{
-		ABaseCharacter* SpawnedActor = nullptr;
-		AActor* PlayerStart = FindPlayerStart(Player, Player->GetControllerTeam() == ETeam::RED ? "Red" : "Blue");
-		SpawnedActor = GetWorld()->SpawnActor<ABaseCharacter>(SpawnActor, PlayerStart->GetActorLocation(), PlayerStart->GetActorRotation());
-		Player->ClientSetRotation(PlayerStart->GetActorRotation());
-		Player->Possess(SpawnedActor);
-		SpawnedActor->Client_OnPossessed();
-		Player->Client_FadeInOut(true);
-	}
-	GetGameState<AIngameGameState>()->AddRound();
-	GetGameState<AIngameGameState>()->StartGameTimer();
-}
-
 void AInGameGameMode::RoundLoading()
 {
 	for (const auto& Player : ConnectedPlayers)
@@ -123,6 +107,23 @@ void AInGameGameMode::RoundLoading()
 	GetWorldTimerManager().SetTimer(RoundStartTimerHandle, this, &AInGameGameMode::RoundStart, 2.0f, false);
 }
 
+void AInGameGameMode::RoundStart()
+{
+	for (const auto& Player : ConnectedPlayers)
+	{
+		ABaseCharacter* SpawnedActor = nullptr;
+		AActor* PlayerStart = FindPlayerStart(Player, Player->GetControllerTeam() == ETeam::RED ? "Red" : "Blue");
+		SpawnedActor = GetWorld()->SpawnActor<ABaseCharacter>(SpawnActor, PlayerStart->GetActorLocation(), PlayerStart->GetActorRotation());
+		Player->ClientSetRotation(PlayerStart->GetActorRotation());
+		Player->Possess(SpawnedActor);
+		SpawnedActor->Client_OnPossessed();
+		Player->Client_FadeInOut(true);
+	}
+
+	GetGameState<AIngameGameState>()->AddRound();
+	GetGameState<AIngameGameState>()->StartGameTimer();
+}
+
 void AInGameGameMode::RoundEnd()
 {
 	for (const auto& Player : ConnectedPlayers)
@@ -131,7 +132,6 @@ void AInGameGameMode::RoundEnd()
 	}
 	
 	GetWorldTimerManager().SetTimer(RoundLoadingTimerHandle, this, &AInGameGameMode::RoundLoading, 1.0f, false);
-
 }
 
 void AInGameGameMode::OnGameTimeFinished()
@@ -147,6 +147,7 @@ void AInGameGameMode::OnGameTimeFinished()
 			MaxHealth = PlayerPawn->GetCurrentHealth();
 		}
 		PlayerPawn->Server_SetState(ECharacterStates::DEAD);
+
 		if (PlayerPawn->GetTargeting())
 			PlayerPawn->Server_Targeting();
 	}
@@ -179,15 +180,6 @@ void AInGameGameMode::OnPlayerDiedDelegate(AIngamePlayerController* DeadCharacte
 	CurrentGameState->StopGameTimer();
 	ETeam WinTeam = DeadCharacter->GetControllerTeam() == ETeam::RED ? ETeam::BLUE : ETeam::RED;
 
-	//if (DeadCharacter->GetControllerTeam() == ETeam::RED)
-	//{
-	//	CurrentGameState->AddTeamScore(ETeam::BLUE);
-	//}
-	//else if (DeadCharacter->GetControllerTeam() == ETeam::BLUE)
-	//{
-	//	CurrentGameState->AddTeamScore(ETeam::RED);
-	//}
-	
 	CurrentGameState->AddTeamScore(WinTeam);
 
 	for (const auto& Player : ConnectedPlayers)
@@ -197,7 +189,6 @@ void AInGameGameMode::OnPlayerDiedDelegate(AIngamePlayerController* DeadCharacte
 		if (PlayerPawn->GetTargeting())
 			PlayerPawn->Server_Targeting();
 	}
-
 
 	if (CurrentGameState->GetTeamScore(ETeam::RED) >= 3 || CurrentGameState->GetTeamScore(ETeam::BLUE) >= 3)
 	{

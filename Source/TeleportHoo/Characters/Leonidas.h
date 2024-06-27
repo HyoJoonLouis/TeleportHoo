@@ -10,16 +10,20 @@ class TELEPORTHOO_API ALeonidas : public ABaseCharacter
 	GENERATED_BODY()
 public:
 	ALeonidas();
-	void Tick(float DeltaTime);
 
 	UFUNCTION(BlueprintCallable)
-	void StartWeaponCollision();
+	FORCEINLINE class UStaticMeshComponent* GetSwordMesh() { return SwordMesh; }
 	UFUNCTION(BlueprintCallable)
-	void EndWeaponCollision();
+	FORCEINLINE class UStaticMeshComponent* GetShieldMesh() { return ShieldMesh; }
+
+	UFUNCTION(BlueprintCallable)
+	void SetSwordAsCollision();
+	UFUNCTION(BlueprintCallable)
+	void SetShieldAsCollision();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
-	class UStaticMeshComponent* WeaponMesh;
+	class UStaticMeshComponent* SwordMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attack | Mesh")
 	class UStaticMeshComponent* ShieldMesh;
 };

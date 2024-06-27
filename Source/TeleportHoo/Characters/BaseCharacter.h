@@ -45,6 +45,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+
 	UFUNCTION()
 	void InputBind();
 public:
@@ -105,6 +106,7 @@ public:
 	void OnRep_SetDirection();
 	UFUNCTION()
 	void OnRep_SetTargeting();
+
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void Client_OnPossessed();
 	UFUNCTION(Server, Reliable, BlueprintCallable)
@@ -126,7 +128,7 @@ public:
 	UFUNCTION(Client, UnReliable, BlueprintCallable)
 	void Client_TakeDamage(AActor* CauseActor, FDamageInfo DamageInfo);
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void Server_TakeDamage(AActor* CauseActor, FDamageInfo DamageInfo);
+	void Server_TakeDamage(AActor* CauseActor, FDamageInfo DamageInfo, FVector HitLocation);
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_PlayAnimMontage(class UAnimMontage* AnimMontage);
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
@@ -149,6 +151,12 @@ public:
 
 	void ChangeToControllerDesiredRotation();
 	void ChangeToRotationToMovement();
+
+	// Collision
+	UFUNCTION(BlueprintCallable)
+	void StartWeaponCollision();
+	UFUNCTION(BlueprintCallable)
+	void EndWeaponCollision();
 
 protected:
 	// Cameras
@@ -204,11 +212,14 @@ protected:
 	class UDirectionWidget* DirectionWidget;
 
 	// Attacks
-
 	UPROPERTY(BlueprintReadWrite)
 	uint8 AttackIndex;
-	TArray<AActor*> AlreadyHitActors;
 	bool bActivateCollision;
+	TArray<AActor*> AlreadyHitActors;
+	UPROPERTY(BlueprintReadWrite)
+	class UStaticMeshComponent* CollisionMesh;
+	FVector BeforeCollisionStartLocation;
+	FVector BeforeCollisionEndLocation;
 	UPROPERTY(BlueprintReadWrite)
 	FDamageInfo CurrentDamageInfo;
 

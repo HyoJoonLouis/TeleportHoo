@@ -25,7 +25,6 @@ void AIngameGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AIngameGameState, BlueTeamScore);
 }
 
-
 void AIngameGameState::StartGameTimer()
 {
 	if (HasAuthority())
@@ -37,6 +36,7 @@ void AIngameGameState::StartGameTimer()
 					{
 						if (OnGameTimeFinished.IsBound())
 							OnGameTimeFinished.Broadcast();
+
 						GetWorld()->GetTimerManager().ClearTimer(GameTimerHandle);
 					}
 			}, 1.0f, true);
