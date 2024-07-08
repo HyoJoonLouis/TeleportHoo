@@ -57,7 +57,7 @@ void ALobbyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation 진입"));
 
 	// 클라이언트에서 플레이어 정보 갱신
 	UE_LOG(LogTemp, Warning,
@@ -68,7 +68,7 @@ void ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation(int32 Player
 
 void ALobbyPlayerController::Client_SetStartButtonEnabled_Implementation(bool bEnabled)
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_SetStartButtonEnabled_Implementation 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Client_SetStartButtonEnabled_Implementation 진입"));
 
 	if (LobbyWidget)
 	{
@@ -78,7 +78,7 @@ void ALobbyPlayerController::Client_SetStartButtonEnabled_Implementation(bool bE
 
 void ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation(bool bIsVisible)
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation 진입"));
 
 	if (LobbyWidget)
 	{
@@ -448,7 +448,7 @@ void ALobbyPlayerController::InitializeLobbyWidget()
 // PlayerLobbyInfo 정보 업데이트
 void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
 	UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerInfoUI: PlayerName: %s, bIsReady: %s"),
 	       *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 

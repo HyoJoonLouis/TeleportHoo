@@ -12,7 +12,7 @@ void UPlayerLobbyInfoWidget::NativeConstruct()
 
 void UPlayerLobbyInfoWidget::UpdatePlayerInfo(const FPlayerInfo& PlayerInfo)
 {
-	UE_LOG(LogTemp, Error, TEXT("UPlayerLobbyInfoWidget::UpdatePlayerInfo 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("UPlayerLobbyInfoWidget::UpdatePlayerInfo 진입"));
 	UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerInfo: PlayerName: %s, bIsReady: %s"),
 		*PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
@@ -39,7 +39,7 @@ void UPlayerLobbyInfoWidget::UpdatePlayerInfo(const FPlayerInfo& PlayerInfo)
 	if(ReadyStatus)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ReadyStatus->SetText"));
-		UE_LOG(LogTemp, Error, TEXT("Set Ready!!! : %s"), PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
+		UE_LOG(LogTemp, Warning, TEXT("Set Ready!!! : %s"), PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 		ReadyStatus->SetText(PlayerInfo.bIsReady ? FText::FromString("READY") : FText::FromString("NOT READY"));
 	}
 	else

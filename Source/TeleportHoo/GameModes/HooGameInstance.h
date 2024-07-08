@@ -91,7 +91,7 @@ public:
 
 // CreateLobby_DB
 USTRUCT(BlueprintType)
-struct FMatchMakingJSON
+struct FLobbyCreationJSON
 {
 	GENERATED_BODY()
 
@@ -105,7 +105,7 @@ public:
 
 // JoinLobby_DB
 USTRUCT(BlueprintType)
-struct FMatchJSON
+struct FLobbyJoinJSON
 {
 	GENERATED_BODY()
 
@@ -119,7 +119,7 @@ public:
 
 // ScoreBoard_DB
 USTRUCT(BlueprintType)
-struct FFinishMatchJSON
+struct FMatchResultJSON
 {
 	GENERATED_BODY()
 
@@ -189,13 +189,13 @@ public:
 
 	// Matchmaking Functions
 	UFUNCTION(BlueprintCallable)
-	void CreateLobby_DB(const FMatchMakingJSON& MatchMakingData);	// lobby, (post)
+	void CreateLobby_DB(const FLobbyCreationJSON& LobbyCreationData);	// lobby, (post)
 	UFUNCTION(BlueprintCallable)
-	void JoinLobby_DB(const FMatchJSON& MatchJoinData);	// joinlobby, (post)
+	void JoinLobby_DB(const FLobbyJoinJSON& LobbyJoinData);	// joinlobby, (post)
 	UFUNCTION(BlueprintCallable)
-	void LeaveLobby_DB(const FMatchJSON& MatchJoinData);	// leavelobby, (post)
+	void LeaveLobby_DB(const FLobbyJoinJSON& LobbyJoinData);	// leavelobby, (post)
 	UFUNCTION(BlueprintCallable)
-	void MatchEnd_DB(const FFinishMatchJSON& FinishMatchData);	// matchend, (post)
+	void MatchEnd_DB(const FMatchResultJSON& MatchResultJSON);	// matchend, (post)
 	UFUNCTION(BlueprintCallable)
 	void GetLobbyList_DB();	// match, (get)
 	UFUNCTION(BlueprintCallable)

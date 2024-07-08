@@ -110,7 +110,7 @@ void ALobbyGameMode::Logout(AController* Exiting)
 
 void ALobbyGameMode::CheckAllPlayersReady()
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode::CheckAllPlayersReady 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyGameMode::CheckAllPlayersReady 진입"));
 
 	ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
 	if (IsValid(LobbyGameState) && LobbyGameState->AreAllPlayersReady())
@@ -146,7 +146,7 @@ void ALobbyGameMode::CheckAllPlayersReady()
 // 모든 클라이언트에게 캐릭터 선택 화면으로 이동하도록 명령
 void ALobbyGameMode::StartCharacterSelection()
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode::StartCharacterSelection 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyGameMode::StartCharacterSelection 진입"));
 
 	for(FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 	{
@@ -161,7 +161,7 @@ void ALobbyGameMode::StartCharacterSelection()
 // 모든 클라이언트에게 로딩 화면을 보여주도록 명령
 void ALobbyGameMode::ShowLoadingScreenToAllPlayers()
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode::ShowLoadingScreenToALlPlayers 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyGameMode::ShowLoadingScreenToALlPlayers 진입"));
 
 	for(FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 	{
@@ -178,7 +178,7 @@ void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 {
 	if (HasAuthority())
 	{
-		UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode : OnPlayerInfoUpdated_Implementation 진입"));
+		UE_LOG(LogTemp, Warning, TEXT("ALobbyGameMode : OnPlayerInfoUpdated_Implementation 진입"));
 
 		ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
 		if (!IsValid(LobbyGameState))
