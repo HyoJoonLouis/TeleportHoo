@@ -48,6 +48,8 @@ void UHooGameInstance::Init()
 // Session Creation Complete Callback
 void UHooGameInstance::OnCreateSessionComplete(FName SessionName, bool bSucceeded)
 {
+	UE_LOG(LogTemp, Warning, TEXT("OnCreateSessionComplete 시작"));
+	
 	if (bSucceeded)
 	{
 		GetWorld()->ServerTravel("/Game/Levels/L_Lobby?listen");
@@ -152,14 +154,14 @@ void UHooGameInstance::CreateServer()
 	SessionSettings.Set(L"SERVER_NAME_KEY", CreateServerInfo.ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
-	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
-
 	// DB와 상호작용
 	FLobbyCreationJSON LobbyCreationData;
 	LobbyCreationData.UserId = GetSteamID();
 	LobbyCreationData.Ip = GetLocalIP();
-	UE_LOG(LogTemp, Warning, TEXT("CreateLobby_DB"));
 	CreateLobby_DB(LobbyCreationData);
+	
+	
+	SessionInterface->CreateSession(0, MySessionName, SessionSettings);
 }
 
 // Find Server
@@ -533,32 +535,36 @@ void UHooGameInstance::InitializeMaps()
 
 void UHooGameInstance::OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
 {
+	UE_LOG(LogTemp, Warning, TEXT("OnCreateLobbyResponse 시작"));
+
 	if (bWasSuccessful && HttpResponse.IsValid() && HttpResponse->GetResponseCode() == 200)
 	{
-		TSharedPtr<FJsonObject> JsonObject;
-		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(HttpResponse->GetContentAsString());
-		if (FJsonSerializer::Deserialize(Reader, JsonObject))
-		{
-			bool Success = JsonObject->GetBoolField(TEXT("success"));
-			if (Success)
-			{
-				int32 ServerIdx = JsonObject->GetIntegerField(TEXT("idx"));
-				UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded, ServerIdx: %d"), ServerIdx);
-	
-				// 서버 인덱스를 세션 설정에 추가
-				FOnlineSessionSettings SessionSettings;
-				SessionSettings.Settings.Add(FName("SERVER_IDX_KEY"), FOnlineSessionSetting(FVariantData(ServerIdx), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing));
-				SessionInterface->CreateSession(0, MySessionName, SessionSettings);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 서버 생성 실패"));
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: JSON 파싱 실패"));
-		}
+		UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded: %s"), *HttpResponse->GetContentAsString());
+
+		// TSharedPtr<FJsonObject> JsonObject;
+		// TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(HttpResponse->GetContentAsString());
+		// if (FJsonSerializer::Deserialize(Reader, JsonObject))
+		// {
+		// 	bool Success = JsonObject->GetBoolField(TEXT("success"));
+		// 	if (Success)
+		// 	{
+		// 		int32 ServerIdx = JsonObject->GetIntegerField(TEXT("idx"));
+		// 		UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded, ServerIdx: %d"), ServerIdx);
+		//
+		// 		// 서버 인덱스를 세션 설정에 추가
+		// 		FOnlineSessionSettings SessionSettings;
+		// 		SessionSettings.Settings.Add(FName("SERVER_IDX_KEY"), FOnlineSessionSetting(FVariantData(ServerIdx), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing));
+		// 		SessionInterface->CreateSession(0, MySessionName, SessionSettings);
+		// 	}
+		// 	else
+		// 	{
+		// 		UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 서버 생성 실패"));
+		// 	}
+		// }
+		// else
+		// {
+		// 	UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: JSON 파싱 실패"));
+		// }
 	}
 	else
 	{
