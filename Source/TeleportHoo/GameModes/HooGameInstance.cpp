@@ -147,6 +147,8 @@ void UHooGameInstance::CreateServer()
 	SessionSettings.bShouldAdvertise = true;
 	SessionSettings.bUsesPresence = true;
 	SessionSettings.NumPublicConnections = CreateServerInfo.MaxPlayers;
+
+	// 세션 설정에 서버 이름과 맵 이름 추가
 	SessionSettings.Set(L"SERVER_NAME_KEY", CreateServerInfo.ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
@@ -156,7 +158,7 @@ void UHooGameInstance::CreateServer()
 	FLobbyCreationJSON LobbyCreationData;
 	LobbyCreationData.UserId = GetSteamID();
 	LobbyCreationData.Ip = GetLocalIP();
-	UE_LOG(LogTemp, Warning, TEXT("CreateLobby_DB 호추우우우울"));
+	UE_LOG(LogTemp, Warning, TEXT("CreateLobby_DB"));
 	CreateLobby_DB(LobbyCreationData);
 }
 
@@ -192,10 +194,22 @@ void UHooGameInstance::JoinServer(int32 ArrayIndex)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Joining server at index: %d"), ArrayIndex);
 
+		// 서버 인덱스 가져오기
+		int32 ServerIdx = 0;
+		const FOnlineSessionSetting* ServerIdxSetting = Result.Session.SessionSettings.Settings.Find(FName("SERVER_IDX_KEY"));
+		if (ServerIdxSetting)
+		{
+			ServerIdxSetting->Data.GetValue(ServerIdx);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to get server index"));
+		}
+		
 		FLobbyJoinJSON LobbyJoinData;
 		LobbyJoinData.UserId = GetSteamID();
-		LobbyJoinData.Idx = 99;		// 이거 서버한테서 인덱스 가져와야함. 
-		// JoinLobby_DB(LobbyJoinData);
+		LobbyJoinData.Idx = ServerIdx;		// 이거 서버한테서 인덱스 가져와야함. 
+		JoinLobby_DB(LobbyJoinData);
 		
 		SessionInterface->JoinSession(0, MySessionName, Result);
 	}
@@ -519,22 +533,44 @@ void UHooGameInstance::InitializeMaps()
 
 void UHooGameInstance::OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
 {
-	if (bWasSuccessful && HttpResponse.IsValid())
+	if (bWasSuccessful && HttpResponse.IsValid() && HttpResponse->GetResponseCode() == 200)
 	{
-		if (HttpResponse->GetResponseCode() == 200)
+		TSharedPtr<FJsonObject> JsonObject;
+		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(HttpResponse->GetContentAsString());
+		if (FJsonSerializer::Deserialize(Reader, JsonObject))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded: %s"), *HttpResponse->GetContentAsString());
+			bool Success = JsonObject->GetBoolField(TEXT("success"));
+			if (Success)
+			{
+				int32 ServerIdx = JsonObject->GetIntegerField(TEXT("idx"));
+				UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded, ServerIdx: %d"), ServerIdx);
+	
+				// 서버 인덱스를 세션 설정에 추가
+				FOnlineSessionSettings SessionSettings;
+				SessionSettings.Settings.Add(FName("SERVER_IDX_KEY"), FOnlineSessionSetting(FVariantData(ServerIdx), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing));
+				SessionInterface->CreateSession(0, MySessionName, SessionSettings);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 서버 생성 실패"));
+			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 응답 코드 %d, 응답 내용: %s"), HttpResponse->GetResponseCode(), *HttpResponse->GetContentAsString());
+			UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: JSON 파싱 실패"));
 		}
 	}
 	else
 	{
 		FString ErrorMessage = HttpResponse.IsValid() ? HttpResponse->GetContentAsString() : TEXT("Invalid response");
-		UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 요청이 성공적으로 처리되지 않음. 에러 메시지: %s"), *ErrorMessage);
-	}
+		if (HttpResponse.IsValid())
+		{
+			UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 요청이 성공적으로 처리되지 않음. 응답 코드: %d, 에러 메시지: %s"), HttpResponse->GetResponseCode(), *ErrorMessage);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 요청이 성공적으로 처리되지 않음. 에러 메시지: %s"), *ErrorMessage);
+		}	}
 }
 
 void UHooGameInstance::OnJoinLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
@@ -609,9 +645,8 @@ void UHooGameInstance::OnGetLobbyListResponse(TSharedPtr<IHttpRequest> HttpReque
 			if (FJsonSerializer::Deserialize(Reader, Lobbies))
 			{
 				// Lobbies를 처리하는 로직 추가
-				TArray<FServerInfo> ServerList;
+				// TArray<FServerInfo> ServerList;
 
-				
 			}
 			UE_LOG(LogTemp, Warning, TEXT("GetLobbyList succeeded: %s"), *HttpResponse->GetContentAsString());
 		}
