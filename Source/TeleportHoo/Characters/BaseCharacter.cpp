@@ -148,6 +148,39 @@ void ABaseCharacter::Tick(float DeltaTime)
 		TargetingTimeline.Reverse();
 	}
 
+	// Collision
+	if (HasAuthority() && bActivateCollision)
+	{
+		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+		TEnumAsByte<EObjectTypeQuery> Pawn = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn);
+		ObjectTypes.Add(Pawn);
+		TArray<AActor*> IgnoreActors;
+		IgnoreActors.Add(GetOwner());
+		TArray<FHitResult> HitResults;
+
+		FVector BeforeInterval = (BeforeCollisionEndLocation - BeforeCollisionStartLocation) / 5;
+		FVector CurrentInterval = (CollisionMesh->GetSocketLocation("EndCollision") - CollisionMesh->GetSocketLocation("StartCollision")) / 5;
+		for (int i = 0; i < 5; i++)
+		{
+			bool Result = UKismetSystemLibrary::LineTraceMultiForObjects(this, BeforeCollisionStartLocation + BeforeInterval * i, CollisionMesh->GetSocketLocation("StartCollision") + CurrentInterval * i, ObjectTypes, false, IgnoreActors, EDrawDebugTrace::ForDuration, HitResults, true);
+			if (Result)
+			{
+				for (const auto& HitResult : HitResults)
+				{
+					ABaseCharacter* HitActor = Cast<ABaseCharacter>(HitResult.GetActor());
+					if(AlreadyHitActors.Contains(HitActor) || HitActor->GetState() == ECharacterStates::DODGE)
+						continue;
+					AlreadyHitActors.AddUnique(HitActor);
+					IgnoreActors.Add(HitActor);
+					if (IsValid(HitActor))
+						HitActor->Server_TakeDamage(this, CurrentDamageInfo, HitResult.Location);
+				}
+			}
+		}
+
+		BeforeCollisionStartLocation = CollisionMesh->GetSocketLocation("StartCollision");
+		BeforeCollisionEndLocation = CollisionMesh->GetSocketLocation("EndCollision");
+	}
 }
 
 void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -318,6 +351,7 @@ void ABaseCharacter::Server_SetState_Implementation(ECharacterStates NewState)
 	{
 		if (CurrentState == NewState)
 			return;
+
 		CurrentState = NewState;
 		OnRep_SetState();
 	}
@@ -347,6 +381,7 @@ void ABaseCharacter::Server_SetDirection_Implementation(EDamageDirection Value)
 	{
 		if (CurrentDirection == Value)
 			return;
+
 		CurrentDirection = Value;
 		OnRep_SetDirection();
 	}
@@ -364,6 +399,7 @@ void ABaseCharacter::Server_Targeting_Implementation()
 void ABaseCharacter::Server_WeakAttack_Implementation(int Index)
 {
 	Server_SetState(ECharacterStates::ATTACK);
+
 	if(CurrentDirection == EDamageDirection::RIGHT)
 	{
 		Server_PlayAnimMontage(WeakAttackMontages[EDamageDirection::RIGHT].AttackMontages[Index]);
@@ -377,7 +413,20 @@ void ABaseCharacter::Server_WeakAttack_Implementation(int Index)
 
 void ABaseCharacter::Server_HeavyAttack_Implementation()
 {
+	if (bTargeting && IsValid(TargetActor) && Cast<ABaseCharacter>(TargetActor)->GetState() == ECharacterStates::PARRIABLE && FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) <= 200)
+	{
+		ABaseCharacter* Target = Cast<ABaseCharacter>(TargetActor);
+		if ((CurrentDirection == EDamageDirection::RIGHT && Target->GetActorDirection() == EDamageDirection::LEFT)
+			|| (CurrentDirection == EDamageDirection::LEFT && Target->GetActorDirection() == EDamageDirection::RIGHT))
+		{
+			Parry(TargetActor, this);
+		}
+
+		return;
+	}
+
 	Server_SetState(ECharacterStates::ATTACK);
+
 	if (CurrentDirection == EDamageDirection::RIGHT)
 	{
 		Server_PlayAnimMontage(HeavyAttackMontages[EDamageDirection::RIGHT]);
@@ -409,7 +458,7 @@ void ABaseCharacter::Client_TakeDamage_Implementation(AActor* CauseActor, FDamag
 	PlayerController->GetIngameHUD()->OnHitEffect();
 }
 
-void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo)
+void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamageInfo DamageInfo, FVector HitLocation)
 {
 	if (HasAuthority())
 	{
@@ -420,14 +469,10 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 
 		ABaseCharacter* DamageActor = Cast<ABaseCharacter>(CauseActor);
 
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("DamageActor %i"), DamageActor->GetState()));
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("HitActor %i"), CurrentState));
-
-
 		if (((CurrentDirection == EDamageDirection::RIGHT && DamageActor->GetActorDirection() == EDamageDirection::LEFT)
 			|| (CurrentDirection == EDamageDirection::LEFT && DamageActor->GetActorDirection() == EDamageDirection::RIGHT))
 			&& CurrentState == ECharacterStates::IDLE
-			&& DamageActor->GetState() == ECharacterStates::ATTACK)
+			&& (DamageActor->CheckCurrentState({ECharacterStates::ATTACK, ECharacterStates::PARRIABLE})))
 		{
 			Server_SetState(ECharacterStates::BLOCK);
 			Server_PlayAnimMontage(BlockMontages[DamageInfo.DamageType] );
@@ -443,9 +488,25 @@ void ABaseCharacter::Server_TakeDamage_Implementation(AActor* CauseActor, FDamag
 		if (DamageInfo.DamageType == EDamageType::SKILL)
 			Server_PlayAnimMontage(SkillBlockMontage);
 		else
-			Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
-		Server_SpawnNiagara(OnHitEffects[DamageInfo.WeaponType].Niagara[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")), DamageActor->GetActorRightVector().Rotation());
-		Server_PlaySoundAtLocation(OnHitEffects[DamageInfo.WeaponType].SoundBase[DamageInfo.DamageDirection], GetMesh()->GetSocketLocation(FName("DirectionWidget")));
+		{
+			// 앞, 뒤에서 때리는 지 계산
+			float DotProduct = FVector::DotProduct(GetActorForwardVector(), (CauseActor->GetActorLocation() - GetActorLocation()).GetSafeNormal());
+
+			if (DotProduct > 0)
+			{
+				Server_PlayAnimMontage(HitMontages[DamageInfo.DamageDirection]);
+			}
+			else
+			{
+				if (DamageInfo.DamageDirection == EDamageDirection::RIGHT)
+					Server_PlayAnimMontage(HitMontages[EDamageDirection::LEFT]);
+				else
+					Server_PlayAnimMontage(HitMontages[EDamageDirection::RIGHT]);
+			}
+		}
+
+		Server_SpawnNiagara(OnHitEffects[DamageInfo.WeaponType].Niagara[DamageInfo.DamageDirection], HitLocation, DamageActor->GetActorRightVector().Rotation());
+		Server_PlaySoundAtLocation(OnHitEffects[DamageInfo.WeaponType].SoundBase[DamageInfo.DamageDirection], HitLocation);
 
 		if (CurrentHealth <= 0)
 		{
@@ -511,17 +572,18 @@ bool ABaseCharacter::CanTargetBlockAttack()
 	{
 		if (FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) >= 200)
 			return false;
+
 		ABaseCharacter* Target = Cast<ABaseCharacter>(TargetActor);
+
 		if ((CurrentDirection == EDamageDirection::RIGHT && Target->GetActorDirection() == EDamageDirection::LEFT) 
 			|| CurrentDirection == EDamageDirection::LEFT && Target->GetActorDirection() == EDamageDirection::RIGHT)
 		{
 			return true;
 		}
 	}
+
 	return false;
 }
-
-
 
 void ABaseCharacter::ChangeToControllerDesiredRotation()
 {
@@ -602,8 +664,10 @@ void ABaseCharacter::Dodge()
 	{
 		if (CurrentMomentum < MomentumValues.OnDodgeRemoveAmount)
 			return;
+
 		Server_SetMomentum(CurrentMomentum - MomentumValues.OnDodgeRemoveAmount);
 		Server_SetState(ECharacterStates::DODGE);
+
 		if (MovementVector.X >= 0)
 			Server_PlayAnimMontage(DodgeMontages[EDamageDirection::RIGHT]);
 		else if (MovementVector.X < 0)
@@ -626,8 +690,10 @@ void ABaseCharacter::WeakAttack()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
+
 	Server_WeakAttack(AttackIndex);
 	AttackIndex++;
+
 	if (AttackIndex > 1)
 		AttackIndex = 0;
 }
@@ -638,17 +704,6 @@ void ABaseCharacter::HeavyAttack()
 		return;
 	
 	AttackIndex = 0;
-	
-	if (bTargeting && IsValid(TargetActor) && Cast<ABaseCharacter>(TargetActor)->GetState() == ECharacterStates::PARRIABLE && FVector::Distance(GetActorLocation(), TargetActor->GetActorLocation()) <= 200)
-	{
-		ABaseCharacter* Target = Cast<ABaseCharacter>(TargetActor);
-		if ((CurrentDirection == EDamageDirection::RIGHT && Target->GetActorDirection() == EDamageDirection::LEFT)
-			|| CurrentDirection == EDamageDirection::LEFT && Target->GetActorDirection() == EDamageDirection::RIGHT)
-		{
-			Parry(TargetActor, this);
-		}
-		return;
-	}
 	
 	Server_HeavyAttack();
 }
@@ -662,8 +717,10 @@ void ABaseCharacter::Skill()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
+
 	if (CurrentMomentum < MomentumValues.OnSkillRemoveAmount)
 		return;
+
 	Server_SetState(ECharacterStates::SKILL);
 	Server_SetMomentum(CurrentMomentum - MomentumValues.OnSkillRemoveAmount);
 	Server_PlayAnimMontage(SkillMontage);
@@ -673,6 +730,20 @@ void ABaseCharacter::Emot()
 {
 	if (GetState() != ECharacterStates::IDLE)
 		return;
+
 	Server_SetState(ECharacterStates::EMOT);
 	Server_PlayAnimMontage(EmotMontage);
+}
+
+void ABaseCharacter::StartWeaponCollision()
+{
+	BeforeCollisionStartLocation = CollisionMesh->GetSocketLocation(FName("StartCollision"));
+	BeforeCollisionEndLocation = CollisionMesh->GetSocketLocation(FName("EndCollision"));
+	bActivateCollision = true;
+	AlreadyHitActors.Empty();
+}
+
+void ABaseCharacter::EndWeaponCollision()
+{
+	bActivateCollision = false;
 }
