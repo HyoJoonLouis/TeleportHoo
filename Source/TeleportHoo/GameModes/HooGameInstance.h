@@ -134,6 +134,28 @@ public:
 	FString Lose;					// 패자 UserId
 };
 
+// LobbyInfo_DB
+USTRUCT(Blueprintable)
+struct FLobbyInfoJSON
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 Idx;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString HostName;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString HostIP;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString ClientName;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString CreatedTime;
+};
+
 // Delegates
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerDel, FServerInfo, ServerListDel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FServerSearchingDel, bool, SearchingForServerDel);
@@ -211,7 +233,7 @@ protected:
 	// Map Initialization
 	void InitializeMaps();
 
-	// Matchmaking
+	// Matchmaking Response
 	void OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
 	void OnJoinLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
 	void OnLeaveLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful);
@@ -233,6 +255,9 @@ protected:
 
 	// Server Creation Data
 	FCreateServerInfo CreateServerInfo;
+
+	// Matchmaking
+	TArray<FLobbyInfoJSON> ExistingLobbies;
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable)

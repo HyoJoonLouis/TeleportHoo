@@ -39,7 +39,7 @@ void ALobbyPlayerController::BeginPlay()
 	//	UE_LOG(LogTemp, Warning, TEXT("Steam API 초기화 성공"))
 	//}
 
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::BeginPlay"))
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::BeginPlay"))
 	InitializeLobbyWidget();
 
 	if(LobbyWidget)
@@ -171,11 +171,10 @@ FString ALobbyPlayerController::GetPlayerName()
 	// 위에서 하나도 받아오지 못했다면 기본값 설정
 	if (PlayerName.IsEmpty())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("플레이어 이름 못받아와서 Default로 설정"))
+		UE_LOG(LogTemp, Error, TEXT("플레이어 이름 못받아와서 Default로 설정"))
 		PlayerName = "DefaultPlayerName";
 	}
-
-
+	
 	UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *PlayerName);
 	return PlayerName;
 }
@@ -232,7 +231,7 @@ UTexture2D* ALobbyPlayerController::GetPlayerAvatar()
 
 	//								delete[] AvatarRGBA;
 
-	//								UE_LOG(LogTemp, Warning, TEXT("아바타 반환 성공!!!!!!!!!!!!!!!!!!!!!"));
+	//								UE_LOG(LogTemp, Warning, TEXT("아바타 이미지 반환 성공!!!!!!!!!!!!!!!!!!!!!"));
 
 	//								return AvatarTexture;
 	//							}
@@ -246,7 +245,7 @@ UTexture2D* ALobbyPlayerController::GetPlayerAvatar()
 	//	}
 	//}
 
-	UE_LOG(LogTemp, Warning, TEXT("아바타 반환 실패........"));
+	UE_LOG(LogTemp, Error, TEXT("아바타 이미지 반환 실패........"));
 	return nullptr;
 
  //   UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: 시작"));
@@ -356,7 +355,7 @@ ULobbyWidget* ALobbyPlayerController::GetLobbyWidgetRef()
 
 void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Server_ToggleReady_Implementation 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Server_ToggleReady_Implementation 진입"));
 
 	if (HasAuthority())
 	{
@@ -367,7 +366,7 @@ void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 			LocalPlayerState->OnRep_PlayerInfo();
 			LocalPlayerState->ForceNetUpdate();
 
-			UE_LOG(LogTemp, Error, TEXT("Server_ToggleReady : Ready set to : %s"), LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
+			UE_LOG(LogTemp, Warning, TEXT("Server_ToggleReady : Ready set to : %s"), LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
 			ALobbyGameMode* GameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
 			if (GameMode)
@@ -469,6 +468,7 @@ void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayer
 		return;
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("LobbyWidget이 설정 완료!"));
 	UE_LOG(LogTemp, Warning, TEXT("LobbyWidget->UpdatePlayerInfo"));
 	LobbyWidget->UpdatePlayerInfo(PlayerIndex, PlayerInfo);
 }
@@ -478,7 +478,7 @@ void ALobbyPlayerController::ToggleReady()
 	ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>();
 	if (LocalPlayerState)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::ToggleReady"));
+		UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::ToggleReady"));
 		UE_LOG(LogTemp, Warning, TEXT("원래 레디 : %s"), LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
 		bool bIsReady = !LocalPlayerState->PlayerInfo.bIsReady;

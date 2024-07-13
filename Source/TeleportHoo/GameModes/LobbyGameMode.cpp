@@ -34,14 +34,14 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 			{
 				LobbyGameState->ConnectedPlayers.AddUnique(PlayerState->PlayerInfo);
 
-				UE_LOG(LogTemp, Error, TEXT("Player1 Name : %s"), *LobbyGameState->ConnectedPlayers[0].PlayerName);
-				UE_LOG(LogTemp, Error, TEXT("Player1 Ready : %s"),
+				UE_LOG(LogTemp, Warning, TEXT("Player1 Name : %s"), *LobbyGameState->ConnectedPlayers[0].PlayerName);
+				UE_LOG(LogTemp, Warning, TEXT("Player1 Ready : %s"),
 				       LobbyGameState->ConnectedPlayers[0].bIsReady ? TEXT("true") : TEXT("false"));
 
 				if (LobbyGameState->ConnectedPlayers.Num() == 2)
 				{
-					UE_LOG(LogTemp, Error, TEXT("Player2 Name: %s"), *LobbyGameState->ConnectedPlayers[1].PlayerName);
-					UE_LOG(LogTemp, Error, TEXT("Player2 Ready : %s"),
+					UE_LOG(LogTemp, Warning, TEXT("Player2 Name: %s"), *LobbyGameState->ConnectedPlayers[1].PlayerName);
+					UE_LOG(LogTemp, Warning, TEXT("Player2 Ready : %s"),
 					       LobbyGameState->ConnectedPlayers[1].bIsReady ? TEXT("true") : TEXT("false"));
 				}
 
@@ -50,7 +50,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 				// 호스트에게만 시작 버튼을 활성화
 				if (IncomePlayer->HasAuthority())
 				{
-					UE_LOG(LogTemp, Error, TEXT("시작버튼 활성화"));
+					UE_LOG(LogTemp, Warning, TEXT("시작버튼 활성화"));
 					IncomePlayer->Client_SetStartButtonVisibility(true);
 				}
 
@@ -58,7 +58,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 				UHooGameInstance* GameInstance = Cast<UHooGameInstance>(GetGameInstance());
 				if (GameInstance)
 				{
-					UE_LOG(LogTemp, Error, TEXT("방제목 설정"));
+					UE_LOG(LogTemp, Warning, TEXT("방제목 설정"));
 					FString ServerName = GameInstance->GetCreateServerName();
 					UE_LOG(LogTemp, Warning, TEXT("방제목 : %s"), *ServerName);
 					IncomePlayer->Client_SetServerName(ServerName);
