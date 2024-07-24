@@ -130,43 +130,45 @@ void UHooGameInstance::CreateServer()
 {
 	UE_LOG(LogTemp, Warning, TEXT("CreateServer 시작"));
 
-	FOnlineSessionSettings SessionSettings;
-	SessionSettings.bAllowJoinInProgress = true;
-	SessionSettings.bIsDedicated = false;
-
 	// Steam이 가능하다면 Steam으로 불가능하다면 Lan으로
 	if (IOnlineSubsystem::Get()->GetSubsystemName() != "NULL")
 	{
-		SessionSettings.bIsLANMatch = false;
-		SessionSettings.bUseLobbiesIfAvailable = true;
 		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsSteam"));
+
+		ABC = true;
+
+		// 현재 로비 목록 갱신
+		GetLobbyList_DB();
+
+		// // DB와 상호작용하여 새로운 로비 생성
+		// FLobbyCreationJSON LobbyCreationData;
+		// LobbyCreationData.UserId = GetSteamID();
+		// LobbyCreationData.Ip = GetLocalIP();
+		// CreateLobby_DB(LobbyCreationData);
 	}
-	else
+	else // 그냥 로컬로 구동
 	{
+		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsLan"));
+
+		// 세션 설정
+		FOnlineSessionSettings SessionSettings;
+		SessionSettings.bAllowJoinInProgress = true;
+		SessionSettings.bIsDedicated = false;
 		SessionSettings.bIsLANMatch = true;
 		SessionSettings.bUseLobbiesIfAvailable = false;
-		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsLan"));
+		SessionSettings.bShouldAdvertise = true;
+		SessionSettings.bUsesPresence = true;
+		SessionSettings.NumPublicConnections = CreateServerInfo.MaxPlayers;
+
+		// 세션 설정에 서버 이름과 맵 이름 추가
+		SessionSettings.Set(L"SERVER_NAME_KEY", CreateServerInfo.ServerName,
+		                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+		SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName,
+		                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
+		// 세션 생성
+		SessionInterface->CreateSession(0, MySessionName, SessionSettings);
 	}
-
-	SessionSettings.bShouldAdvertise = true;
-	SessionSettings.bUsesPresence = true;
-	SessionSettings.NumPublicConnections = CreateServerInfo.MaxPlayers;
-
-	// 세션 설정에 서버 이름과 맵 이름 추가
-	SessionSettings.Set(L"SERVER_NAME_KEY", CreateServerInfo.ServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-
-	// 기존 로비 목록을 가져온 후 새로운 로비 생성
-	GetLobbyList_DB();
-	
-	
-	//// DB와 상호작용
-	// FLobbyCreationJSON LobbyCreationData;
-	// LobbyCreationData.UserId = GetSteamID();
-	// LobbyCreationData.Ip = GetLocalIP();
-	// CreateLobby_DB(LobbyCreationData);
-
-	// SessionInterface->CreateSession(0, MySessionName, SessionSettings);
 }
 
 // Find Server
@@ -554,25 +556,37 @@ void UHooGameInstance::OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpReques
 	{
 		UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded: %s"), *HttpResponse->GetContentAsString());
 
-		TSharedPtr<FJsonObject> JsonObject;
-		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(HttpResponse->GetContentAsString());
-		if (FJsonSerializer::Deserialize(Reader, JsonObject))
-		{
-			bool Success = JsonObject->GetBoolField(TEXT("success"));
-			if (Success)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded"));
-				GetLobbyList_DB();
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 서버 생성 실패"));
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: JSON 파싱 실패"));
-		}
+		// 세션 설정
+		FOnlineSessionSettings SessionSettings;
+		SessionSettings.bAllowJoinInProgress = true;
+		SessionSettings.bIsDedicated = false;
+		SessionSettings.bIsLANMatch = false;
+		SessionSettings.bUseLobbiesIfAvailable = true;
+		SessionSettings.bShouldAdvertise = true;
+		SessionSettings.bUsesPresence = true;
+		SessionSettings.NumPublicConnections = CreateServerInfo.MaxPlayers;
+
+		// 세션 설정에 서버 이름과 맵 이름 추가
+		SessionSettings.Set(L"SERVER_NAME_KEY", CreateServerInfo.ServerName,
+							EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+		SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName,
+							EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+		
+		// 현재 세션 인덱스 로비의 인덱스를 1 증가시키도록 임시로 하드코딩
+		// 나중에 서버에서 새로 생성된 로비의 인덱스를 받아올 수 있도록 수정 필요
+		int32 NewLobbyIdx = ExistingLobbies.Num() > 0 ? ExistingLobbies.Last().Idx + 1 : 1;
+		SessionSettings.Set(L"SERVER_IDX_KEY", NewLobbyIdx,
+							EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
+		// 세션 생성
+		SessionInterface->CreateSession(0, MySessionName, SessionSettings);
+
+		// 기존 로비 목록에 새로 생성된 로비 추가
+		FLobbyInfoJSON NewLobby;
+		NewLobby.Idx = NewLobbyIdx;
+		NewLobby.HostName = GetSteamID();
+		NewLobby.HostIP = GetLocalIP();
+		ExistingLobbies.Add(NewLobby);
 	}
 	else
 	{
@@ -587,6 +601,75 @@ void UHooGameInstance::OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpReques
 			UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 요청이 성공적으로 처리되지 않음. 에러 메시지: %s"), *ErrorMessage);
 		}
 	}
+
+	// 여기부터 임시코드
+	// UE_LOG(LogTemp, Warning, TEXT("OnCreateLobbyResponse 시작"));
+	//
+	// if (bWasSuccessful && HttpResponse.IsValid() && HttpResponse->GetResponseCode() == 200)
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded: %s"), *HttpResponse->GetContentAsString());
+	//
+	// 	TSharedPtr<FJsonObject> JsonObject;
+	// 	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(HttpResponse->GetContentAsString());
+	// 	if (FJsonSerializer::Deserialize(Reader, JsonObject))
+	// 	{
+	// 		bool Success = JsonObject->GetBoolField(TEXT("success"));
+	// 		if (Success)
+	// 		{
+	// 			int32 NewLobbyIdx = JsonObject->GetIntegerField(TEXT("idx"));
+	// 			UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded, 새로운 로비 Idx : %d"), NewLobbyIdx);
+	//
+	// 			// 세션 설정
+	// 			FOnlineSessionSettings SessionSettings;
+	// 			SessionSettings.bAllowJoinInProgress = true;
+	// 			SessionSettings.bIsDedicated = false;
+	// 			SessionSettings.bIsLANMatch = false;
+	// 			SessionSettings.bUseLobbiesIfAvailable = true;
+	// 			SessionSettings.bShouldAdvertise = true;
+	// 			SessionSettings.bUsesPresence = true;
+	// 			SessionSettings.NumPublicConnections = CreateServerInfo.MaxPlayers;
+	//
+	// 			// 세션 설정에 서버 이름과 맵 이름 추가
+	// 			SessionSettings.Set(L"SERVER_NAME_KEY", CreateServerInfo.ServerName,
+	// 			                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	// 			SessionSettings.Set(L"SERVER_MAPNAME_KEY", CreateServerInfo.ServerMapName,
+	// 			                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	// 			SessionSettings.Set(L"SERVER_IDX_KEY", NewLobbyIdx,
+	// 			                    EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	//
+	// 			// 세션 생성
+	// 			SessionInterface->CreateSession(0, MySessionName, SessionSettings);
+	//
+	// 			// 기존 로비 목록에 새로 생성된 로비 추가
+	// 			FLobbyInfoJSON NewLobby;
+	// 			NewLobby.Idx = NewLobbyIdx;
+	// 			NewLobby.HostName = GetSteamID();
+	// 			NewLobby.HostIP = GetLocalIP();
+	// 			ExistingLobbies.Add(NewLobby);
+	// 		}
+	// 		else
+	// 		{
+	// 			UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 서버 생성 실패"));
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: JSON 파싱 실패"));
+	// 	}
+	// }
+	// else
+	// {
+	// 	FString ErrorMessage = HttpResponse.IsValid() ? HttpResponse->GetContentAsString() : TEXT("Invalid response");
+	// 	if (HttpResponse.IsValid())
+	// 	{
+	// 		UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 요청이 성공적으로 처리되지 않음. 응답 코드: %d, 에러 메시지: %s"),
+	// 		       HttpResponse->GetResponseCode(), *ErrorMessage);
+	// 	}
+	// 	else
+	// 	{
+	// 		UE_LOG(LogTemp, Error, TEXT("CreateLobby failed: 요청이 성공적으로 처리되지 않음. 에러 메시지: %s"), *ErrorMessage);
+	// 	}
+	// }
 }
 
 void UHooGameInstance::OnJoinLobbyResponse(TSharedPtr<IHttpRequest> HttpRequest, TSharedPtr<IHttpResponse> HttpResponse,
@@ -658,66 +741,50 @@ void UHooGameInstance::OnMatchEndResponse(TSharedPtr<IHttpRequest> HttpRequest, 
 void UHooGameInstance::OnGetLobbyListResponse(TSharedPtr<IHttpRequest> HttpRequest,
                                               TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
 {
+	UE_LOG(LogTemp, Warning, TEXT("aaaaaaaaaaaaaaaaaaaaaaa 시작"));
+
 	if (bWasSuccessful && HttpResponse.IsValid() && HttpResponse->GetResponseCode() == 200)
 	{
+		// JSON 응답 로깅
+		UE_LOG(LogTemp, Warning, TEXT("OnGetLobbyListResponse 응답: %s"), *HttpResponse->GetContentAsString());
+
 		TArray<TSharedPtr<FJsonValue>> LobbyList;
 		TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(HttpResponse->GetContentAsString());
 		if (FJsonSerializer::Deserialize(Reader, LobbyList))
 		{
-			TArray<FLobbyInfoJSON> NewLobbies;
-
-			// 로비 목록을 순회하면서 NewLobbies 배열에 추가
-			for (const TSharedPtr<FJsonValue>& Value : LobbyList)
-			{
-				TSharedPtr<FJsonObject> LobbyObject = Value->AsObject();
-				FLobbyInfoJSON LobbyInfoJSON;
-				LobbyInfoJSON.Idx = LobbyObject->GetIntegerField(TEXT("idx"));
-				LobbyInfoJSON.HostName = LobbyObject->GetStringField(TEXT("hostname"));
-				LobbyInfoJSON.HostIP = LobbyObject->GetStringField(TEXT("host_ip"));
-				LobbyInfoJSON.ClientName = LobbyObject->GetStringField(TEXT("clientname"));
-				LobbyInfoJSON.CreatedTime = LobbyObject->GetStringField(TEXT("createdtime"));
-
-				NewLobbies.Add(LobbyInfoJSON);
-			}
-
-			// 기존 로비 목록 초기화
 			ExistingLobbies.Empty();
 
-			// 새로 추가된 로비 판별위해 Idx 비교
-			for (const FLobbyInfoJSON& NewLobby : NewLobbies)
+			// 로비 목록을 순회하면서 ExistingLobbies 배열에 추가
+			for (const TSharedPtr<FJsonValue>& Value : LobbyList)
 			{
-				bool bIsNewLobby = true;
-
-				for (const FLobbyInfoJSON& ExistingLobby : ExistingLobbies)
+				if (Value->Type == EJson::Array)
 				{
-					if (ExistingLobby.Idx == NewLobby.Idx)
-					{
-						bIsNewLobby = false;
-						break;
-					}
+					TArray<TSharedPtr<FJsonValue>> LobbyArray = Value->AsArray();
+					FLobbyInfoJSON LobbyInfoJSON;
+					LobbyInfoJSON.Idx = LobbyArray[0]->AsNumber();
+					LobbyInfoJSON.HostName = LobbyArray[1]->IsNull() ? TEXT("") : LobbyArray[1]->AsString();
+					LobbyInfoJSON.HostIP = LobbyArray[2]->IsNull() ? TEXT("") : LobbyArray[2]->AsString();
+					LobbyInfoJSON.ClientName = LobbyArray[3]->IsNull() ? TEXT("") : LobbyArray[3]->AsString();
+					LobbyInfoJSON.CreatedTime = LobbyArray[4]->IsNull() ? TEXT("") : LobbyArray[4]->AsString();
+
+					ExistingLobbies.Add(LobbyInfoJSON);
 				}
-
-				if (bIsNewLobby)
+				else
 				{
-					UE_LOG(LogTemp, Warning, TEXT("새로 생성된 로비의 Idx : %d"), NewLobby.Idx);
-
-					FOnlineSessionSettings SessionSettings;
-					FOnlineSessionSetting LobbyIdxSettings;
-					LobbyIdxSettings.Data.SetValue(NewLobby.Idx);
-					SessionSettings.Settings.Add(FName("SERVER_IDX_KEY"), LobbyIdxSettings);
-					SessionInterface->CreateSession(0, MySessionName, SessionSettings);
-					ExistingLobbies.Add(NewLobby);
-					return;
+					UE_LOG(LogTemp, Error, TEXT("Unexpected JSON value type: %d"), (int32)Value->Type);
 				}
 			}
 
-			UE_LOG(LogTemp, Warning, TEXT("새로 추가된 로비를 찾을 수 없습니다."));
-
-			// 로비 목록을 저장한 후 새로운 로비를 생성하기 위해 CreateLobby_DB를 호출
-			FLobbyCreationJSON LobbyCreationData;
-			LobbyCreationData.UserId = GetSteamID();
-			LobbyCreationData.Ip = GetLocalIP();
-			CreateLobby_DB(LobbyCreationData);
+			// ExistingLobbies 배열의 모든 로비를 로그로 출력
+			for (const FLobbyInfoJSON& Lobby : ExistingLobbies)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("----------------------------------------------"));
+				UE_LOG(LogTemp, Warning, TEXT("Existing Lobby - Idx: %d"), Lobby.Idx);
+				UE_LOG(LogTemp, Warning, TEXT("HostName: %s"), *Lobby.HostName);
+				UE_LOG(LogTemp, Warning, TEXT("HostIP: %s"), *Lobby.HostIP);
+				UE_LOG(LogTemp, Warning, TEXT("ClientName: %s"), *Lobby.ClientName);
+				UE_LOG(LogTemp, Warning, TEXT("CreatedTime: %s"), *Lobby.CreatedTime);			}
+				UE_LOG(LogTemp, Warning, TEXT("----------------------------------------------"));
 		}
 		else
 		{
@@ -729,34 +796,24 @@ void UHooGameInstance::OnGetLobbyListResponse(TSharedPtr<IHttpRequest> HttpReque
 		UE_LOG(LogTemp, Error, TEXT("OnGetLobbyListResponse : 요청이 성공적으로 처리되지 않음"));
 	}
 
-	// // 기존 로비 목록
-	// TArray<int32> ExistingLobbies;
-	//
-	// for(const TSharedPtr<FJsonValue>& Value : LobbyList)
-	// {
-	// 	TSharedPtr<FJsonObject> LobbyObject = Value->AsObject();
-	// 	int32 LobbyIdx = LobbyObject->GetIntegerField(TEXT("idx"));
-	// 	ExistingLobbies.Add(LobbyIdx);
-	// }
-	//
-	// // CreateLobby_DB를 호출 후, 새로 추가된 로비 찾아서 세션 설정에 추가하기
-	// for(const TSharedPtr<FJsonValue>& Value : LobbyList)
-	// {
-	// 	TSharedPtr<FJsonObject> LobbyObject = Value->AsObject();
-	// 	int32 LobbyIdx = LobbyObject->GetIntegerField(TEXT("idx"));
-	//
-	// 	// 새로 생긴 로비인지 체크
-	// 	if(!ExistingLobbies.Contains(LobbyIdx))
-	// 	{
-	// 		UE_LOG(LogTemp, Warning, TEXT("새로 생긴 로비 idx : %d"), LobbyIdx);
-	//
-	// 		// 서버 인덱스 가져오기
-	// 		FOnlineSessionSettings SessionSettings;
-	// 		FVariantData LobbyIdxData(LobbyIdx);
-	// 		SessionSettings.Set(FName("SERVER_IDX_KEY"), LobbyIdxData, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-	// 		SessionInterface->CreateSession(0, MySessionName, SessionSettings);
-	// 	}
-	// }
+	UE_LOG(LogTemp, Error, TEXT("1111"));
+
+	if (ABC)
+	{
+		UE_LOG(LogTemp, Error, TEXT("2222"));
+
+		ABC = false;
+		
+		// DB와 상호작용하여 새로운 로비 생성
+		FLobbyCreationJSON LobbyCreationData;
+		LobbyCreationData.UserId = GetSteamID();
+		LobbyCreationData.Ip = GetLocalIP();
+		CreateLobby_DB(LobbyCreationData);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("3333"));
+	}
 }
 
 void UHooGameInstance::OnGetPlayerScoreResponse(TSharedPtr<IHttpRequest> HttpRequest,
