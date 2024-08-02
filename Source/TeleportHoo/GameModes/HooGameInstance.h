@@ -258,7 +258,7 @@ protected:
 
 	// Matchmaking
 	TArray<FLobbyInfoJSON> ExistingLobbies;
-	bool ABC ;		// 상태 플래그 변수
+	bool bIsCreatingLobby ;		// 상태 플래그 변수
 
 	// Delegates
 	UPROPERTY(BlueprintAssignable)

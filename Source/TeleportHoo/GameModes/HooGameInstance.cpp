@@ -135,7 +135,7 @@ void UHooGameInstance::CreateServer()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("CreateServer -> IsSteam"));
 
-		ABC = true;
+		bIsCreatingLobby = true;
 
 		// 현재 로비 목록 갱신
 		GetLobbyList_DB();
@@ -554,8 +554,26 @@ void UHooGameInstance::OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpReques
 
 	if (bWasSuccessful && HttpResponse.IsValid() && HttpResponse->GetResponseCode() == 200)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded: %s"), *HttpResponse->GetContentAsString());
+		// 여기서 false 가 반환되었다면 userId가 이미 matchmakingtable에 존재할 경우.
+		// UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded : %s"), *HttpResponse->GetContentAsString());
+		//
+		// if(!*HttpResponse->GetContentAsString())
+		// {
+		// 	UE_LOG(LogTemp, Error, TEXT("매치메이킹테이블에 이미 중복되는 userid가 있음"));
+		// }
 
+		// 여기서 false 가 반환되었다면 userId가 이미 matchmakingtable에 존재할 경우.
+		FString ResponseContent = HttpResponse->GetContentAsString();
+		UE_LOG(LogTemp, Warning, TEXT("CreateLobby succeeded: %s"), *ResponseContent);
+
+		bool bSuccess = ResponseContent == TEXT("true");
+
+		if (!bSuccess)
+		{
+			UE_LOG(LogTemp, Error, TEXT("매치메이킹테이블에 이미 중복되는 userId가 있음"));
+			// return;
+		}
+		
 		// 세션 설정
 		FOnlineSessionSettings SessionSettings;
 		SessionSettings.bAllowJoinInProgress = true;
@@ -575,18 +593,26 @@ void UHooGameInstance::OnCreateLobbyResponse(TSharedPtr<IHttpRequest> HttpReques
 		// 현재 세션 인덱스 로비의 인덱스를 1 증가시키도록 임시로 하드코딩
 		// 나중에 서버에서 새로 생성된 로비의 인덱스를 받아올 수 있도록 수정 필요
 		int32 NewLobbyIdx = ExistingLobbies.Num() > 0 ? ExistingLobbies.Last().Idx + 1 : 1;
+		UE_LOG(LogTemp, Error, TEXT("NewLobbyIdx : %d"), NewLobbyIdx);
+		UE_LOG(LogTemp, Error, TEXT("세션 세팅에 SERVER_IDX_KEY 설정 - NewLobbyIdx : %d"), NewLobbyIdx);
 		SessionSettings.Set(L"SERVER_IDX_KEY", NewLobbyIdx,
 							EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 		// 세션 생성
 		SessionInterface->CreateSession(0, MySessionName, SessionSettings);
 
-		// 기존 로비 목록에 새로 생성된 로비 추가
-		FLobbyInfoJSON NewLobby;
-		NewLobby.Idx = NewLobbyIdx;
-		NewLobby.HostName = GetSteamID();
-		NewLobby.HostIP = GetLocalIP();
-		ExistingLobbies.Add(NewLobby);
+		// ExistingLobbies 배열의 모든 로비를 로그로 출력
+		UE_LOG(LogTemp, Warning, TEXT("세션 생성후 ExistingLobbies 배열의 모든 로비를 로그로 출력"));
+		for (const FLobbyInfoJSON& Lobby : ExistingLobbies)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("----------------------------------------------"));
+			UE_LOG(LogTemp, Warning, TEXT("Existing Lobby - Idx: %d"), Lobby.Idx);
+			UE_LOG(LogTemp, Warning, TEXT("HostName: %s"), *Lobby.HostName);
+			UE_LOG(LogTemp, Warning, TEXT("HostIP: %s"), *Lobby.HostIP);
+			UE_LOG(LogTemp, Warning, TEXT("ClientName: %s"), *Lobby.ClientName);
+			UE_LOG(LogTemp, Warning, TEXT("CreatedTime: %s"), *Lobby.CreatedTime);
+			UE_LOG(LogTemp, Warning, TEXT("----------------------------------------------"));
+		}
 	}
 	else
 	{
@@ -741,7 +767,7 @@ void UHooGameInstance::OnMatchEndResponse(TSharedPtr<IHttpRequest> HttpRequest, 
 void UHooGameInstance::OnGetLobbyListResponse(TSharedPtr<IHttpRequest> HttpRequest,
                                               TSharedPtr<IHttpResponse> HttpResponse, bool bWasSuccessful)
 {
-	UE_LOG(LogTemp, Warning, TEXT("aaaaaaaaaaaaaaaaaaaaaaa 시작"));
+	UE_LOG(LogTemp, Warning, TEXT("OnGetLobbyListResponse 진입"));
 
 	if (bWasSuccessful && HttpResponse.IsValid() && HttpResponse->GetResponseCode() == 200)
 	{
@@ -783,8 +809,9 @@ void UHooGameInstance::OnGetLobbyListResponse(TSharedPtr<IHttpRequest> HttpReque
 				UE_LOG(LogTemp, Warning, TEXT("HostName: %s"), *Lobby.HostName);
 				UE_LOG(LogTemp, Warning, TEXT("HostIP: %s"), *Lobby.HostIP);
 				UE_LOG(LogTemp, Warning, TEXT("ClientName: %s"), *Lobby.ClientName);
-				UE_LOG(LogTemp, Warning, TEXT("CreatedTime: %s"), *Lobby.CreatedTime);			}
+				UE_LOG(LogTemp, Warning, TEXT("CreatedTime: %s"), *Lobby.CreatedTime);
 				UE_LOG(LogTemp, Warning, TEXT("----------------------------------------------"));
+			}
 		}
 		else
 		{
@@ -796,13 +823,11 @@ void UHooGameInstance::OnGetLobbyListResponse(TSharedPtr<IHttpRequest> HttpReque
 		UE_LOG(LogTemp, Error, TEXT("OnGetLobbyListResponse : 요청이 성공적으로 처리되지 않음"));
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("1111"));
-
-	if (ABC)
+	if (bIsCreatingLobby)
 	{
-		UE_LOG(LogTemp, Error, TEXT("2222"));
+		UE_LOG(LogTemp, Error, TEXT("bIsCreatingLobby Is True"));
 
-		ABC = false;
+		bIsCreatingLobby = false;
 		
 		// DB와 상호작용하여 새로운 로비 생성
 		FLobbyCreationJSON LobbyCreationData;
@@ -812,7 +837,7 @@ void UHooGameInstance::OnGetLobbyListResponse(TSharedPtr<IHttpRequest> HttpReque
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("3333"));
+		UE_LOG(LogTemp, Error, TEXT("bIsCreatingLobby Is False"));
 	}
 }
 
