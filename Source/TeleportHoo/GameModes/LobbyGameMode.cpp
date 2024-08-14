@@ -26,7 +26,8 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 		if (IsValid(PlayerState))
 		{
 			PlayerState->PlayerInfo.PlayerName = IncomePlayer->GetPlayerName(); // 플레이어 이름 할당 로직
-			PlayerState->PlayerInfo.AvatarImage = IncomePlayer->GetPlayerAvatar(); // 실제 이미지 할당 로직
+			// 블루프린트로 이동
+			// PlayerState->PlayerInfo.AvatarImage = IncomePlayer->GetPlayerAvatar(); // 실제 이미지 할당 로직
 			PlayerState->PlayerInfo.bIsReady = false;
 
 			ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
@@ -34,31 +35,31 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 			{
 				LobbyGameState->ConnectedPlayers.AddUnique(PlayerState->PlayerInfo);
 
-				UE_LOG(LogTemp, Error, TEXT("Player1 Name : %s"), *LobbyGameState->ConnectedPlayers[0].PlayerName);
-				UE_LOG(LogTemp, Error, TEXT("Player1 Ready : %s"),
+				UE_LOG(LogTemp, Warning, TEXT("Player1 Name : %s"), *LobbyGameState->ConnectedPlayers[0].PlayerName);
+				UE_LOG(LogTemp, Warning, TEXT("Player1 Ready : %s"),
 				       LobbyGameState->ConnectedPlayers[0].bIsReady ? TEXT("true") : TEXT("false"));
 
 				if (LobbyGameState->ConnectedPlayers.Num() == 2)
 				{
-					UE_LOG(LogTemp, Error, TEXT("Player2 Name: %s"), *LobbyGameState->ConnectedPlayers[1].PlayerName);
-					UE_LOG(LogTemp, Error, TEXT("Player2 Ready : %s"),
+					UE_LOG(LogTemp, Warning, TEXT("Player2 Name: %s"), *LobbyGameState->ConnectedPlayers[1].PlayerName);
+					UE_LOG(LogTemp, Warning, TEXT("Player2 Ready : %s"),
 					       LobbyGameState->ConnectedPlayers[1].bIsReady ? TEXT("true") : TEXT("false"));
 				}
 
-				OnPlayerInfoUpdated();
+				// 블루프린트로 이동
+				// OnPlayerInfoUpdated();
 
 				// 호스트에게만 시작 버튼을 활성화
 				if (IncomePlayer->HasAuthority())
 				{
-					UE_LOG(LogTemp, Error, TEXT("시작버튼 활성화"));
+					UE_LOG(LogTemp, Warning, TEXT("시작버튼 활성화"));
 					IncomePlayer->Client_SetStartButtonVisibility(true);
 				}
 
 				// 새로운 플레이어에게 방 이름 설정
-				UHooGameInstance* GameInstance = Cast<UHooGameInstance>(GetGameInstance());
-				if (GameInstance)
+				if (const UHooGameInstance* GameInstance = Cast<UHooGameInstance>(GetGameInstance()))
 				{
-					UE_LOG(LogTemp, Error, TEXT("방제목 설정"));
+					UE_LOG(LogTemp, Warning, TEXT("방제목 설정"));
 					FString ServerName = GameInstance->GetCreateServerName();
 					UE_LOG(LogTemp, Warning, TEXT("방제목 : %s"), *ServerName);
 					IncomePlayer->Client_SetServerName(ServerName);
@@ -66,19 +67,19 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("LobbyGameState is nullptr"));
+				UE_LOG(LogTemp, Error, TEXT("LobbyGameState is nullptr"));
 				return;
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("PlayerState is nullptr"));
+			UE_LOG(LogTemp, Error, TEXT("PlayerState is nullptr"));
 			return;
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("IncomePlayer is nullptr"));
+		UE_LOG(LogTemp, Error, TEXT("IncomePlayer is nullptr"));
 		return;
 	}
 }
@@ -176,9 +177,10 @@ void ALobbyGameMode::ShowLoadingScreenToAllPlayers()
 // 모든 클라이언트에게 최신 플레이어 정보를 동기화
 void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 {
+	// 서버에서 실행되는지 확인
 	if (HasAuthority())
 	{
-		UE_LOG(LogTemp, Error, TEXT("ALobbyGameMode : OnPlayerInfoUpdated_Implementation 진입"));
+		UE_LOG(LogTemp, Warning, TEXT("ALobbyGameMode : OnPlayerInfoUpdated_Implementation 진입"));
 
 		ALobbyGameState* LobbyGameState = GetGameState<ALobbyGameState>();
 		if (!IsValid(LobbyGameState))
@@ -192,6 +194,7 @@ void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 
 		bool bAllPlayersReady = true;
 
+		// 모든 연결된 플레이어에 대해 반복
 		for (int32 i = 0; i < LobbyGameState->ConnectedPlayers.Num(); i++)
 		{
 			if (!LobbyGameState->ConnectedPlayers.IsValidIndex(i))
@@ -200,22 +203,27 @@ void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 				continue;
 			}
 
+			// 현재 플레이어 정보 가져와서 레디상태 체크
 			const FPlayerInfo& PlayerInfo = LobbyGameState->ConnectedPlayers[i];
 			if (!PlayerInfo.bIsReady)
 			{
 				bAllPlayersReady = false;
 			}
 
-			for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++
-			     Iterator)
+			// 현재 게임에 연결된 모든 PlayerController에 대해 반복
+			for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
 			{
 				ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(*Iterator);
 				if (IsValid(LobbyPlayerController))
 				{
 					UE_LOG(LogTemp, Warning, TEXT("LobbyPlayerController->Client_UpdatePlayerInfo"));
-					UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d, PlayerName: %s, ReadyStatus: %s"), i,
+					UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d, / PlayerName: %s, / ReadyStatus: %s"), i,
 					       *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("READY") : TEXT("NOT READY"));
+
+					// 각 클라이언트에게 플레이어 정보를 업데이트하도록 요청
 					LobbyPlayerController->Client_UpdatePlayerInfo(i, PlayerInfo);
+
+					// 모든 클라이언트의 시작 버튼을 일당 비활성화 
 					LobbyPlayerController->Client_SetStartButtonVisibility(false);
 				}
 				else

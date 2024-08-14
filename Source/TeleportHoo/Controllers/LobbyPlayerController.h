@@ -43,10 +43,11 @@ public:
 	FString GetPlayerName();
 	UFUNCTION()
 	UTexture2D* GetPlayerAvatar();
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "C++")
+	void SetPlayerAvatar(UTexture2D* AvatarImage);
+	UFUNCTION(BlueprintCallable, Category = "C++")
 	ULobbyWidget* GetLobbyWidgetRef();
-
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "C++")
 	void ToggleReady();
 
 private:

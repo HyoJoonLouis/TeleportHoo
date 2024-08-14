@@ -19,12 +19,12 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void OnPlayerInfoUpdated();
 
-	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	UFUNCTION(BlueprintCallable, Category = "C++")
 	void CheckAllPlayersReady();
 
-	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	UFUNCTION(BlueprintCallable, Category = "C++")
 	void StartCharacterSelection();
 
-	UFUNCTION(BlueprintCallable, Category = "Lobby")
+	UFUNCTION(BlueprintCallable, Category = "C++")
 	void ShowLoadingScreenToAllPlayers();	
 };

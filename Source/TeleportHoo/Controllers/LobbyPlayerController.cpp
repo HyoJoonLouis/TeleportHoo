@@ -68,7 +68,7 @@ void ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation(int32 Player
 
 void ALobbyPlayerController::Client_SetStartButtonEnabled_Implementation(bool bEnabled)
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_SetStartButtonEnabled_Implementation 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Client_SetStartButtonEnabled_Implementation 진입"));
 
 	if (LobbyWidget)
 	{
@@ -78,7 +78,7 @@ void ALobbyPlayerController::Client_SetStartButtonEnabled_Implementation(bool bE
 
 void ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation(bool bIsVisible)
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation 진입"));
 
 	if (LobbyWidget)
 	{
@@ -171,10 +171,9 @@ FString ALobbyPlayerController::GetPlayerName()
 	// 위에서 하나도 받아오지 못했다면 기본값 설정
 	if (PlayerName.IsEmpty())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("플레이어 이름 못받아와서 Default로 설정"))
+		UE_LOG(LogTemp, Error, TEXT("플레이어 이름 못받아와서 Default로 설정"))
 		PlayerName = "DefaultPlayerName";
 	}
-
 
 	UE_LOG(LogTemp, Log, TEXT("Player Name: %s"), *PlayerName);
 	return PlayerName;
@@ -182,6 +181,15 @@ FString ALobbyPlayerController::GetPlayerName()
 
 UTexture2D* ALobbyPlayerController::GetPlayerAvatar()
 {
+	UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: 진입"));
+
+
+	UE_LOG(LogTemp, Error, TEXT("구현부 주석처리"));
+
+	UE_LOG(LogTemp, Error, TEXT("아바타 반환 실패........"));
+	return nullptr;
+	
+	// 흑백으로 가져오기는 하는데, 빌드하면 Fatal Error 뜸 이유를 찾지 못하겠음.
 	//IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	//if (OnlineSub && OnlineSub->GetSubsystemName() == STEAM_SUBSYSTEM)
 	//{
@@ -245,100 +253,23 @@ UTexture2D* ALobbyPlayerController::GetPlayerAvatar()
 	//		}
 	//	}
 	//}
+	// return nullptr;
+}
 
-	UE_LOG(LogTemp, Warning, TEXT("아바타 반환 실패........"));
-	return nullptr;
+void ALobbyPlayerController::SetPlayerAvatar(UTexture2D* AvatarImage)
+{
+	UE_LOG(LogTemp, Warning, TEXT(" ALobbyPlayerController::SetPlayerAvatar 아바타 세팅"));
 
- //   UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: 시작"));
+	if(ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>())
+	{
+		LobbyPlayerState->PlayerInfo.AvatarImage = AvatarImage;
 
- //   IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
- //   if (OnlineSub && OnlineSub->GetSubsystemName() == STEAM_SUBSYSTEM)
- //   {
- //       UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: Steam 서브시스템 확인됨"));
-
- //       IOnlineIdentityPtr Identity = OnlineSub->GetIdentityInterface();
- //       if (Identity.IsValid())
- //       {
- //           UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: Identity 유효"));
-
- //           APlayerState* LocalPlayerState = GetPlayerState<APlayerState>();
- //           if (!LocalPlayerState)
- //           {
- //               UE_LOG(LogTemp, Error, TEXT("LocalPlayerState is null"));
- //               return nullptr;
- //           }
-
- //           TSharedPtr<const FUniqueNetId> UserId = Identity->GetUniquePlayerId(GetLocalPlayer()->GetControllerId());
- //           if (!UserId.IsValid())
- //           {
- //               UE_LOG(LogTemp, Error, TEXT("UserId is not valid"));
- //               return nullptr;
- //           }
-
- //           if (UserId.IsValid())
- //           {
- //               uint32 AvatarWidth = 0;
- //               uint32 AvatarHeight = 0;
- //               if (SteamFriends())
- //               {
- //                   UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: Steam 친구 정보 확인됨"));
-
- //                   CSteamID SteamID(*(uint64*)UserId->GetBytes());
- //                   int FriendAvatar = SteamFriends()->GetMediumFriendAvatar(SteamID);
- //                   if (FriendAvatar > 0)
- //                   {
- //                       UE_LOG(LogTemp, Warning, TEXT("GetPlayerAvatar: 아바타 ID 확인됨"));
-
- //                       SteamUtils()->GetImageSize(FriendAvatar, &AvatarWidth, &AvatarHeight);
- //                       uint32 AvatarSize = AvatarWidth * AvatarHeight * 4;
- //                       uint8* AvatarRGBA = new uint8[AvatarSize];
- //                       SteamUtils()->GetImageRGBA(FriendAvatar, AvatarRGBA, AvatarSize);
-
- //                       IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
- //                       TSharedPtr<IImageWrapper> ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::PNG);
-
- //                       if (ImageWrapper.IsValid() && ImageWrapper->SetRaw(AvatarRGBA, AvatarSize, AvatarWidth, AvatarHeight, ERGBFormat::BGRA, 8))
- //                       {
- //                           TArray64<uint8> UncompressedRGBA;
- //                           if (ImageWrapper->GetRaw(ERGBFormat::BGRA, 8, UncompressedRGBA))
- //                           {
- //                               UTexture2D* AvatarTexture = UTexture2D::CreateTransient(AvatarWidth, AvatarHeight, PF_B8G8R8A8);
-
- //                               // 텍스처 데이터 설정
- //                               void* TextureData = AvatarTexture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE);
- //                               FMemory::Memcpy(TextureData, UncompressedRGBA.GetData(), UncompressedRGBA.Num());
- //                               AvatarTexture->GetPlatformData()->Mips[0].BulkData.Unlock();
- //                               AvatarTexture->UpdateResource();
-
- //                               delete[] AvatarRGBA;
-
- //                               UE_LOG(LogTemp, Warning, TEXT("아바타 반환 성공!!!!!!!!!!!!!!!!!!!!!"));
-
- //                               return AvatarTexture;
- //                           }
- //                       }
-
- //                       delete[] AvatarRGBA;
- //                   }
- //               }
-	//			else
-	//			{
-	//				UE_LOG(LogTemp, Error, TEXT("SteamFriend nullptr"));
-	//			}
- //           }
- //       }
-	//	else
-	//	{
-	//		UE_LOG(LogTemp, Error, TEXT("IOnlineIdentityPtr Identity IsNotValid"));
-	//	}
- //   }
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("GetPlayerAvatar: Steam 서브시스템 확인 실패"));
-	//}
-
-    //UE_LOG(LogTemp, Error, TEXT("아바타 반환 실패........"));
-    //return nullptr;
+		// LobbyGameMode에서 OnPlayerInfoUpdated를 호출
+		if (ALobbyGameMode* LobbyGameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
+		{
+			LobbyGameMode->OnPlayerInfoUpdated();
+		}
+	}
 }
 
 ULobbyWidget* ALobbyPlayerController::GetLobbyWidgetRef()
@@ -347,21 +278,17 @@ ULobbyWidget* ALobbyPlayerController::GetLobbyWidgetRef()
 	{
 		return LobbyWidget;
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT(" ALobbyPlayerController::GetLobbyWidgetRef <- LobbyWidget 쓰레기임"));
-		return nullptr;
-	}
+	UE_LOG(LogTemp, Error, TEXT(" ALobbyPlayerController::GetLobbyWidgetRef <- LobbyWidget 쓰레기임"));
+	return nullptr;
 }
 
 void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Server_ToggleReady_Implementation 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Server_ToggleReady_Implementation 진입"));
 
 	if (HasAuthority())
 	{
-		ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>();
-		if (LocalPlayerState)
+		if (ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>())
 		{
 			LocalPlayerState->PlayerInfo.bIsReady = bIsReady;
 			LocalPlayerState->OnRep_PlayerInfo();
@@ -369,12 +296,10 @@ void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 
 			UE_LOG(LogTemp, Error, TEXT("Server_ToggleReady : Ready set to : %s"), LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
-			ALobbyGameMode* GameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>();
-			if (GameMode)
+			if (ALobbyGameMode* GameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
 			{
 				// LobbyGameState의 ConnectedPlayers 배열 업데이트
-				ALobbyGameState* LobbyGameState = GetWorld()->GetGameState<ALobbyGameState>();
-				if (LobbyGameState)
+				if (ALobbyGameState* LobbyGameState = GetWorld()->GetGameState<ALobbyGameState>())
 				{
 					int32 PlayerIndex = LobbyGameState->ConnectedPlayers.IndexOfByKey(LocalPlayerState->PlayerInfo);
 					if (PlayerIndex != INDEX_NONE)
