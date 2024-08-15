@@ -27,7 +27,7 @@ void ULobbyWidget::NativeConstruct()
 
 void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
-	UE_LOG(LogTemp, Error, TEXT("ULobbyWidget::UpdatePlayerInfo 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::UpdatePlayerInfo 진입"));
 	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::UpdatePlayerInfo : PlayerName: %s, bIsReady: %s"),
 	       *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
@@ -36,12 +36,12 @@ void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& Player
 	// PlayerIndex 따라서 업데이트할 위젯 선택
 	if (PlayerIndex == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TargetWidget = WBP_PlayerLobbyInfoWidget_1"));
+		UE_LOG(LogTemp, Warning, TEXT("TargetWidget = WBP_PlayerLobbyInfoWidget_1 업데이트"));
 		TargetWidget = WBP_PlayerLobbyInfoWidget_1;
 	}
 	else if (PlayerIndex == 1)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TargetWidget = WBP_PlayerLobbyInfoWidget_2"));
+		UE_LOG(LogTemp, Warning, TEXT("TargetWidget = WBP_PlayerLobbyInfoWidget_2 업데이트"));
 		TargetWidget = WBP_PlayerLobbyInfoWidget_2;
 	}
 	else
@@ -62,7 +62,7 @@ void ULobbyWidget::UpdatePlayerInfo(int32 PlayerIndex, const FPlayerInfo& Player
 
 void ULobbyWidget::SetStartButtonEnabled(bool bEnabled)
 {
-	UE_LOG(LogTemp, Error, TEXT("ULobbyWidget::SetStartButtonEnabled 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::SetStartButtonEnabled 진입"));
 	if (B_StartButton)
 	{
 		B_StartButton->SetIsEnabled(bEnabled);
@@ -72,7 +72,7 @@ void ULobbyWidget::SetStartButtonEnabled(bool bEnabled)
 
 void ULobbyWidget::SetStartButtonVisibility(bool bIsVisible)
 {
-	UE_LOG(LogTemp, Error, TEXT("ULobbyWidget::SetStartButtonVisibility 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ULobbyWidget::SetStartButtonVisibility 진입"));
 	if (B_StartButton)
 	{
 		B_StartButton->SetVisibility(bIsVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);

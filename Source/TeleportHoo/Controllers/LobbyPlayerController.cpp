@@ -30,16 +30,7 @@ void ALobbyPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//if (!SteamAPI_Init())
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("Steam API 초기화 실패"))
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Steam API 초기화 성공"))
-	//}
-
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::BeginPlay"))
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::BeginPlay"))
 	InitializeLobbyWidget();
 
 	if(LobbyWidget)
@@ -57,7 +48,7 @@ void ALobbyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Client_UpdatePlayerInfo_Implementation 진입"));
 
 	// 클라이언트에서 플레이어 정보 갱신
 	UE_LOG(LogTemp, Warning,
@@ -86,6 +77,7 @@ void ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation(bool
 		{
 			LobbyWidget->SetStartButtonVisibility(bIsVisible);
 			UE_LOG(LogTemp, Warning, TEXT("Host: Start button visibility set to %s"), bIsVisible ? TEXT("Visible") : TEXT("Hidden"));
+			UE_LOG(LogTemp, Warning, TEXT("-----------------------------------------"));
 		}
 		else
 		{
@@ -258,17 +250,23 @@ UTexture2D* ALobbyPlayerController::GetPlayerAvatar()
 
 void ALobbyPlayerController::SetPlayerAvatar(UTexture2D* AvatarImage)
 {
-	UE_LOG(LogTemp, Warning, TEXT(" ALobbyPlayerController::SetPlayerAvatar 아바타 세팅"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::SetPlayerAvatar 아바타 세팅 (BP에서 호출)"));
+	UE_LOG(LogTemp, Warning, TEXT("SetPlayerAvatar: AvatarImage is %s"), AvatarImage ? TEXT("valid") : TEXT("invalid"));
 
 	if(ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>())
 	{
 		LobbyPlayerState->PlayerInfo.AvatarImage = AvatarImage;
-
-		// LobbyGameMode에서 OnPlayerInfoUpdated를 호출
-		if (ALobbyGameMode* LobbyGameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
-		{
-			LobbyGameMode->OnPlayerInfoUpdated();
-		}
+	
+		LobbyPlayerState->OnRep_PlayerInfo();
+		LobbyPlayerState->ForceNetUpdate();
+		
+		// // LobbyGameMode에서 OnPlayerInfoUpdated를 호출
+		// if (ALobbyGameMode* LobbyGameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
+		// {
+		// 	UE_LOG(LogTemp, Warning, TEXT("LobbyGameMode->OnPlayerInfoUpdated"));
+		//
+		// 	LobbyGameMode->OnPlayerInfoUpdated();
+		// }
 	}
 }
 
@@ -357,7 +355,6 @@ void ALobbyPlayerController::InitializeLobbyWidget()
 			}
 
 			LobbyWidget->SetVisibility(ESlateVisibility::Visible);
-			
 			LobbyWidget->SetStartButtonVisibility(false);
 			LobbyWidget->SetStartButtonEnabled(false);
 
@@ -373,7 +370,7 @@ void ALobbyPlayerController::InitializeLobbyWidget()
 // PlayerLobbyInfo 정보 업데이트
 void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo)
 {
-	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::UpdatePlayerInfoUI 진입"));
 	UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerInfoUI: PlayerName: %s, bIsReady: %s"),
 	       *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
@@ -403,7 +400,7 @@ void ALobbyPlayerController::ToggleReady()
 	ALobbyPlayerState* LocalPlayerState = GetPlayerState<ALobbyPlayerState>();
 	if (LocalPlayerState)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerController::ToggleReady"));
+		UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::ToggleReady"));
 		UE_LOG(LogTemp, Warning, TEXT("원래 레디 : %s"), LocalPlayerState->PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
 		bool bIsReady = !LocalPlayerState->PlayerInfo.bIsReady;

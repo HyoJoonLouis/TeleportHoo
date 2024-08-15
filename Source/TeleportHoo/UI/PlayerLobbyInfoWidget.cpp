@@ -12,31 +12,31 @@ void UPlayerLobbyInfoWidget::NativeConstruct()
 
 void UPlayerLobbyInfoWidget::UpdatePlayerInfo(const FPlayerInfo& PlayerInfo)
 {
-	UE_LOG(LogTemp, Error, TEXT("UPlayerLobbyInfoWidget::UpdatePlayerInfo 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("UPlayerLobbyInfoWidget::UpdatePlayerInfo 진입"));
 	UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerInfo: PlayerName: %s, bIsReady: %s"),
-		*PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
+	       *PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
 
-	if(PlayerName)
+	if (PlayerName)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("PlayerName->SetText"));
 		PlayerName->SetText(FText::FromString(PlayerInfo.PlayerName));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("PlayerName<-쓰레기"));
+		UE_LOG(LogTemp, Error, TEXT("PlayerName<-쓰레기"));
 	}
-
-	if(AvatarImage&&PlayerInfo.AvatarImage)
+	
+	if (AvatarImage && PlayerInfo.AvatarImage)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AvatarImage->SetBrushFromTexture"));
+		UE_LOG(LogTemp, Warning, TEXT("AvatarImage->SetBrushFromTexture : AvatarImage 세팅 성공"));
 		AvatarImage->SetBrushFromTexture(PlayerInfo.AvatarImage);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AvatarImage 세팅 실패 쓰레기값임"));
+		UE_LOG(LogTemp, Error, TEXT("AvatarImage 세팅 실패 쓰레기값임"));
 	}
 
-	if(ReadyStatus)
+	if (ReadyStatus)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ReadyStatus->SetText"));
 		UE_LOG(LogTemp, Error, TEXT("Set Ready!!! : %s"), PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
@@ -44,6 +44,6 @@ void UPlayerLobbyInfoWidget::UpdatePlayerInfo(const FPlayerInfo& PlayerInfo)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ReadyStatus->쓰레기"));
+		UE_LOG(LogTemp, Error, TEXT("ReadyStatus->쓰레기"));
 	}
 }

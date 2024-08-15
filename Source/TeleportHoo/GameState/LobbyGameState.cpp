@@ -12,7 +12,6 @@ void ALobbyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	UE_LOG(LogTemp, Warning, TEXT("ALobbyGameState::GetLifetimeReplicatedProps"));
-	UE_LOG(LogTemp, Warning, TEXT("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
 
 	DOREPLIFETIME(ALobbyGameState, ConnectedPlayers);
 }

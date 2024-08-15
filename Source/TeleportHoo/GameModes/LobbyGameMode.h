@@ -15,8 +15,8 @@ public:
 	//FUNCTION
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
-	
-	UFUNCTION(NetMulticast, Reliable)
+
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category= "C++")
 	void OnPlayerInfoUpdated();
 
 	UFUNCTION(BlueprintCallable, Category = "C++")
@@ -26,5 +26,5 @@ public:
 	void StartCharacterSelection();
 
 	UFUNCTION(BlueprintCallable, Category = "C++")
-	void ShowLoadingScreenToAllPlayers();	
+	void ShowLoadingScreenToAllPlayers();
 };
