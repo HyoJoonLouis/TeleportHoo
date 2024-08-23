@@ -36,6 +36,20 @@ void ALobbyPlayerController::BeginPlay()
 	if(LobbyWidget)
 	{
 		LobbyWidget->SetServerName(ServerName);
+
+		// 여기서 UI 갱신을 추가로 호출
+		if (ALobbyGameState* LobbyGameState = GetWorld()->GetGameState<ALobbyGameState>())
+		{
+			for (int32 PlayerIndex = 0; PlayerIndex < LobbyGameState->ConnectedPlayers.Num(); ++PlayerIndex)
+			{
+				UpdatePlayerInfoUI(PlayerIndex, LobbyGameState->ConnectedPlayers[PlayerIndex]);
+			}
+		}
+	}
+	else
+	{
+		// 위젯 초기화가 완료되지 않은 경우에 대한 처리
+		UE_LOG(LogTemp, Error, TEXT("LobbyWidget이 초기화되지 않았습니다. 이후 로직은 대기합니다."));
 	}
 }
 
@@ -73,8 +87,12 @@ void ALobbyPlayerController::Client_SetStartButtonVisibility_Implementation(bool
 
 	if (LobbyWidget)
 	{
+		UE_LOG(LogTemp, Error, TEXT("씨이이이발22222222222222222"));
+
 		if (HasAuthority())
 		{
+			UE_LOG(LogTemp, Error, TEXT("씨이이이발22233333333333333333333333333322"));
+
 			LobbyWidget->SetStartButtonVisibility(bIsVisible);
 			UE_LOG(LogTemp, Warning, TEXT("Host: Start button visibility set to %s"), bIsVisible ? TEXT("Visible") : TEXT("Hidden"));
 			UE_LOG(LogTemp, Warning, TEXT("-----------------------------------------"));
@@ -328,6 +346,8 @@ void ALobbyPlayerController::Server_ToggleReady_Implementation(bool bIsReady)
 // 위젯 관련 초기화 함수
 void ALobbyPlayerController::InitializeLobbyWidget()
 {
+	UE_LOG(LogTemp, Warning, TEXT("InitializeLobbyWidget!"));
+
 	if (!LobbyWidgetClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("LobbyWidgetClass가 설정되지 않았습니다!"));
@@ -390,7 +410,8 @@ void ALobbyPlayerController::UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayer
 
 		return;
 	}
-
+	
+	UE_LOG(LogTemp, Warning, TEXT("LobbyWidget이 설정 완료"));
 	UE_LOG(LogTemp, Warning, TEXT("LobbyWidget->UpdatePlayerInfo"));
 	LobbyWidget->UpdatePlayerInfo(PlayerIndex, PlayerInfo);
 }

@@ -26,14 +26,27 @@ void UPlayerLobbyInfoWidget::UpdatePlayerInfo(const FPlayerInfo& PlayerInfo)
 		UE_LOG(LogTemp, Error, TEXT("PlayerName<-쓰레기"));
 	}
 	
-	if (AvatarImage && PlayerInfo.AvatarImage)
+	if (AvatarImage)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AvatarImage->SetBrushFromTexture : AvatarImage 세팅 성공"));
-		AvatarImage->SetBrushFromTexture(PlayerInfo.AvatarImage);
+		if (PlayerInfo.AvatarImage)
+		{
+			UE_LOG(LogTemp, Error, TEXT("AvatarImage->SetBrushFromTexture : 아바타 이미지 설정 성공"));
+			AvatarImage->SetBrushFromTexture(PlayerInfo.AvatarImage);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("PlayerInfo.AvatarImage가 유효하지 않습니다. 기본 아바타를 설정합니다."));
+			// 기본 아바타 설정 로직 추가
+			// static ConstructorHelpers::FObjectFinder<UTexture2D> DefaultAvatar(TEXT("Path/To/DefaultAvatar"));
+			// if (DefaultAvatar.Succeeded())
+			// {
+			// 	AvatarImage->SetBrushFromTexture(DefaultAvatar.Object);
+			// }
+		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("AvatarImage 세팅 실패 쓰레기값임"));
+		UE_LOG(LogTemp, Error, TEXT("AvatarImage가 유효하지 않습니다."));
 	}
 
 	if (ReadyStatus)

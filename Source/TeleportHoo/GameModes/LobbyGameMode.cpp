@@ -46,8 +46,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 					       LobbyGameState->ConnectedPlayers[1].bIsReady ? TEXT("true") : TEXT("false"));
 				}
 
-				// 블루프린트로 이동
-				// OnPlayerInfoUpdated();
+				OnPlayerInfoUpdated();
 
 				// 호스트에게만 시작 버튼을 활성화
 				if (IncomePlayer->HasAuthority())
@@ -68,22 +67,18 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("LobbyGameState is nullptr"));
-				return;
 			}
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("PlayerState is nullptr"));
-			return;
 		}
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("IncomePlayer is nullptr"));
-		return;
 	}
 }
-
 
 // 로그아웃 처리
 void ALobbyGameMode::Logout(AController* Exiting)
@@ -177,6 +172,8 @@ void ALobbyGameMode::ShowLoadingScreenToAllPlayers()
 // 모든 클라이언트에게 최신 플레이어 정보를 동기화
 void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 {
+	UE_LOG(LogTemp, Error, TEXT("OnPlayerInfoUpdated 호출!!!!!!!!!!!!!!!!!!!!!!!!!!"));
+	
 	// 서버에서 실행되는지 확인
 	if (HasAuthority())
 	{
@@ -225,6 +222,7 @@ void ALobbyGameMode::OnPlayerInfoUpdated_Implementation()
 
 					// 모든 클라이언트의 시작 버튼을 일당 비활성화 
 					LobbyPlayerController->Client_SetStartButtonVisibility(false);
+					UE_LOG(LogTemp, Error, TEXT("씨이이이발"));
 				}
 				else
 				{

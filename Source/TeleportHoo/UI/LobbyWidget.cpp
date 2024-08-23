@@ -161,4 +161,3 @@ void ULobbyWidget::SetWidgetSwitcherIndex(int32 Index)
 		UE_LOG(LogTemp, Warning, TEXT("WidgetSwitcher is nullptr"));
 	}
 }
-
