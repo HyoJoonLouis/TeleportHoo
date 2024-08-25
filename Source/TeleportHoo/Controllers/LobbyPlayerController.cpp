@@ -19,6 +19,8 @@
 #include "OnlineSubsystemSteam.h"
 #include "IImageWrapper.h"
 #include "IImageWrapperModule.h"
+#include "Serialization/BufferArchive.h"
+#include "Serialization/ObjectWriter.h"
 //#include "steam/steam_api.h"		// https://partner.steamgames.com/doc/api/steam_api   <- 참고
 
 ALobbyPlayerController::ALobbyPlayerController()
@@ -155,9 +157,25 @@ void ALobbyPlayerController::Server_SetPlayerAvatar_Implementation(UTexture2D* A
 
 	if (HasAuthority())
 	{
+		// UTexture2D를 Replicated 하기위해 직렬화된 바이트 배열로 변환
+		TArray<uint8> CompressedData;
+		FObjectWriter ObjectWriter(AvatarImage, CompressedData);
+		UE_LOG(LogTemp, Warning, TEXT("CompressedData 크기: %d"), CompressedData.Num());
+		
+		// TArray<uint8> TextureData;
+		// FBufferArchive ToBinary;
+		// AvatarImage->Serialize(ToBinary);
+		// TextureData.Append(ToBinary);
+		//
+		// TArray<uint8> TextureData;
+		// FMemoryWriter MemoryWriter(TextureData, true);
+		// AvatarImage->Serialize(MemoryWriter); // FMemoryWriter 사용
+		
+		
 		if (ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>())
 		{
-			LobbyPlayerState->PlayerInfo.AvatarImage = AvatarImage;
+			LobbyPlayerState->PlayerInfo.AvatarImageData = CompressedData;
+			// LobbyPlayerState->PlayerInfo.AvatarImageData = TextureData;
 			LobbyPlayerState->OnRep_PlayerInfo();
 			LobbyPlayerState->ForceNetUpdate();
 

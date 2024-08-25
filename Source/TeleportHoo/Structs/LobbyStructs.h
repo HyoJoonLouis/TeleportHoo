@@ -11,7 +11,7 @@ struct FPlayerInfo
 	FString PlayerName;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UTexture2D* AvatarImage;
+	TArray<uint8> AvatarImageData;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bIsReady;
@@ -20,7 +20,7 @@ struct FPlayerInfo
 	bool operator==(const FPlayerInfo& Other) const
 	{
 		return PlayerName == Other.PlayerName;
-			// && AvatarImage == Other.AvatarImage
-			// && bIsReady == Other.bIsReady;
+		// && AvatarImage == Other.AvatarImage
+		// && bIsReady == Other.bIsReady;
 	}
 };
