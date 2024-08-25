@@ -31,24 +31,29 @@ void ALobbyPlayerController::BeginPlay()
 	Super::BeginPlay();
 
 	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::BeginPlay"))
-	InitializeLobbyWidget();
 
-	if(LobbyWidget)
+	if(!HasAuthority())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("클라이언트에서 로비 위젯 초기화"));
+		InitializeLobbyWidget();
+	}
+
+	// InitializeLobbyWidget();
+	// if (IsLocalController())
+	// {
+	// 	InitializeLobbyWidget();
+	// }
+	// else
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("서버에서 로비 위젯 초기화 시도 방지"));
+	// }
+
+	if (LobbyWidget)
 	{
 		LobbyWidget->SetServerName(ServerName);
-
-		// 여기서 UI 갱신을 추가로 호출
-		if (ALobbyGameState* LobbyGameState = GetWorld()->GetGameState<ALobbyGameState>())
-		{
-			for (int32 PlayerIndex = 0; PlayerIndex < LobbyGameState->ConnectedPlayers.Num(); ++PlayerIndex)
-			{
-				UpdatePlayerInfoUI(PlayerIndex, LobbyGameState->ConnectedPlayers[PlayerIndex]);
-			}
-		}
 	}
 	else
 	{
-		// 위젯 초기화가 완료되지 않은 경우에 대한 처리
 		UE_LOG(LogTemp, Error, TEXT("LobbyWidget이 초기화되지 않았습니다. 이후 로직은 대기합니다."));
 	}
 }
@@ -143,6 +148,46 @@ void ALobbyPlayerController::Client_ShowLoadingScreen_Implementation()
 	SetInputMode(FInputModeUIOnly());
 	bShowMouseCursor = false;
 }
+
+void ALobbyPlayerController::Server_SetPlayerAvatar_Implementation(UTexture2D* AvatarImage)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::Server_SetPlayerAvatar_Implementation 진입"));
+
+	if (HasAuthority())
+	{
+		if (ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>())
+		{
+			LobbyPlayerState->PlayerInfo.AvatarImage = AvatarImage;
+			LobbyPlayerState->OnRep_PlayerInfo();
+			LobbyPlayerState->ForceNetUpdate();
+
+			// GameMode에서 모든 플레이어 정보를 갱신
+			if(ALobbyGameMode* LobbyGameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
+			{
+				LobbyGameMode->OnPlayerInfoUpdated();
+			}
+
+			UE_LOG(LogTemp, Warning, TEXT("서버에 아바타 설정 성공적"))
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("LobbyPlayerState 이상해"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Server_SetPlayerAvatar_Implementation : 권한이 없어!"));
+	}
+}
+
+void ALobbyPlayerController::Client_InitializeLobbyWidget_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Client_InitializeLobbyWidget_Implementation 진입"))
+	
+	if (IsLocalController())
+	{
+		InitializeLobbyWidget();
+	}}
 
 // 플레이어의 이름 반환
 FString ALobbyPlayerController::GetPlayerName()
@@ -269,23 +314,10 @@ UTexture2D* ALobbyPlayerController::GetPlayerAvatar()
 void ALobbyPlayerController::SetPlayerAvatar(UTexture2D* AvatarImage)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerController::SetPlayerAvatar 아바타 세팅 (BP에서 호출)"));
-	UE_LOG(LogTemp, Warning, TEXT("SetPlayerAvatar: AvatarImage is %s"), AvatarImage ? TEXT("valid") : TEXT("invalid"));
+	UE_LOG(LogTemp, Warning, TEXT("SetPlayerAvatar : AvatarImage is %s"), AvatarImage ? TEXT("valid") : TEXT("invalid"));
 
-	if(ALobbyPlayerState* LobbyPlayerState = GetPlayerState<ALobbyPlayerState>())
-	{
-		LobbyPlayerState->PlayerInfo.AvatarImage = AvatarImage;
-	
-		LobbyPlayerState->OnRep_PlayerInfo();
-		LobbyPlayerState->ForceNetUpdate();
-		
-		// // LobbyGameMode에서 OnPlayerInfoUpdated를 호출
-		// if (ALobbyGameMode* LobbyGameMode = GetWorld()->GetAuthGameMode<ALobbyGameMode>())
-		// {
-		// 	UE_LOG(LogTemp, Warning, TEXT("LobbyGameMode->OnPlayerInfoUpdated"));
-		//
-		// 	LobbyGameMode->OnPlayerInfoUpdated();
-		// }
-	}
+	// 서버와 클라이언트 모두에서 Server_SetPlayerAvatar를 호출
+	Server_SetPlayerAvatar(AvatarImage);
 }
 
 ULobbyWidget* ALobbyPlayerController::GetLobbyWidgetRef()
@@ -362,16 +394,15 @@ void ALobbyPlayerController::InitializeLobbyWidget()
 		LobbyWidget = Cast<ULobbyWidget>(CreateWidget(this, LobbyWidgetClass));
 		if (IsValid(LobbyWidget))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("LobbyWidget->AddToViewport"));
 			LobbyWidget->AddToViewport();
 
 			if (LobbyWidget->IsInViewport())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("LobbyWidget is successfully added to viewport"));
+				UE_LOG(LogTemp, Warning, TEXT("LobbyWidget viewport 추가 성공"));
 			}
 			else
 			{
-				UE_LOG(LogTemp, Error, TEXT("LobbyWidget failed to add to viewport"));
+				UE_LOG(LogTemp, Error, TEXT("LobbyWidget viewport 추가 실패"));
 			}
 
 			LobbyWidget->SetVisibility(ESlateVisibility::Visible);

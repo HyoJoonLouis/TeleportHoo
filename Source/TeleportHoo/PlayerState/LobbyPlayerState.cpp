@@ -16,23 +16,24 @@ void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 void ALobbyPlayerState::OnRep_PlayerInfo()
 {
 	UE_LOG(LogTemp, Error, TEXT("ALobbyPlayerState::OnRep_PlayerInfo 진입"));
+	UE_LOG(LogTemp, Warning, TEXT("------------------------------------------------------"));
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_PlayerInfo: PlayerName: %s, bIsReady: %s"),
 		*PlayerInfo.PlayerName, PlayerInfo.bIsReady ? TEXT("true") : TEXT("false"));
+	UE_LOG(LogTemp, Warning, TEXT("------------------------------------------------------"));
 
 	if (APlayerController* PC = Cast<APlayerController>(GetOwner()))
 	{
-		if (ALobbyPlayerController* LPC = Cast<ALobbyPlayerController>(PC))
+		if (ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(PC))
 		{
 			// PlayerIndex를 구하기 위해서 LobbyGameState를 통해서 확인합니다.
-			ALobbyGameState* LobbyGameState = GetWorld()->GetGameState<ALobbyGameState>();
-			if (LobbyGameState)
+			if (const ALobbyGameState* LobbyGameState = GetWorld()->GetGameState<ALobbyGameState>())
 			{
 				// ConnectedPlayers 배열에서 PlayerInfo를 기반으로 현재 플레이어의 인덱스를 찾음
-				int32 PlayerIndex = LobbyGameState->ConnectedPlayers.IndexOfByKey(PlayerInfo);
+				const int32 PlayerIndex = LobbyGameState->ConnectedPlayers.IndexOfByKey(PlayerInfo);
 				UE_LOG(LogTemp, Warning, TEXT("ALobbyPlayerState::OnRep_PlayerInfo : PlayerIndex: %d"), PlayerIndex);
 
 				// UI를 업데이트하기 위해 클라이언트에서 PlayerInfo를 전달
-				LPC->Client_UpdatePlayerInfo(PlayerIndex, PlayerInfo);
+				LobbyPlayerController->Client_UpdatePlayerInfo(PlayerIndex, PlayerInfo);
 			}
 		}
 	}

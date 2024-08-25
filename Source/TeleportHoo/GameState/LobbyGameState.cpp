@@ -18,12 +18,20 @@ void ALobbyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 bool ALobbyGameState::AreAllPlayersReady() const
 {
-	for(const FPlayerInfo& PlayerInfo : ConnectedPlayers)
+	// 최소 두 명 이상의 플레이어가 연결되어 있어야 시작할 수 있음
+	if (ConnectedPlayers.Num() < 2)
 	{
-		if(!PlayerInfo.bIsReady)
+		return false;
+	}
+
+	// 모든 플레이어가 준비되었는지 확인
+	for (const FPlayerInfo& PlayerInfo : ConnectedPlayers)
+	{
+		if (!PlayerInfo.bIsReady)
 		{
 			return false;
 		}
 	}
+
 	return true;
 }

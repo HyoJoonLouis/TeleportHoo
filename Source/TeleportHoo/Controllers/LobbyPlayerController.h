@@ -33,25 +33,31 @@ public:
 	void Client_StartCharacterSelection();
 	UFUNCTION(Client, Reliable)
 	void Client_ShowLoadingScreen();
-	
+	UFUNCTION(Client, Reliable)
+	void Client_InitializeLobbyWidget();
 	
 	// Server
 	UFUNCTION(Server, Reliable)
 	void Server_ToggleReady(bool bIsReady);
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "C++")
+	void Server_SetPlayerAvatar(UTexture2D* AvatarImage);
 
 	UFUNCTION()
 	FString GetPlayerName();
 	UFUNCTION()
-	UTexture2D* GetPlayerAvatar();
+	UTexture2D* GetPlayerAvatar();			// 폐기
+
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void SetPlayerAvatar(UTexture2D* AvatarImage);
+
+	
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	ULobbyWidget* GetLobbyWidgetRef();
 	UFUNCTION(BlueprintCallable, Category = "C++")
 	void ToggleReady();
+	void InitializeLobbyWidget();
 
 private:
-	void InitializeLobbyWidget();
 	void UpdatePlayerInfoUI(int32 PlayerIndex, const FPlayerInfo& PlayerInfo);
 
 	// VARIABLES
